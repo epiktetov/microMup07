@@ -40,9 +40,9 @@
 		</dict>
 	</array>
 	<key>CFBundleExecutable</key>
-	<string>µMup07</string>
+	<string>@EXECUTABLE@</string>
 	<key>CFBundleIconFile</key>
-	<string>microMir.icns</string>
+	<string>@ICON@</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleSignature</key>

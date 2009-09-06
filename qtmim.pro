@@ -1,5 +1,6 @@
 TEMPLATE = app
 macx {
+  CONFIG += x86
   TARGET = µMup07
   ICON = microMir.icns
   QMAKE_INFO_PLIST = mim.Info.plist
