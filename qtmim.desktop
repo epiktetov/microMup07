@@ -1,0 +1,9 @@
+[Desktop Entry]
+Encoding=UTF-8
+Icon=qtmim
+Name=µMup07
+Comment=MicroMir07 text editor
+Exec=/home/epi/Dvlm/qtmim/mim %f
+Terminal=false
+Type=Application
+Categories=GNOME;GTK;Utility;
