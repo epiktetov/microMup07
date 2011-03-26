@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07           Text & Window Manager           | (c) Epi MG, 2004-2008
+// МикроМир07           Text & Window Manager           | (c) Epi MG, 2004-2011
 //------------------------------------------------------+----------------------
 #include <QCoreApplication> // need QCoreApplication::arguments
 #include <QRegExp>
@@ -380,12 +380,24 @@ void tmDoFentr (void)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tmFnewByTtxt (void)                 /* войти в новый файл (имя из Ttxt) */
 {
+  if (!tleread()) return;
+/*++
   TxSetY(Ttxt, Ty); if (qTxDown(Ttxt)) return;
   Lleng  = TxTRead(Ttxt, Lebuf);
+*/
   int lm, rm;
-       if (Block1size(&lm, &rm));
-  else if (Ttxt->txstat & TS_MCD) { if (Lleng < (lm = MCD_RIGHT+1)) return;
+       if (Block1size(&lm, &rm)); // sets lm/rm, nothing more to do
+  else if (Ttxt->txstat & TS_MCD) { 
+#define USE_MCD_MARGIN(LEFTorRIGHT) \
+  if (Lleng > LEFTorRIGHT &&        \
+  (char)Lebuf[LEFTorRIGHT] == LDS_MCD) { lm = LEFTorRIGHT+1; rm = Lleng; }
+         USE_MCD_MARGIN(MCD_RIGHT) //
+    else USE_MCD_MARGIN(MCD_LEFT)  // allow both double-delimiter (64+69th pos)
+    else return;                   // and single-delimiter (64th posd only) fmt
+/*++
+                                    if (Lleng < (lm = MCD_RIGHT+1)) return;
                                     else         rm = Lleng;                
+*/
   }
   else if (Ttxt->txstat & TS_DIRLST) { lm = DIRLST_FNPOS; rm = Lleng; }
   else if (Tx > Lleng) return;
@@ -400,17 +412,13 @@ void tmFnewByTtxt (void)                 /* войти в новый файл (�
   if (lm < rm) twDirPush(tcs2qstr(Lebuf+lm, rm-lm), Ttxt);
 }
 /*---------------------------------------------------------------------------*/
-static void infilnam (void) 
+static void infilnam (void)      /* return by Enter, see teCR() in file te.c */
 {
   if (! (Ttxt->txstat & TS_MCD)) { vipBell(); return; }
   Ttxt->txrm = MAXTXRM;
-  Ttxt->txlm = MCD_LEFT+1; Tx = MCD_RIGHT+1;
-}
-static void outfilnam (void) 
-{
-  if (! (Ttxt->txstat & TS_MCD)) { vipBell(); return; }
-  Ttxt->txlm = 0;
-  Ttxt->txrm = MCD_LEFT; Tx = 0;
+  Ttxt->txlm = MCD_LEFT+1; 
+  if (tleread() && (char)Lebuf[MCD_RIGHT] == LDS_MCD) Tx = MCD_RIGHT+1;
+  else                                                Tx = MCD_LEFT +1;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 int TmCommand (int kcode)
@@ -456,8 +464,7 @@ int TmCommand (int kcode)
     tmshell(kcode);
     break;
 #endif
-  case TM_INFILE:  infilnam();  break; /* enter filename field */
-  case TM_OUTFILE: outfilnam(); break; /* leave it /micros.dir */
+  case TM_INFILE: infilnam(); break; /* enter filename field in micros.dir   */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   case TM_HFORK:                     /* горизонтальный fork и к нижнему окну */
   case TM_VFORK:                     /* create new window и к правому окну   */

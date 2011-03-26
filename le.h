@@ -1,11 +1,12 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07    le = Line Editor -- Редактор строки    | (c) Epi MG, 2006-2007
+// МикроМир07    le = Line Editor -- Редактор строки    | (c) Epi MG, 2006-2011
 //------------------------------------------------------+--------------------*/
 #ifndef LE_H_INCLUDED      /* Old "le.h" (c) Attic 1989, (c) EpiMG 1996-2003 */
 #define LE_H_INCLUDED
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tleload(void), /* load LE line from text, see also EnterLEmode in vip.h */
    tleunload(void); /* unload LE line to text, see also ExitLEmode (ibid)    */
+BOOL tleread(void); /* read Lebuf from text (read-only), true if non-empty   */
 
 void  blktspac(tchar *p, small len);
 small lstrlen (small lmax, tchar *string);

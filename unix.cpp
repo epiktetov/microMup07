@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07     UNIX-specific stuff and tmSyncPos     | (c) Epi MG, 2007
+// МикроМир07     UNIX-specific stuff and tmSyncPos     | (c) Epi MG, 2007-2011
 //------------------------------------------------------+--------------------*/
 #include <QString>        /* Old tm.c (c) Attic 1989-91, (c) EpiMG 1997-2003 */
 #include "mic.h"
@@ -49,11 +49,14 @@ void x2enter (void)           /* command line enter (2) ввести коман�
  * If invoked from command window, copy the current line (excluding old prompt)
  * as initial value for new command:
  */
+/*++
   if ((Ttxt->txstat & TS_PSEUDO) && !qTxDown(Ttxt)) {
     tchar  *p, *pend;
     TxSetY(Ttxt, Ty); Lleng = TxTRead(Ttxt, Lebuf);
-    for (p = Lebuf, 
-      pend = p+Lleng; p < pend && (*p & AT_LIGHT); p++);
+*/
+  if ((Ttxt->txstat & TS_PSEUDO) && tleread()) {
+    tchar      *p, *pend;
+    for (p = Lebuf, pend = p+Lleng; p < pend && (*p & AT_LIGHT); p++);
     if (p < pend) {
       blktmov(p, tcmdbuffer + tcmdpromptlen, pend-p);
       tcmdbuflen = tcmdpromptlen + (pend-p);

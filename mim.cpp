@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07   Main Frame + Application Data + ScTwin  | (c) Epi MG, 2004-2008
+// МикроМир07   Main Frame + Application Data + ScTwin  | (c) Epi MG, 2004-2011
 //------------------------------------------------------+----------------------
 #include <QApplication>
 #include <QFileDialog>
@@ -115,7 +115,7 @@ MiFrame::MiFrame (MiFrame *base) : main(0), scwin(0), wrapped(false),
 {
 #ifndef Q_OS_MAC
   QMenu *dummy_menu = menuBar()->addMenu(QString::fromUtf8("µMup07"));
-  dummy_menu->setDisabled(true);
+         dummy_menu->setDisabled(true);
 #endif
   QMenu *file_menu = menuBar()->addMenu("File");
   QAction *act = file_menu->addAction("&Open file...");
@@ -134,6 +134,8 @@ MiFrame::MiFrame (MiFrame *base) : main(0), scwin(0), wrapped(false),
   size_menu = menuBar()->addMenu("size");
   size_act = size_menu->addAction("fallback-size");
   connect(size_act, SIGNAL(triggered()), this, SLOT(fallbackSize()));
+  QMenu *dummy_version_menu = menuBar()->addMenu("ver."microVERSION);
+         dummy_version_menu->setDisabled(true);
 
   sash = new QSplitter(Qt::Vertical, this);
   sashHeight = sash->handleWidth();

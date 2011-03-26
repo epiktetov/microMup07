@@ -1,12 +1,12 @@
 //------------------------------------------------------+----------------------
-// МикроМир07           Text & Window Manager           | (c) Epi MG, 2004-2008
+// МикроМир07           Text & Window Manager           | (c) Epi MG, 2004-2011
 //------------------------------------------------------+----------------------
 #ifndef TWM_H_INCLUDED  /* Old "nm.h" (c) Attic 1989-90, (c) EpiMG 1998-2001 */
 #define TWM_H_INCLUDED  /* old "wd.h" (c) Attic 1989, then (c) EpiMG 1996,98 */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #define LDS_MCD '|'
-#define MCD_LEFT     63
-#define MCD_RIGHT    68
+#define MCD_LEFT     63     /* первый (основной) разделитель в micros.dir    */
+#define MCD_RIGHT    68     /* второй разделитель в micros.dir (optional)    */
 #define DIRLST_FNPOS 40     /* position of the filename in the TS_DIRLST txt */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 struct txt_tag 

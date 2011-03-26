@@ -1,9 +1,9 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07         Самый главный header файл         | (c) Epi MG, 2006-2008
+// МикроМир07         Самый главный header файл         | (c) Epi MG, 2006-2011
 //------------------------------------------------------+--------------------*/
 #ifndef MIC_H_INCLUDED  /* Old "nm.h" (c) Attic 1989-90, (c) EpiMG 1998-2001 */
 #define MIC_H_INCLUDED
-#define microVERSION "2.02.02"
+#define microVERSION "4.3" // released Sat Mar 26 14:00 PDT 2011
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07    le = Line Editor -- Редактор строки    | (c) Epi MG, 2006-2008
+// МикроМир07    le = Line Editor -- Редактор строки    | (c) Epi MG, 2006-2011
 //------------------------------------------------------+--------------------*/
 #include "mic.h"             /* Old le.c (c) Attic 1989, (c) EpiMG 1996-2003 */
 #include "ccd.h"
@@ -74,6 +74,12 @@ void ExitLEmode (int er)
     if (er == E_UP) undodir = -1;
     tleunload();    undodir =  0;
 } }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+BOOL tleread(void)    /* read Lebuf from text (read-only), true if non-empty */
+{
+           TxSetY (Ttxt, Ty); if (qTxDown(Ttxt)) return FALSE;
+  Lleng  = TxTRead(Ttxt, Lebuf);                 return (Lleng > 0);
+}
 /*---------------------------------------- Базовый уровень строчных операций */
 void blktspac (tchar *p, small len)
 {
