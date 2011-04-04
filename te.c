@@ -68,12 +68,12 @@ void teRCR()
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static small mcdpat (tchar *buf, small i)           /* micros.dir paste line */
 {
-  tchar *p;
   if ((Ttxt->txstat & TS_MCD) && i < MCD_LEFT) {
-    for (p = buf+i; i < MCD_LEFT;  i++) *p++ = (tchar)' '; *p++ = LDS_MCD;
-    for (i++;       i < MCD_RIGHT; i++) *p++ = (tchar)' '; *p++ = LDS_MCD;
-         i++; //
-  } return i; // returns length of filled up lfbuf
+    tchar *p;
+    for (p = buf+i; i < MCD_LEFT; i++) *p++ = (tchar)' ';
+                                  i++; *p++ = LDS_MCD;
+  } 
+  return i; // returns length of filled up lfbuf
 }
 void teIL() { TxTIL(Ttxt, lfbuf, mcdpat(lfbuf,0)); }
 void teDL() { TxDL(Ttxt);                          }

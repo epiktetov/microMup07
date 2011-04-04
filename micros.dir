@@ -21,9 +21,10 @@ Clipboard (using QClipboard) and Char/Line Storage operations, |clip.h
 Qt project file, adds microMir.icns micros.icns micons.psd etc |qtmim.pro
 Desktop file for Linux, adds qtmim.png                         |qtmim.desktop
 Windows resource file, adds qtmim.ico                          |qtmim.rc
-                                      Makefile (auto-generated)|Makefile
+                                               (auto-generated)|Makefile
+Sun-like license                                               |LICENSE
 MacOS info.plist                                               |mim.Info.plist
-                                     (to be added to qtmim.pro)|make.bundle.sh
+                          (to be added to qtmim.pro eventually)|make.bundle.sh
 ---------------------------------------------------------------|---------------
 --------------- Legacy code (not converted to C++) ------------|---------------
 Text Editor                                                    |te.h

@@ -3,7 +3,7 @@
 //------------------------------------------------------+--------------------*/
 #ifndef MIC_H_INCLUDED  /* Old "nm.h" (c) Attic 1989-90, (c) EpiMG 1998-2001 */
 #define MIC_H_INCLUDED
-#define microVERSION "4.3" // released Sat Mar 26 14:00 PDT 2011
+#define microVERSION "4.4" // released Sun Apr 3 14:30 PDT 2011
 #ifdef __cplusplus
 extern "C" {
 #endif

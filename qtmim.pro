@@ -44,7 +44,7 @@ macx {
   QMAKE_EXTRA_TARGETS += icns keys
 }
 MimFILES  = micros.dir qtmim.pro qtmim.desktop qtmim.rc mim.Info.plist
-MimFILES += micons.psd qtmim.ico qtmim.png
+MimFILES += micons.psd qtmim.ico qtmim.png LICENSE
 zip.target  = zip
 zip.depends = Qtmim.zip
 

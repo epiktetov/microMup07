@@ -336,7 +336,7 @@ k_(LE_CCHEX, 0xc2203, mod_ALT+mod_META+Mk_RIGHT, KxSEL) /* число->hex      
 Third MicroMir principle: instead of relying on sorting capabilites provided by
 file browser, one can keep files sorted his/her way (and also add any comments)
 by listing filenames in 'micros.dir'.  This is a regular text file, except that
-it has '|' symbols in all lines in 64th and 69th positions (no pun intended).
+it has '|' symbols in all lines in 64th position (and, optionally, in 69th one)
 
   Esc <right> - move right to the filename field (return back by Enter)
   Esc <down>  - down into file
