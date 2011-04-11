@@ -1,9 +1,14 @@
-cp µMup07.app/Contents/MacOS/µMup07 µMup07.Qt.app/Contents/MacOS/µMup07
-rm                                  µMup07.Qt.app/Contents/Resources/*
-cp µMup07.app/Contents/Resources/*  µMup07.Qt.app/Contents/Resources
-#
-#install_name_tool -id @executable_path/../Frameworks/QtGui.framework/Versions/4/QtGui   µMup07.Qt.app/Contents/Frameworks/QtGui.framework/Versions/4/QtGui
-#install_name_tool -id @executable_path/../Frameworks/QtCore.framework/Versions/4/QtCore µMup07.Qt.app/Contents/Frameworks/QtCore.framework/Versions/4/QtCore
-install_name_tool -change /usr/local/Qt/lib/QtGui.framework/Versions/4/QtGui   @executable_path/../Frameworks/QtGui.framework/Versions/4/QtGui   µMup07.Qt.app/Contents/MacOS/µMup07
-install_name_tool -change /usr/local/Qt/lib/QtCore.framework/Versions/4/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/4/QtCore µMup07.Qt.app/Contents/MacOS/µMup07
-#install_name_tool -change /usr/local/Qt/lib/QtCore.framework/Versions/4/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/4/QtCore µMup07.Qt.app/Contents/Frameworks/QtGui.framework/Versions/4/QtGui
+#!/bin/sh
+cp -R µMup07.app µMup07.Qt.app
+QtCOREpath=Frameworks/QtCore.framework/Versions/4
+QtGUIpath=Frameworks/QtGUI.framework/Versions/4
+MimQtCORE=µMup07.Qt.app/Contents/$QtCOREpath
+MimQtGUI=µMup07.Qt.app/Contents/$QtGUIpath
+mkdir -p $MimQtCORE
+mkdir -p $MimQtGUI
+LibQtCORE=/usr/local/Qt/lib/QtCore.framework/Versions/4/QtCore
+LibQtGUI=/usr/local/Qt/lib/QtGui.framework/Versions/4/QtGui
+cp $LibQtCORE $MimQtCORE
+cp $LibQtGUI  $MimQtGUI
+install_name_tool -change $LibQtCORE @executable_path/../$QtCOREpath/QtCore µMup07.Qt.app/Contents/MacOS/µMup07
+install_name_tool -change $LibQtGUI  @executable_path/../$QtGUIpath/QtGui   µMup07.Qt.app/Contents/MacOS/µMup07
