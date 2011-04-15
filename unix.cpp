@@ -56,7 +56,7 @@ void x2enter (void)           /* command line enter (2) ввести коман�
 */
   if ((Ttxt->txstat & TS_PSEUDO) && tleread()) {
     tchar      *p, *pend;
-    for (p = Lebuf, pend = p+Lleng; p < pend && (*p & AT_LIGHT); p++);
+    for (p = Lebuf, pend = p+Lleng; p < pend && (*p & AT_LIGHT); p++) ;
     if (p < pend) {
       blktmov(p, tcmdbuffer + tcmdpromptlen, pend-p);
       tcmdbuflen = tcmdpromptlen + (pend-p);
@@ -288,7 +288,7 @@ int tmSyncPos (void)
 
     if (pline[-1] == '\"') pline--;
     for (p = pline-1; 
-         p > line_buffer && *p != ' ' && *p != '\"'; p--); p++;
+         p > line_buffer && *p != ' ' && *p != '\"'; p--) ; p++;
 
     *sncpy(p, filename, pline-p) = 0; /* copy filename and terminate by 0 */
   }

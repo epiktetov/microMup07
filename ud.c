@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07              Откатка - Undo               | (c) Epi MG, 2007
+// МикроМир07              Откатка - Undo               | (c) Epi MG, 2007,2011
 //------------------------------------------------------+--------------------*/
 #include "mic.h"                  /* Old ud.c (c) Attic 1989, (c) EpiMG 1998 */
 #include "ccd.h"
@@ -197,7 +197,7 @@ static void genundo (void)
     TxDL(Ttxt);
   }
   else if (undo_typ == UT_REP) {
-    text2undo *pt2 = (text1undo *)ubuf;
+    text2undo *pt2 = (text2undo *)ubuf;
     small index = pt2->udindex;
     small usl, uosl, unsl;
     char *usptr, *unsptr;

@@ -1,15 +1,18 @@
 //------------------------------------------------------+----------------------
-// МикроМир07 Main Header + Scrollable/Gradient Window  | (c) Epi MG, 2004-2008
+// МикроМир07 Main Header + Scrollable/Gradient Window  | (c) Epi MG, 2004-2011
 //------------------------------------------------------+----------------------
 #ifndef MIM_H_INCLUDED
 #define MIM_H_INCLUDED
 #include "mic.h"
 //-----------------------------------------------------------------------------
 #include <QMainWindow>
+#include <QDialog>
 #include <QWidget>
 class MiScTwin;
-class QSplitter;
-class QMessageBox;
+class QLabel;
+class QMessageBox; class QSpinBox;
+class QPushButton; class QSplitter;
+class QLineEdit;
 extern bool MiApp_useDIAGRAD; 
 extern int  MiApp_defWidth, MiApp_defHeight;
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -20,26 +23,23 @@ extern int  MiApp_defWidth, MiApp_defHeight;
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 class MiFrame : public QMainWindow
 {
-  Q_OBJECT
-
-  MiScTwin *main, *scwin; int sashHeight;
-  QSplitter *sash;          bool wrapped;
-  QFont ref_Font, textFont, boldFont;
-  QMessageBox *mbox;
-  QMenu  *size_menu; 
-  QAction *size_act; QSize tSize, oldSize;
-
+  Q_OBJECT QAction *size_act; QSize tSize, oldSize; bool wrapped;
+           QMessageBox *mbox; QSplitter *sash;
+           QMenu  *size_menu; int  sashHeight; QFont textFont, boldFont;
+  MiScTwin *main, *scwin;
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 public:    MiFrame(MiFrame *base); MiScTwin *NewScTwin(wnd *vp);
   virtual ~MiFrame();              void DeleteScTwin(MiScTwin*);
   void updateWinTitle(void);
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  const QFont& getRef_Font() const { return ref_Font; }
   const QFont& getTextFont() const { return textFont; }
   const QFont& getBoldFont() const { return boldFont; }
+protected:
+  void makeFonts(); // makes textFont and boldFont from MiApp_defaultFont etc
 public slots:
-  void SelectFont(); void OpenFile(); void SaveAs ();
-  void SetTABsize(); void OpenDir (); void SaveAll();
-  void shrinkwrap();                  void finishClose(int qtStdBtn);
+  void OpenFile();  void SaveAs (); void Preferences();
+  void OpenDir ();  void SaveAll();
+  void finishClose(int qtStandBtn);
+  void shrinkwrap();    
   void fallbackSize(); 
   void splitterMoved(int pos);
 public:
@@ -64,13 +64,25 @@ public:    MiInfoWin(MiScTwin *parent, const QColor *bgnd);
   void paintEvent(QPaintEvent *ev);
   void updateInfo(MiInfoType mit = MitUSE_CURRENT);
 };
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+class MiConfigDlg : public QDialog
+{
+  Q_OBJECT QPushButton *fontButton;
+           QLabel      *fontLabel;
+           QLineEdit   *fontAdjust; QSpinBox *tabSizeBox;
+protected:
+  void setFontLabelText();
+public slots:
+  void selectFont();
+public:
+  MiConfigDlg(QWidget *parent = 0); bool Ask();
+};
 //--------------------------------------//-------------------------------------
 class MiScTwin : public QWidget         //   MicroMir Scrollable Text Window
 {
-public:
-  MiScTwin(MiFrame *frame, const QColor *prim,
-                           const QColor *bgnd, wnd *vp);
-  ~MiScTwin();
+public: MiScTwin(MiFrame *frame, const QColor *prim,
+                                 const QColor *bgnd, wnd *vp);
+  virtual ~MiScTwin();
   void vpResize();                      // resize based on vp->wsh/wsw info
   void vpResize(int width, int height); // resize to given dimensions
 private:

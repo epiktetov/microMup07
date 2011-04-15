@@ -2,17 +2,7 @@
 // МикроМир07   Main Frame + Application Data + ScTwin  | (c) Epi MG, 2004-2011
 //------------------------------------------------------+----------------------
 #include <QApplication>
-#include <QFileDialog>
-#include <QFontDialog>
-#include <QInputDialog>
-#include <QKeyEvent>
-#include <QMenuBar>
-#include <QMessageBox>
-#include <QPainter>
-#include <QPaintEvent>
-#include <QSettings>
-#include <QSplitter>
-#include <QTimer>
+#include <QtGui>
 #include "mim.h"
 #include "ccd.h"
 #include "qfs.h"
@@ -22,9 +12,10 @@
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 BOOL dosEOL = false;                              /* Настраиваемые параметры */
 int TABsize = 4;
-QString MiApp_defaultFont;
-int     MiApp_defFontSize, MiApp_defFontAdjH, MiApp_defWidth, MiApp_defHeight;
 static bool MiApp_debugKB = false;
+QString MiApp_defaultFont, MiApp_defFontAdjH;
+int     MiApp_defFontSize;
+int     MiApp_fontAdjOver, MiApp_fontAdjUnder, MiApp_defWidth, MiApp_defHeight;
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 inline bool txtReplaceable (txt *t)
 {
@@ -70,6 +61,17 @@ QColor colorLightPink(200,200,172); // "temporary" block
 QColor colorLightCyan(172,200,255); // "permanent" block
 QColor colorDarkWheat(213,150, 36); // dark wheat (for TAB and control chars)
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+inline QString myPackAdj2string (int X, int Y)
+{
+  return QString("%1/%2").arg(QChar((X > 0) ? '+' : (X < 0) ? '-' : '0'))
+                         .arg(QChar((Y > 0) ? '+' : (Y < 0) ? '-' : '0'));
+}
+inline int myUnpackAdj2int (QString adj, int ix)
+{
+  const char c = adj[ix].toAscii();
+  return (c == '+') ? +1 : (c == '-') ? -1 : 0;
+}
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 int main(int argc, char *argv[])
 {
   QApplication app(argc, argv);
@@ -78,11 +80,13 @@ int main(int argc, char *argv[])
   QCoreApplication::setApplicationName("micro7"); tmInitialize();
   QSettings Qs;
   TABsize = Qs.value("TABsize", 4).toInt();
-  MiApp_defaultFont = Qs.value("font", QString(mimFONTFACENAME)).toString();
-  MiApp_defFontSize = Qs.value("fontSize", mimFONTSIZE).toInt();
-  MiApp_defFontAdjH = Qs.value("fontAdjH", 0).toInt();
   MiApp_defWidth    = Qs.value("frameWidth", defWinWIDTH).toInt();
   MiApp_defHeight   = Qs.value("frameHeight", defWinHEIGHT).toInt();
+  MiApp_defaultFont = Qs.value("font", QString(mimFONTFACENAME)).toString();
+  MiApp_defFontSize = Qs.value("fontSize", mimFONTSIZE).toInt();
+  MiApp_defFontAdjH = Qs.value("fontAdjH", 0).toString();
+  MiApp_fontAdjOver = myUnpackAdj2int(MiApp_defFontAdjH, 0);
+  MiApp_fontAdjUnder = myUnpackAdj2int(MiApp_defFontAdjH, 2);
 #ifdef Q_OS_MAC
   app.installEventFilter(new MacEvents);
 #else
@@ -110,8 +114,8 @@ void mimExit()
   cpsave(); QCoreApplication::quit();
 }
 //-----------------------------------------------------------------------------
-MiFrame::MiFrame (MiFrame *base) : main(0), scwin(0), wrapped(false), 
-                                   mbox(0), tSize(0,0), oldSize(0,0)
+MiFrame::MiFrame (MiFrame *base) : tSize(0,0), oldSize(0,0), wrapped(false),
+                                   mbox(0),         main(0), scwin(0)
 {
 #ifndef Q_OS_MAC
   QMenu *dummy_menu = menuBar()->addMenu(QString::fromUtf8("µMup07"));
@@ -127,10 +131,8 @@ MiFrame::MiFrame (MiFrame *base) : main(0), scwin(0), wrapped(false),
   act = file_menu->addAction("Save &ALL changes\tCtrl+S");
   connect(act, SIGNAL(triggered()), this, SLOT(SaveAll()));
   file_menu->addSeparator();
-  act = file_menu->addAction("&Font...");
-  connect(act, SIGNAL(triggered()), this, SLOT(SelectFont()));
-  act = file_menu->addAction("&TABsize...");
-  connect(act, SIGNAL(triggered()), this, SLOT(SetTABsize()));
+  act = file_menu->addAction("&Preferences...");
+  connect(act, SIGNAL(triggered()), this, SLOT(Preferences()));
   size_menu = menuBar()->addMenu("size");
   size_act = size_menu->addAction("fallback-size");
   connect(size_act, SIGNAL(triggered()), this, SLOT(fallbackSize()));
@@ -147,33 +149,23 @@ MiFrame::MiFrame (MiFrame *base) : main(0), scwin(0), wrapped(false),
     QPoint basePos = base->pos();
     basePos.rx() += 120;
     basePos.ry() +=  20;    move(basePos);
-    ref_Font = QFont(base->getRef_Font());
     textFont = QFont(base->getTextFont());
     boldFont = QFont(base->getBoldFont());
   }
-  else { ref_Font = QFont(MiApp_defaultFont, MiApp_defFontSize);
-         textFont = QFont(ref_Font);
-         boldFont = QFont(ref_Font); boldFont.setBold(true);
-     if (MiApp_defFontAdjH & 2) ref_Font.setStrikeOut(true);
-     if (MiApp_defFontAdjH & 1) ref_Font.setUnderline(true);
-} }
+  else makeFonts();
+}
 MiFrame::~MiFrame() //- - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 {                   // Unfortunately, we need to know menuBar height before Qt
   QSettings Qs;     // knows it (i.e. before window is shown), saving in prefs
 #ifndef Q_OS_MAC
   Qs.setValue("private/menuBarHeight", menuBar()->height());
 #endif
-  MiApp_defaultFont = ref_Font.family();
-  MiApp_defFontSize = ref_Font.pointSize();
-  MiApp_defFontAdjH = (ref_Font.strikeOut() ? 2 : 0)|
-                      (ref_Font.underline() ? 1 : 0);
-  // Font/geometry:
-  //
-  Qs.setValue("font",      MiApp_defaultFont);  if (main) delete main;
-  Qs.setValue("fontSize",  MiApp_defFontSize);  if (scwin) delete scwin;
-  Qs.setValue("fontAdjH",  MiApp_defFontAdjH);
   Qs.setValue("frameWidth",  MiApp_defWidth  = tSize.width());
   Qs.setValue("frameHeight", MiApp_defHeight = tSize.height());
+  MiApp_defFontAdjH = myPackAdj2string(MiApp_fontAdjOver, MiApp_fontAdjUnder);
+  Qs.setValue("font",     MiApp_defaultFont);
+  Qs.setValue("fontSize", MiApp_defFontSize);  if (main) delete main;
+  Qs.setValue("fontAdjH", MiApp_defFontAdjH);  if (scwin) delete scwin;
 }                          
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiFrame::closeEvent (QCloseEvent *ev)
@@ -199,9 +191,9 @@ bool MiFrame::safeClose (MiScTwin *sctw)  // NOTE: sctw pointer in the MiFrame
   return false; // not safe to close yet (user notified, waiting for reaction)
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-void MiFrame::finishClose (int qtStdBtn)   // finish closing either scwin (when
+void MiFrame::finishClose (int qtStandBtn) // finish closing either scwin (when
 {                                          // still present) or main & then try
-  switch (qtStdBtn) {                      // to close the window again
+  switch (qtStandBtn) {                    // to close the window again
   case QMessageBox::Cancel: return;
   case QMessageBox::Save:
          if (scwin) twSave(scwin->vp->wtext, scwin->vp, false);
@@ -213,23 +205,17 @@ void MiFrame::finishClose (int qtStdBtn)   // finish closing either scwin (when
   close();
 }
 //-----------------------------------------------------------------------------
-void MiFrame::OpenFile()
-{
-  QString file = QFileDialog::getOpenFileName(this, "Open file",
-                         (Ttxt && Ttxt->file) ? Ttxt->file->path : QString());
-  if (file.isEmpty()) return;
-  if (Ttxt) { vipFocusOff(Twnd); twDirPush(file, Ttxt); vipReady(); }
-  else                           twStart  (file,    1);
+#define MiFrameOPEN_XXX(XXX,XXXtext,getMETHOD)                        \
+void MiFrame::Open##XXX()                                             \
+{                                                                     \
+  QString init = (Ttxt && Ttxt->file) ? Ttxt->file->path : QString(); \
+  QString name = QFileDialog::getMETHOD(this, "Open " XXXtext, init); \
+  if (name.isEmpty()) return;                                         \
+  if (Ttxt) { vipFocusOff(Twnd); twDirPush(name, Ttxt); vipReady(); } \
+  else                           twStart  (name,    1);               \
 }
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-void MiFrame::OpenDir()
-{
-  QString dir = QFileDialog::getExistingDirectory(this, "Open directory",
-                        (Ttxt && Ttxt->file) ? Ttxt->file->path : QString());
-  if (dir.isEmpty()) return;
-  if (Ttxt) { vipFocusOff(Twnd); twDirPush(dir, Ttxt); vipReady(); }
-  else                           twStart  (dir,    1);
-}
+MiFrameOPEN_XXX(File,    "file", getOpenFileName)
+MiFrameOPEN_XXX(Dir,"directory", getExistingDirectory)
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 QString MiFrame::saveAsDialog (txt *t)
 {
@@ -239,33 +225,36 @@ QString MiFrame::saveAsDialog (txt *t)
     return QFileDialog::getSaveFileName(this, "Save as", suggest_name);
   } return QString();
 }
-void MiFrame::SaveAs() 
+void MiFrame::SaveAs() // - - - - - - - - - - - - - - - - - - - - - - - - - - -
 {                        
   QString file = saveAsDialog(Ttxt);
   if (! file.isEmpty()) { vipFocusOff(Twnd); tmSaveAs(Ttxt,file); vipReady(); }
 }
 void MiFrame::SaveAll() { vipFocusOff(Twnd); tmSaveAll();         vipReady(); }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-void MiFrame::SetTABsize()
+void MiFrame::Preferences()
 {
-  bool ok;
-  TABsize = QInputDialog::getInteger(this, QString::fromUtf8("µMup07 config"),
-                                           "TAB size", TABsize, 2, 8, 1, &ok);
-  if (ok) {
-    QSettings Qs; Qs.setValue("TABsize", TABsize);
-} }
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-void MiFrame::SelectFont()
-{
-  bool ok; ref_Font = QFontDialog::getFont(&ok, ref_Font, this);
-  if (ok) {
-    textFont = QFont(ref_Font); textFont.setStrikeOut(false);
-                                textFont.setUnderline(false);
-    boldFont = QFont(textFont); 
-    boldFont.setBold(true);
+  MiConfigDlg dialog;                              // font parameters are saved
+  if (dialog.Ask()) {                              // in frame destructor along
+    QSettings Qs; Qs.setValue("TABsize", TABsize); //< with current window size
+    makeFonts();
     if (main)  {  main->UpdateMetrics();  main->vpResize(); }
     if (scwin) { scwin->UpdateMetrics(); scwin->vpResize(); } shrinkwrap();
 } }
+//-----------------------------------------------------------------------------
+void MiFrame::makeFonts() // makes textFont and boldFont from MiApp_defaultFont
+{
+  textFont = QFont(MiApp_defaultFont, MiApp_defFontSize);
+  textFont.setStyleHint(QFont::TypeWriter, QFont::ForceIntegerMetrics);
+//+
+//  QFontMetrics fm = textFont;
+//  int wi1 = fm.width("X"),
+//    wi100 = fm.width("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+//                     "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+//  fprintf(stderr, "width=%d,x100=%d\n", wi1, wi100);
+//-
+  boldFont = QFont(textFont);  boldFont.setBold(true);
+}
 //-----------------------------------------------------------------------------
 MiScTwin *MiFrame::NewScTwin (wnd *vp) // creates new pane (unless two already
 {                                      // exist - then do nothing, returns 0)
@@ -390,6 +379,92 @@ void MiFrame::resizeEvent (QResizeEvent*)
     QTimer::singleShot(0, this, SLOT(shrinkwrap()));
 } }
 //=============================================================================
+MiInfoWin::MiInfoWin (MiScTwin *parent, const QColor *bgnd) : QWidget(parent), 
+                                        infoType(MitLINE_BLOCK), sctw(parent)
+{
+  QPalette palette(*bgnd);   setFocusPolicy(Qt::NoFocus);
+  palette.setColor(QPalette::WindowText, colorDarkWheat);
+  setPalette(palette);       setAutoFillBackground(true);
+  setFont(sctw->mf->getTextFont());
+}
+void MiInfoWin::vpResize() { resize(sctw->Tsw2qtWb(8), sctw->Tsh2qtHb(1)); }
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void MiInfoWin::paintEvent (QPaintEvent *)
+{
+  QPainter dc(this); int Y = sctw->Ty2qtY(0)+sctw->fontBaseline;
+  QString info;
+  if (infoType == MitCHARK && sctw->vp->cx >= 0) {
+    int len; 
+    tchar *pt = TxInfo(sctw->vp, sctw->vp->cy, &len) + sctw->vp->cx;
+    info.sprintf("U+%X", (uint)(*pt & AT_CHAR));
+    dc.drawText(sctw->Tx2qtX(0), Y, info);
+  }
+  else if (BlockMark) {
+    int dx, dy; BlockXYsize(&dx, &dy);
+    info.sprintf ("%dx%d",   dx,  dy); dc.drawText(sctw->Tx2qtX(0), Y, info);
+  }
+  else {
+    info.sprintf("%6d", int((sctw->vp == Twnd) ? Ty : sctw->vp->wcy)+1);
+    dc.drawText(sctw->Tx2qtX(0),                     Y, info.mid(0, 3));
+    dc.drawText(sctw->Tx2qtX(3) + sctw->fontWidth/2, Y, info.mid(3, 3));
+  }
+  dc.drawText(sctw->Tx2qtX(7), Y, clipStatus());
+}
+void MiInfoWin::updateInfo (MiInfoType mit) { if (mit) infoType = mit;
+                                                            repaint(); }
+//-----------------------------------------------------------------------------
+MiConfigDlg::MiConfigDlg(QWidget *parent) : QDialog(parent)
+{
+  fontButton = new QPushButton(tr("Font"));
+  fontLabel  = new QLabel();
+  fontLabel->setMinimumWidth(120); setFontLabelText();
+  fontAdjust = new QLineEdit();
+  fontAdjust->setMaximumWidth(32);
+  fontAdjust->setText(myPackAdj2string(MiApp_fontAdjOver, MiApp_fontAdjUnder));
+
+  QHBoxLayout *topLayout = new QHBoxLayout;
+  topLayout->addWidget(fontButton);
+  topLayout->addWidget(fontLabel);
+  topLayout->addWidget(fontAdjust);
+  connect(fontButton, SIGNAL(clicked()), this, SLOT(selectFont()));
+
+  tabSizeBox = new QSpinBox();      QLabel *tabl = new QLabel(tr("TAB size:"));
+  tabSizeBox->setRange(2, 8);       tabl->setBuddy(tabSizeBox);
+  tabSizeBox->setMaximumWidth(40);  QHBoxLayout *botLayout = new QHBoxLayout;
+  tabSizeBox->setValue(TABsize);    botLayout->addWidget(tabl);
+                                    botLayout->addWidget(tabSizeBox);
+                                    botLayout->addStretch(1);
+
+  QDialogButtonBox *okButtonBox = new QDialogButtonBox(QDialogButtonBox::Ok);
+  connect(okButtonBox, SIGNAL(accepted()), this, SLOT(accept()));
+  QVBoxLayout *mainLayout = new QVBoxLayout;
+  mainLayout->addLayout(topLayout);
+  mainLayout->addLayout(botLayout);
+  mainLayout->addWidget(okButtonBox); setLayout(mainLayout);
+}
+void MiConfigDlg::setFontLabelText() // - - - - - - - - - - - - - - - - - - - -
+{
+  fontLabel->setText(QString("%1, %2pt").arg(MiApp_defaultFont)
+                                        .arg(MiApp_defFontSize));
+}
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+bool MiConfigDlg::Ask()
+{
+  if (exec() != QDialog::Accepted) return false;
+  TABsize = tabSizeBox->value();
+  MiApp_defFontAdjH = fontAdjust->text();
+  MiApp_fontAdjOver = myUnpackAdj2int(MiApp_defFontAdjH, 0);
+  MiApp_fontAdjUnder = myUnpackAdj2int(MiApp_defFontAdjH, 2); return true;
+}
+void MiConfigDlg::selectFont() // - - - - - - - - - - - - - - - - - - - - - - -
+{
+  bool ok;   QFont refont = QFont (MiApp_defaultFont,      MiApp_defFontSize);
+  setModal(false); refont = QFontDialog::getFont(&ok, refont, parentWidget());
+  setModal(true);
+  if (ok) { MiApp_defaultFont = refont.family();
+            MiApp_defFontSize = refont.pointSize(); setFontLabelText(); }
+}
+//=============================================================================
 MiScTwin::MiScTwin(MiFrame *frame, const QColor *prim,
                                    const QColor *bg_color, wnd *win)
  : gradColor(*prim),
@@ -422,15 +497,14 @@ void MiScTwin::resizeEvent(QResizeEvent*) // using fontWidth as vertical offset
             height() - info.height() - fontWidth); UpdateGradient();
 }                    
 //-----------------------------------------------------------------------------
-void MiScTwin::UpdateMetrics()            // NOTE: assuming fixed-width font //
-{
-  QFontMetrics fm =  mf->getRef_Font(); 
+void MiScTwin::UpdateMetrics()          // NOTE: assuming fixed-width font with
+{                                       // adjustments: MiApp_fontAdjOver/Under
+  QFontMetrics fm =  mf->getTextFont();
   fontBaseline = fm.ascent();
   fontHeight = fm.height()-1; // Qt height always equal to ascent()+descent()+1
   fontWidth  = fm.width("X");
-  if (mf->getRef_Font().underline())   fontHeight--;
-  if (mf->getRef_Font().strikeOut()) { fontHeight--; fontBaseline--; }
-  info.vpResize();
+  fontHeight += MiApp_fontAdjOver; fontBaseline += MiApp_fontAdjOver;
+  fontHeight += MiApp_fontAdjUnder;                  info.vpResize();
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // Using fancy diagonal gradient (useDIAGRAD) on Mac and Win, but not under GTK
@@ -660,41 +734,7 @@ void MiScTwin::wheelEvent (QWheelEvent *ev)
                                    (fast ? TW_SCROLDNN : TW_SCROLDN), KxBLK);
     vipReady(); ev->accept();
 } }
-//-----------------------------------------------------------------------------
-MiInfoWin::MiInfoWin (MiScTwin *parent, const QColor *bgnd) : QWidget(parent), 
-                                        infoType(MitLINE_BLOCK), sctw(parent)
-{
-  QPalette palette(*bgnd);   setFocusPolicy(Qt::NoFocus);
-  palette.setColor(QPalette::WindowText, colorDarkWheat);
-  setPalette(palette);       setAutoFillBackground(true);
-  setFont(sctw->mf->getTextFont());
-}
-void MiInfoWin::vpResize() { resize(sctw->Tsw2qtWb(8), sctw->Tsh2qtHb(1)); }
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-void MiInfoWin::paintEvent (QPaintEvent *)
-{
-  QPainter dc(this); int Y = sctw->Ty2qtY(0)+sctw->fontBaseline;
-  QString info;
-  if (infoType == MitCHARK && sctw->vp->cx >= 0) {
-    int len; 
-    tchar *pt = TxInfo(sctw->vp, sctw->vp->cy, &len) + sctw->vp->cx;
-    info.sprintf("U+%X", *pt & AT_CHAR);
-    dc.drawText(sctw->Tx2qtX(0), Y, info);
-  }
-  else if (BlockMark) {
-    int dx, dy; BlockXYsize(&dx, &dy);
-    info.sprintf ("%dx%d",   dx,  dy); dc.drawText(sctw->Tx2qtX(0), Y, info);
-  }
-  else {
-    info.sprintf("%6d", int((sctw->vp == Twnd) ? Ty : sctw->vp->wcy)+1);
-    dc.drawText(sctw->Tx2qtX(0),                     Y, info.mid(0, 3));
-    dc.drawText(sctw->Tx2qtX(3) + sctw->fontWidth/2, Y, info.mid(3, 3));
-  }
-  dc.drawText(sctw->Tx2qtX(7), Y, clipStatus());
-}
-void MiInfoWin::updateInfo (MiInfoType mit) { if (mit) infoType = mit;
-                                                            repaint(); }
-//-----------------------------------------------------------------------------
+//=============================================================================
 #include <time.h>
 
 #ifdef Q_OS_WIN

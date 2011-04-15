@@ -242,7 +242,8 @@ static void tmDirLST (txt *t)
          attr & QFile::ReadOther  ? 'r' : '-',
          attr & QFile::WriteOther ? 'w' : '-',
          attr & QFile::ExeOther   ? 'x' : '-', 
-         int(it->size()), QfsModDateText(*it).cStr(), it->fileName().utf16());
+         int(it->size()), QfsModDateText(*it).cStr(), 
+         (wchar_t *)(it->fileName().utf16())       );
 
     Lleng = qstr2tcs(line, Lebuf); TxTIL(t, Lebuf, Lleng); 
                                    TxDown(t);

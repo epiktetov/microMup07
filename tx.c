@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07              Texts - Тексты               | (c) Epi MG, 2007
+// МикроМир07              Texts - Тексты               | (c) Epi MG, 2007,2011
 //------------------------------------------------------+--------------------*/
 #include "mic.h"             /* Old tx.c (c) Attic 1989, (c) EpiMG 1998,2001 */
 #include "ccd.h"
@@ -11,10 +11,6 @@
 #include "le.h" /* uses Lebuf etc (in TxInfo) */
 #include "ud.h"
 #include <string.h>
-//+
-//#include <stdio.h>
-//-
-
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 txt  *texts;
 char *txbuf;
@@ -136,13 +132,13 @@ void TxEmpt (txt *t)
 /*- - - - - - - - - - - - - - - - - - - - Convert Ascii file string to tchar */
 #define isUTFcont(x) ((x & 0xC0) == 0x80)
 
-small aftotc (char *orig, int len, tchar *dest_buf)
+small aftotc (const char *orig, int len, tchar *dest_buf)
 {
-  char c, *orig_end = orig + ((len < 0) ? (int)strlen(orig) : len);
-  tchar attr = 0;                            unsigned w,x,y,z;
+  const char *orig_end = orig + ((len < 0) ? (int)strlen(orig) : len);
+  tchar attr = 0;                               unsigned /*w,*/ x,y,z;
   small ltc  = 0;
   while (ltc < MAXLPAC && orig < orig_end) {
-    c = *orig++;
+    char c = *orig++;
     if (c == ACPR && orig < orig_end) {
       attr = (tchar)(AT_IN_FILE & (*orig++ << 16));  continue;
     }
