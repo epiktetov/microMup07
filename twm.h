@@ -8,6 +8,7 @@
 #define MCD_LEFT     63     /* первый (основной) разделитель в micros.dir    */
 #define MCD_RIGHT    68     /* второй разделитель в micros.dir (optional)    */
 #define DIRLST_FNPOS 40     /* position of the filename in the TS_DIRLST txt */
+#define TXT_MARKS     6     /* макс.количество запомненных маркеров в тексте */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 struct txt_tag 
 {
@@ -22,8 +23,8 @@ struct txt_tag
 #define TXED_NO   1         /* - нельзя                                      */
 #define TXED_NONO 2         /* - совсем нельзя                               */
   small txlm, txrm;         /* Left margin / правая граница текста           */
-  small txmarkx;            /* Маркер                                        */
-  large txmarky;
+  small txmarkx[TXT_MARKS]; /* Маркеры (установлены в ноль если не занято),  */
+  large txmarky[TXT_MARKS]; /* см. te(c|s)mark в файле te.c и TxMarks(0|Upd) */
   wnd  *txwndptr;           /* Список окон, наложенных на текст              */
   small txlructr;           /* Счетчик для алгоритма выталкивания            */
   small txstat;             /* Биты слова-состояния текста:                  */

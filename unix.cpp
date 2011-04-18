@@ -49,11 +49,6 @@ void x2enter (void)           /* command line enter (2) ввести коман�
  * If invoked from command window, copy the current line (excluding old prompt)
  * as initial value for new command:
  */
-/*++
-  if ((Ttxt->txstat & TS_PSEUDO) && !qTxDown(Ttxt)) {
-    tchar  *p, *pend;
-    TxSetY(Ttxt, Ty); Lleng = TxTRead(Ttxt, Lebuf);
-*/
   if ((Ttxt->txstat & TS_PSEUDO) && tleread()) {
     tchar      *p, *pend;
     for (p = Lebuf, pend = p+Lleng; p < pend && (*p & AT_LIGHT); p++) ;
@@ -67,12 +62,26 @@ void x2enter (void)           /* command line enter (2) ввести коман�
 /*---------------------------------------------------------------------------*/
 static void appendText (char *text, char *tend)
 {
+#ifdef notdef_may_be_later
+  if (qTxDown(Ttxt)) { teIL();  Lleng = 0; }  // insert new empty line here,
+  else       Lleng = TxTRead(Ttxt, Lebuf);    // or get partially filled one
+  Lleng += aftotc(text, tend-text, Lebuf+Lleng);
+  if (Lleng > Twnd->wsw) {
+    int width = Twnd->wsw-1;
+    tchar tmp = Lebuf[width];     Lebuf[width] = TeSCH_CONTINUE;
+    TxTRep(Ttxt, Lebuf, width+1); Lebuf[width] = tmp;
+    TxDown(Ttxt);
+    blktmov(Lebuf+width, Lebuf, Lleng -= width); teIL();
+  }
+  TxTRep(Ttxt, Lebuf, Tx = Lleng); }
+#else
   if (qTxDown(Ttxt)) TxIL(Ttxt, text, Tx = tend-text);
   else {
     Lleng = TxTRead(Ttxt, Lebuf);
     Lleng += aftotc(text, tend-text, Lebuf+Lleng);
     TxTRep(Ttxt, Lebuf, Tx = Lleng);
 } }
+#endif
 static void appendCR() { TxDown(Ttxt); Tx = Ttxt->txlm; Ty++; }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static void shellexec (const char *cmd)
@@ -145,7 +154,7 @@ static void shellexec (const char *cmd)
     execl("/bin/sh", "sh", "-c", cmd, NULL);  exit(1);
 } }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void unixShell_in_Ttxt (const char *cmd)
+static void unixShell_in_Ttxt (const char *cmd)
 {
   small oldTXED = Ttxt->txredit;
                   Ttxt->txredit = TXED_NO; EnterOSmode(); shellexec(cmd);
@@ -166,10 +175,7 @@ void tmshell (int kcode)
     default:
       *pc++ = (char)tp;
   } } *pc = 0;
-//+
-//  fprintf(stderr, "tmshell(plen=%d,len=%d,cmd=%s)\n", tcmdpromptlen,
-//                                                      tcmdbuflen, cmdbuffer);
-//-
+  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   if (CmdTxt) TxEmpt(CmdTxt); // After preparing command line, find text and
   else CmdTxt = TxNew(FALSE); // windows where the command will be executed:
   CmdTxt->txredit = TXED_YES;
@@ -191,7 +197,7 @@ void tmshell (int kcode)
 // Now insert the command (along with the prompt == current directory) into the
 // text and execute UNIX shell command... then check if any files were changed
 //
-  TxTIL (Ttxt, tcmdbuffer, tcmdbuflen);   Ty++;
+  TxTIL (Ttxt, tcmdbuffer, tcmdbuflen); TxMarks0(Ttxt); Ty++;
   TxDown(Ttxt);
   unixShell_in_Ttxt(cmdbuffer); tmCheckFiles();
 }

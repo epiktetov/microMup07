@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07 ViewPort (interface wx/C++ / legacy code) | (c) Epi MG, 2006-2007
+// МикроМир07 ViewPort (interface wx/C++ / legacy code) | (c) Epi MG, 2006-2011
 //------------------------------------------------------+--------------------*/
 #ifndef VIP_H_INCLUDED  /* Old "nm.h" (c) Attic 1989-90, (c) EpiMG 1998-2001 */
 #define VIP_H_INCLUDED  /* old "wd.h" (c) Attic 1989, then (c) EpiMG 1996,98 */
@@ -75,8 +75,8 @@ int  vipOnRegCmd (wnd *w, int kcode); /* process other (LE/TE/TM_x) commands */
 
 comdesc *Ldecode(int kcode); int LeCommand(comdesc *cp);  /* line editor cmd */
 comdesc *Tdecode(int kcode); int TeCommand(comdesc *cp);  /* text editor cmd */
-void EnterLEmode(int er);     int TmCommand (int kcode);
-void ExitLEmode(int erc);
+void EnterLEmode(void);      int TmCommand(int   kcode);
+void ExitLEmode(void);
 extern int leARGmode;     /* Argument Enter mode (1 = first char, > 1 later) */
 /*---------------------------------------------------------------------------*/
 extern wnd * Lwnd; /* Окно, в котором редактируется строка (used in le.c)    */

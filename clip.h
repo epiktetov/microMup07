@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07  Clipboard (using wxClipboard) & CS/LS op | (c) Epi MG, 2007-2008
+// МикроМир07  Clipboard (using wxClipboard) & CS/LS op | (c) Epi MG, 2007-2011
 //------------------------------------------------------+--------------------*/
 #ifndef CLIP_H_INCLUDED
 #define CLIP_H_INCLUDED
@@ -24,10 +24,12 @@ void teclin(), tecdlin();            /* te "copy line" and "copy & delete"   */
 void teicblock(), tedcblock();       /*                     IC/DC for blocks */
 void tecsblock(),                    /*          "character save" for blocks */
      tesdblock();                    /*  save & delete / collapse for blocks */
+void teclrblock(),                   /* clear the block                      */
+     teicharblk();                   /* block char insert (tall cursor mode) */
 extern txt *LCtxt;                   /* Текст-хранилище строк (just in case) */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 int  Block1size (int *x0, int *x1);  /* <- Return 1-line block size (+x0/x1) */
-void BlockXYsize(int *dx, int *dy);  /*   0 if no block, exc() if multi-line */
+BOOL BlockXYsize(int *dx, int *dy);  /*   0 if no block, exc() if multi-line */
 /*---------------------------------------------------------------------------*/
 #ifdef __cplusplus
 }

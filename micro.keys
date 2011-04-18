@@ -67,7 +67,7 @@ For window handling, MicroMir uses concept familiar to UNIX programmers: 'fork'
 (make a copy of the window) and 'replace file' (although this does not actually
 replaces anything, it just pushes current text into stack like Esc <down> does)
 
-  Meta+'='/'+'         - fork current window into two with identical contents
+  Meta+'='/'+'/F12     - fork current window into two, with identical contents
   Meta+'-'             - split the window into two, forking the contents
   Meta+'\' or Ctrl+Esc - ask for filename and enter that file. Special file
                          names - ':clip' = content of copy/paste buffer
@@ -76,7 +76,8 @@ replaces anything, it just pushes current text into stack like Esc <down> does)
   Meta+<arrow> - move cursor to closest window in given direction
   Meta+Enter   - SyncPos(tm) - open (in upper pane) file mentioned here
 */
-k_(TM_VFORK,   0xc122b, mod_META+'=',        0) /* открыть новое окно        */
+k_(TM_VFORK,   0xc122b, mod_META+'=',        0) /* открыть новое окно с тем  */
+a_(TM_VFORK,            mod_META+Mk_F12,     0) /*       же самым содержимым */
 k_(TM_HFORK,   0xc122d, mod_META+'-',        0) /* поделить окно пополам     */
 k_(TM_FENTR,   0xc125c, mod_META+'\\',       0) /* ввести имя и войти        */
 a_(TM_FENTR,            mod_CTRL+Mk_ESCAPE,  0) /*          в указанный файл */
@@ -109,18 +110,30 @@ inserting TAB into text and splitting lines at cursor, though).
   Ctrl+`           - save cursor position
   Ctrl+Tab         - cursor to saved (by Ctrl+`) position, saves curent one
   Ctrl+Shift+Tab   - insert TAB character into text - mostly for GNU make ;)
+  Ctrl+Shift+{1…5} - set marker N (where N is any digit from 1 to 5)
+  Ctrl+{1…5}       - go to marker N (and save cursor position for Ctrl+Tab)
   Enter            - move cursor to beginning of next line
   Shift+Enter      - move cursor to next line, aligned with text in current one
 */
-k_(LE_TAB,    0xc130a,             Mk_TAB,    KxBLK) /* в следующую...      */
-k_(LE_LTAB,   0xc132a,   mod_SHIFT+Mk_TAB,    KxBLK) /* в предыдущую...     */
-a_(LE_LTAB,            mod_SHIFT+Mk_BkTAB,    KxBLK) /*   позицию табуляции */
-k_(TE_SMARK,  0xc1360, mod_CTRL+'`',          KxBLK) /* установить маркер   */
-k_(TE_CMARK,  0xc134a, mod_CTRL+Mk_TAB,       KxBLK) /* курсор <--> маркер  */
-k_(LE_TABCHR, 0xc136a, mod_CTRL+mod_SHIFT+Mk_TAB, 0) /* вставить символ TAB */
-a_(LE_TABCHR,        mod_CTRL+mod_SHIFT+Mk_BkTAB, 0) /* (Mk_BkTAB ~ Mk_TAB) */
-k_(TE_CR,     0xc130e,           Mk_ENTER,        0) /* начало след.строки  */
-k_(TE_RCR,    0xc132e, mod_SHIFT+Mk_ENTER,        0) /* - с выравниванием   */
+k_(LE_TAB,    0xc130a,             Mk_TAB,     KxBLK) /* в следующую...      */
+k_(LE_LTAB,   0xc132a,   mod_SHIFT+Mk_TAB,     KxBLK) /* в предыдущую...     */
+a_(LE_LTAB,            mod_SHIFT+Mk_BkTAB,     KxBLK) /*   позицию табуляции */
+k_(TE_SMARK,  0xc1350, mod_CTRL+'`',           KxBLK) /* установить маркер   */
+k_(TE_CMARK,  0xc1360, mod_CTRL+Mk_TAB,        KxBLK) /* курсор <--> маркер  */
+k_(LE_TABCHR, 0xc133a, mod_CTRL+mod_SHIFT+Mk_TAB,  0) /* вставить символ TAB */
+a_(LE_TABCHR,         mod_CTRL+mod_SHIFT+Mk_BkTAB, 0) /* (Mk_BkTAB ~ Mk_TAB) */
+k_(TE_SMARK1, 0xc1351, mod_CTRL+mod_SHIFT+'!', KxBLK)
+k_(TE_SMARK2, 0xc1352, mod_CTRL+mod_SHIFT+'@', KxBLK)
+k_(TE_SMARK3, 0xc1353, mod_CTRL+mod_SHIFT+'#', KxBLK)
+k_(TE_SMARK4, 0xc1354, mod_CTRL+mod_SHIFT+'$', KxBLK) /* (shift+N уже     */
+k_(TE_SMARK5, 0xc1355, mod_CTRL+mod_SHIFT+'%', KxBLK) /*   преобразовано) */
+k_(TE_CMARK1, 0xc1361, mod_CTRL+'1',           KxBLK) /*------------------*/
+k_(TE_CMARK2, 0xc1362, mod_CTRL+'2',           KxBLK) /* NOTE: codes must */
+k_(TE_CMARK3, 0xc1363, mod_CTRL+'3',           KxBLK) /*  be TE_S/CMARK+N */
+k_(TE_CMARK4, 0xc1364, mod_CTRL+'4',           KxBLK)
+k_(TE_CMARK5, 0xc1365, mod_CTRL+'5',           KxBLK)
+k_(TE_CR,     0xc130e,           Mk_ENTER,         0) /* начало след.строки  */
+k_(TE_RCR,    0xc132e, mod_SHIFT+Mk_ENTER,         0) /* - с выравниванием   */
 /*
 Typing either replaces text or insert characters before cursor position (moving
 exising text right), depending on the current editing mode:
@@ -128,7 +141,7 @@ exising text right), depending on the current editing mode:
   Ctrl+Insert - set insert mode (text inserted before gradient cursor)
   Ctrl+Delele - set replace mode (replaces existing text, solid cursor)
 */
-k_(LE_CHAR, 0xc1400, 0,                      0) /* обычный символ           */
+k_(LE_CHAR, 0xc1400, 0,                  KxSEL) /* обычный символ           */
 k_(LE_RINS, 0xc1461, mod_CTRL+Mk_INSERT, KxSEL) /* установить режим вставки */
 a_(LE_RINS,          mod_CTRL+Mk_F11,    KxSEL)
 k_(LE_RREP, 0xc1462, mod_CTRL+Mk_DELETE, KxSEL) /* установить режим замены  */
@@ -149,14 +162,14 @@ text modification:
   Esc Ctrl+D - delete everything from cursor to end of file
   Esc Ctrl+U - delete everything from the beginning up to cursor (very strong)
 */
-k_(LE_IC,     0xc1501,       Mk_INSERT, KxSEL) /* вставить пробел            */
-a_(LE_IC,                    Mk_F11,    KxSEL)
-k_(LE_DC,     0xc1502,       Mk_DELETE, KxSEL) /* удалить символ             */
-a_(LE_DC,                    Mk_F12,    KxSEL)
-k_(TE_IL,     0xc1521, mod_SHIFT+Mk_INSERT, 0) /* вставить строку            */
-a_(TE_IL,              mod_SHIFT+Mk_F11,    0)
-k_(TE_DL,     0xc1522, mod_SHIFT+Mk_DELETE, 0) /* удалить строку             */
-a_(TE_DL,              mod_SHIFT+Mk_F12,    0)
+k_(LE_IC,     0xc1501,       Mk_INSERT,     KxSEL) /* вставить пробел        */
+a_(LE_IC,                    Mk_F11,        KxSEL) /* - синоним для Mac KB   */
+k_(LE_DC,     0xc1502,       Mk_DELETE,     KxSEL) /* удалить символ         */
+a_(LE_DC,                    Mk_F12,        KxSEL)
+k_(TE_IL,     0xc1521, mod_SHIFT+Mk_INSERT,     0) /* вставить строку        */
+a_(TE_IL,              mod_SHIFT+Mk_F11,        0)
+k_(TE_DL,     0xc1522, mod_SHIFT+Mk_DELETE, KxSEL) /* удалить строку         */
+a_(TE_DL,              mod_SHIFT+Mk_F12,    KxSEL)
 k_(LE_BS,     0xc1503,           Mk_BACK,   0) /* удалить/очистить символ    */
 k_(LE_DLWORD, 0xc1523, mod_SHIFT+Mk_BACK,   0) /* удалить слово влево        */
 k_(LE_DEOL,   0xc1544, mod_CTRL+'D',        0) /* - конец строки за курсором */
@@ -200,7 +213,7 @@ k_(TE_FORMAT,   0xc16f6, Mk_F6,                           0)
 /*
 SEARH AND REPLACE. MicroMir can search in text mode (case-sensitive or not), in
 wildcard mode (? matches any symbol and * matches any substring), or in regular
-expression mode (http://doc.trolltech.com/4.3/qregexp.html); modes are selected
+expression mode: http://doc.qt.nokia.com/4.7/qregexp.html -- modes are selected
 when entering search/replace pattern.
 
   Meta/Ctrl+F = Home End - edit search/replace pattern (start search by Enter)
@@ -220,11 +233,11 @@ Shift+(Meta/Ctrl)+G == Shift+End - search backward (up)
 k_(TE_SENTR,   0xc1700, mod_HOME+Mk_END,  0) /* ввод подстроки поиска        */
 a_(TE_SENTR,            mod_META+'F',     0) /* (Enter или End - поиск вниз, */
 a_(TE_SENTR,            mod_CTRL+'F',     0) /*        +Shift - поиск вверх) */
-k_(LE_HCHAR1,  0xc172f, mod_CTRL+'/',     0)
-k_(LE_HCHAR2,  0xc172e, mod_CTRL+'.',     0) /* '>' begin-replace            */
-k_(LA_STDMODE, 0xc1706, mod_CTRL+'6',     0) /* Режим поиска: стандартный    */
-k_(LA_REMODE,  0xc1707, mod_CTRL+'7',     0) /*               regexp         */
-k_(LA_WCMODE,  0xc1708, mod_CTRL+'8',     0) /*               wildcards      */
+k_(LE_HCHAR1,  0xc172f, mod_CTRL+'/',     0) /* начало списка файлов (grep)  */
+k_(LE_HCHAR2,  0xc172e, mod_CTRL+'.',     0) /* начало подстроки замены      */
+k_(LA_STDMODE, 0xc1706, mod_CTRL+'6',     0) /*               | стандартный  */
+k_(LA_REMODE,  0xc1707, mod_CTRL+'7',     0) /* Режим поиска: | regexp       */
+k_(LA_WCMODE,  0xc1708, mod_CTRL+'8',     0) /*               | wildcards    */
 k_(LA_IGNOREC, 0xc1769, mod_CTRL+'I',     0)
 k_(TE_SDOWN,   0xc1701, Mk_END,       KxBLK) /* поиск вниз */
 a_(TE_SDOWN,            mod_META+'G', KxBLK)
@@ -293,8 +306,7 @@ k_(LE_CPOPEN, 0xc2041,  mod_CTRL+Mk_F1, KxSEL) /* наоборот, будем �
 Yes, MicroMir has selections as well -- as a matter of fact, two kinds of them;
 however it is always a rectangle in the text. Shift+movements makes "temporary"
 selection (grey rectangle) and F5 followed by any regular cursor movement makes
-"permanent" one (light blue rectangle). Typing DO NOT overwrites selected text,
-fisrt keypress just removes the selection rectangle.
+"permanent" one (light blue rectangle). Typing DO NOT overwrites selected text!
 
         Shift+  <arrows> - start/extend  |       (any movement   - start/extend
    Alt +Shift+  <arrows>    "temporary"  |  F5 ..  except for  ..   "permanent"
@@ -319,19 +331,24 @@ text instead of character, namely:
   Shift+F1 (Meta/Ctrl+X) - save selection and delete from text
   Ins                    - insert column of spaces at left edge of selection
   Del                    - delete column at left edge of selection
+  Shift+Del              - clear the text covered by selection rectangle
+  <character>            - insert character at block position in all lines
+  (last command works only when block width is 1 column, "tall cursor" mode)
 
 The following commands also can work with selections, but only with single-line
-ones (this limitation may be lifted in the future, but don't hold your breath):
+ones (without selection, current character is converted and cursor moves right)
 
   Alt+Meta+ <up>   - convert current character/selection to uppercase
   Alt+Meta+<down>  - convert current character/selection to lowercase
   Alt+Meta+<left>  - convert selected number to decimal
   Alt+Meta+<right> - convert selected number to hexadecimal (or other radix)
+  Ctrl+B           - add / clear "bold" attribute
 */
 k_(LE_CCUP,  0xc2201, mod_ALT+mod_META+Mk_UP,    KxSEL) /* буква->прописная */
 k_(LE_CCDWN, 0xc2204, mod_ALT+mod_META+Mk_DOWN,  KxSEL) /* буква->строчная  */
-k_(LE_CCDEC, 0xc2202, mod_ALT+mod_META+Mk_LEFT,  KxSEL) /* число->decimal   */
-k_(LE_CCHEX, 0xc2203, mod_ALT+mod_META+Mk_RIGHT, KxSEL) /* число->hex       */
+k_(LE_CCDEC, 0xc2209, mod_ALT+mod_META+Mk_LEFT,  KxSEL) /* число->decimal   */
+k_(LE_CCHEX, 0xc220f, mod_ALT+mod_META+Mk_RIGHT, KxSEL) /* число->hex       */
+k_(LE_CBOLD, 0xc220b, mod_CTRL+'B',              KxSEL) /* сделать жирным   */
 /*
 Third MicroMir principle: instead of relying on sorting capabilites provided by
 file browser, one can keep files sorted his/her way (and also add any comments)
@@ -401,6 +418,9 @@ MISCELLANEOUS.
   Ctrl+K - display unicode value of the current character in the info window
   Ctrl+L - display line number in the info window (default)
   Ctrl+Q - ask for shell command and execute it (MacOS X/Linux only)
+   in shell command:
+        light blue '>' (Ctrl+'.') is replaced with the name of current file,
+        light blue '/' (Ctrl+'/') replaced with full path to current file
 */
 k_(TK_NONE,   0xc3300, 0,            0) /* None command                     */
 k_(TK_BREAK,  0xc3341, mod_CTRL+'A', 0) /*                                  */

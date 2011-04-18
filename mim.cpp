@@ -168,41 +168,18 @@ MiFrame::~MiFrame() //- - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   Qs.setValue("fontAdjH", MiApp_defFontAdjH);  if (scwin) delete scwin;
 }                          
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-void MiFrame::closeEvent (QCloseEvent *ev)
+void MiFrame::makeFonts() // makes textFont and boldFont from MiApp_defaultFont
 {
-  if (safeClose(scwin) && safeClose(main)) ev->accept();
-  else                                     ev->ignore();
-}                                    
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-bool MiFrame::safeClose (MiScTwin *sctw)  // NOTE: sctw pointer in the MiFrame
-{                                         // is supposed to be cleaned up from
-  if (sctw == NULL) return true;          // twSafeClose/twExit->vipFreeWindow
-  txt *t = sctw->vp->wtext;
-  if (twSafeClose(t, sctw->vp)) return true;
-  if (mbox) delete mbox;
-  mbox = new QMessageBox(QString::fromUtf8("µMup07 warning"),
-               t->file->name+" has been modified.\n"
-                "Do you want to save your changes?", QMessageBox::Warning,
-             QMessageBox::Save|QMessageBox::Default, QMessageBox::Discard,
-            QMessageBox::Cancel|QMessageBox::Escape, this,     Qt::Sheet);
-
-  connect(mbox, SIGNAL(finished(int)), this, SLOT(finishClose(int)));
-  mbox->show();
-  return false; // not safe to close yet (user notified, waiting for reaction)
-}
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-void MiFrame::finishClose (int qtStandBtn) // finish closing either scwin (when
-{                                          // still present) or main & then try
-  switch (qtStandBtn) {                    // to close the window again
-  case QMessageBox::Cancel: return;
-  case QMessageBox::Save:
-         if (scwin) twSave(scwin->vp->wtext, scwin->vp, false);
-    else if (main)  twSave( main->vp->wtext,  main->vp, false); break;
-  case QMessageBox::Discard:
-         if (scwin) scwin->vp->wtext->txstat &= ~TS_CHANGED;
-    else if (main)   main->vp->wtext->txstat &= ~TS_CHANGED;
-  }
-  close();
+  textFont = QFont(MiApp_defaultFont, MiApp_defFontSize);
+  textFont.setStyleHint(QFont::TypeWriter, QFont::ForceIntegerMetrics);
+//+
+//  QFontMetrics fm = textFont;
+//  int wi1 = fm.width("X"),
+//    wi100 = fm.width("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+//                     "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+//  fprintf(stderr, "width=%d,x100=%d\n", wi1, wi100);
+//-
+  boldFont = QFont(textFont);  boldFont.setBold(true);
 }
 //-----------------------------------------------------------------------------
 #define MiFrameOPEN_XXX(XXX,XXXtext,getMETHOD)                        \
@@ -242,18 +219,41 @@ void MiFrame::Preferences()
     if (scwin) { scwin->UpdateMetrics(); scwin->vpResize(); } shrinkwrap();
 } }
 //-----------------------------------------------------------------------------
-void MiFrame::makeFonts() // makes textFont and boldFont from MiApp_defaultFont
+void MiFrame::closeEvent (QCloseEvent *ev)
 {
-  textFont = QFont(MiApp_defaultFont, MiApp_defFontSize);
-  textFont.setStyleHint(QFont::TypeWriter, QFont::ForceIntegerMetrics);
-//+
-//  QFontMetrics fm = textFont;
-//  int wi1 = fm.width("X"),
-//    wi100 = fm.width("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-//                     "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
-//  fprintf(stderr, "width=%d,x100=%d\n", wi1, wi100);
-//-
-  boldFont = QFont(textFont);  boldFont.setBold(true);
+  if (safeClose(scwin) && safeClose(main)) ev->accept();
+  else                                     ev->ignore();
+}                                    
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+bool MiFrame::safeClose (MiScTwin *sctw)  // NOTE: sctw pointer in the MiFrame
+{                                         // is supposed to be cleaned up from
+  if (sctw == NULL) return true;          // twSafeClose/twExit->vipFreeWindow
+  txt *t = sctw->vp->wtext;
+  if (twSafeClose(t, sctw->vp)) return true;
+  if (mbox) delete mbox;
+  mbox = new QMessageBox(QString::fromUtf8("µMup07 warning"),
+               t->file->name+" has been modified.\n"
+                "Do you want to save your changes?", QMessageBox::Warning,
+             QMessageBox::Save|QMessageBox::Default, QMessageBox::Discard,
+            QMessageBox::Cancel|QMessageBox::Escape, this,     Qt::Sheet);
+
+  connect(mbox, SIGNAL(finished(int)), this, SLOT(finishClose(int)));
+  mbox->show();
+  return false; // not safe to close yet (user notified, waiting for reaction)
+}
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void MiFrame::finishClose (int qtStandBtn) // finish closing either scwin (when
+{                                          // still present) or main & then try
+  switch (qtStandBtn) {                    // to close the window again
+  case QMessageBox::Cancel: return;
+  case QMessageBox::Save:
+         if (scwin) twSave(scwin->vp->wtext, scwin->vp, false);
+    else if (main)  twSave( main->vp->wtext,  main->vp, false); break;
+  case QMessageBox::Discard:
+         if (scwin) scwin->vp->wtext->txstat &= ~TS_CHANGED;
+    else if (main)   main->vp->wtext->txstat &= ~TS_CHANGED;
+  }
+  close();
 }
 //-----------------------------------------------------------------------------
 MiScTwin *MiFrame::NewScTwin (wnd *vp) // creates new pane (unless two already
@@ -392,16 +392,15 @@ void MiInfoWin::vpResize() { resize(sctw->Tsw2qtWb(8), sctw->Tsh2qtHb(1)); }
 void MiInfoWin::paintEvent (QPaintEvent *)
 {
   QPainter dc(this); int Y = sctw->Ty2qtY(0)+sctw->fontBaseline;
-  QString info;
+  QString info;                                      int dx, dy;
   if (infoType == MitCHARK && sctw->vp->cx >= 0) {
     int len; 
     tchar *pt = TxInfo(sctw->vp, sctw->vp->cy, &len) + sctw->vp->cx;
     info.sprintf("U+%X", (uint)(*pt & AT_CHAR));
     dc.drawText(sctw->Tx2qtX(0), Y, info);
   }
-  else if (BlockMark) {
-    int dx, dy; BlockXYsize(&dx, &dy);
-    info.sprintf ("%dx%d",   dx,  dy); dc.drawText(sctw->Tx2qtX(0), Y, info);
+  else if (BlockXYsize(&dx ,&dy)) {
+    info.sprintf("%dx%d", dx, dy); dc.drawText(sctw->Tx2qtX(0), Y, info);
   }
   else {
     info.sprintf("%6d", int((sctw->vp == Twnd) ? Ty : sctw->vp->wcy)+1);
@@ -567,20 +566,20 @@ void MiScTwin::Text (QPainter& dc, int x, int y, int attr, QString text)
   if (attr & AT_BOLD) dc.setFont(mf->getBoldFont());
   else                dc.setFont(mf->getTextFont());
 
-  if (attr & AT_INVERT+AT_COMMAND+AT_BG_CLR) {
+  if (attr & AT_INVERT+AT_MARKFLG+AT_BG_CLR) {
     const QColor *bg_color, *fg_color = &colorBlack;
-    if (attr & AT_INVERT+AT_COMMAND) {
+    if (attr & AT_INVERT+AT_MARKFLG) {
            if ((attr & AT_BG_CLR) == AT_BG_RED) bg_color = &colorDarkRed;
       else if ((attr & AT_BG_CLR) == AT_BG_GRN) bg_color = &colorDarkGreen;
       else if ((attr & AT_BG_CLR) == AT_BG_BLU) bg_color = &colorDarkBlue;
-      else                                      bg_color = &colorDarkWheat;// &colorBlack;
+      else                                      bg_color = &colorDarkWheat;
       fg_color = &colorWhite;
     }
     else if ((attr & AT_BG_CLR) == AT_BG_RED) bg_color = &colorLightPink;
     else if ((attr & AT_BG_CLR) == AT_BG_GRN) bg_color = &colorDarkWheat;
     else if ((attr & AT_BG_CLR) == AT_BG_BLU) bg_color = &colorLightCyan;
 
-    if (attr & AT_SUPER+AT_COMMAND) { // special "insert mode" gradient cursor
+    if (attr & AT_SUPER+AT_MARKFLG) { // special "insert mode" gradient cursor
       QLinearGradient grad(Tx2qtX(x), 0, Tx2qtX(x)+1.5*Tw2qtW(len), 0);
       grad.setColorAt(0, *bg_color);
       grad.setColorAt(1, gradColor); dc.setBrush(QBrush(grad));
@@ -685,7 +684,7 @@ void MiScTwin::keyPressEvent (QKeyEvent *event)
       else {
         for (int i=0; i<text.length(); i++) {
           int k = text.at(i).unicode();
-          if (Mk_IsCHAR(k)) vipOnKeyCode(vp, k, 0);
+          if (Mk_IsCHAR(k)) vipOnKeyCode(vp, k, KxSEL);
       } }
       vipReady();
 } } }

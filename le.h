@@ -7,7 +7,7 @@
 void tleload(void), /* load LE line from text, see also EnterLEmode in vip.h */
    tleunload(void); /* unload LE line to text, see also ExitLEmode (ibid)    */
 BOOL tleread(void); /* read Lebuf from text (read-only), true if non-empty   */
-
+void LeStart();
 void  blktspac(tchar *p, small len);
 small lstrlen (small lmax, tchar *string);
 void  llmove  (small xl, small xr, small dx, tchar *ns);

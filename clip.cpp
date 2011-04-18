@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07  Clipboard (using wxClipboard) & CS/LS op | (c) Epi MG, 2007-2008
+// МикроМир07  Clipboard (using wxClipboard) & CS/LS op | (c) Epi MG, 2007-2011
 //------------------------------------------------------+----------------------
 #include <QApplication>   /* Old le.c (c) Attic 1989,    (c) EpiMG 1996-2003 */
 #include <QClipboard>     /* old te.c (c) Attic 1989-96, (c) EpiMG 1998,2001 */
@@ -175,18 +175,18 @@ static void pasteFromLCtxt (bool in_Ttxt) /* paste into Ttxt or current line */
   char *clpos = clbuf;
   if (clbuf[0] == CpSCH_NEW_LINE) { clpos++; len--;
     if (in_Ttxt) {
-      if (Lwnd) ExitLEmode(E_NOCOM);
+      if (Lwnd) ExitLEmode();
       TxSetY(Ttxt, Ty);
       TxIL  (Ttxt, clpos, len); Ttxt->txstat |= TS_CHANGED; return;
   } }
        if (Lx <  Lxle) exc(E_EDTBEG);
   else if (Lx >= Lxre) exc(E_EDTEND);
   else {
-    if (in_Ttxt && qTxDown(Ttxt)) {  //  Have to take care of inserting empty
-      if (Lwnd) ExitLEmode(E_NOCOM); // line at the end-of-text (usually this
-      TxSetY(Ttxt, Ty);      teIL(); // is done by LeCommand automatically)
+    if (in_Ttxt && qTxDown(Ttxt)) { //   Have to take care of inserting empty
+      if (Lwnd)   ExitLEmode();     //  line at the end-of-text (usually this
+      TxSetY(Ttxt, Ty); teIL();     // is done by LeCommand automatically)
     }
-    if (Lwnd == NULL) EnterLEmode(E_NOCOM);           // inserting one-by-one
+    if (Lwnd == NULL) EnterLEmode();                  // inserting one-by-one
     cclen = aftotc(clpos, len, ccbuf);                // to enable slow undo
     for (int i = 0; i < cclen; i++) leLLCE(ccbuf[i]); // inside the line and
     cclen = 0;                        Lchange = TRUE; // cleanup in leARGmode
@@ -208,11 +208,11 @@ void cpaste()                              /* Paste: called either from te.c */
 //
   if (leARGmode) pasteFromLCtxt(false);
   else {
-    pasteFromLCtxt(true);            // First line may be pasted either as line
-    while (!qTxDown(LCtxt)) {        // or as characters, exit LE mode for next
-      if (Lwnd) ExitLEmode(E_NOCOM); // lines and move cursor to saved position
-      Tx = oldLx;     Ty++;          // one line down.   TODO: word "line" used
-      pasteFromLCtxt(true);          // above in 3 different meanings, fix that
+    pasteFromLCtxt(true);     // First stored line may be pasted either as line
+    while (!qTxDown(LCtxt)) { // or as characters, exit LE mode for the rest of
+      if (Lwnd) ExitLEmode(); // save buffer (if paste isn't finished) and move
+      Tx = oldLx;     Ty++;   // cursor to saved position one line below, rinse
+      pasteFromLCtxt(true);   // and repeat pasting.
 } } }
 /*---------------------------------------------------------------------------*/
 static int blkXmin, blkXmax, blkXsize, // NOTE: for 1-line blocks with cursor
@@ -229,26 +229,25 @@ static void make_blkXYsize()           // selection of words more usable)
   blkYsize = blkYmax-blkYmin+1;
 }
 int Block1size (int *x0, int *x1) /*- - - - - - - - - - - - - - - - - - - - -*/
-{
-  if (BlockMark) {
-    if (BlockTy != Ty) exc(E_BLOCKOUT);
-    else {
-      make_blkXYsize(); *x0 = blkXmin;
-                        *x1 = blkXmax+1; return blkXsize;
-  } }                                    return        0;
+{                                                       // does not return any
+  if (BlockMark) {  if (BlockTy != Ty) exc(E_BLOCKOUT); // value when block is
+    make_blkXYsize(); *x0 = blkXmin;                    // taller than one line
+                      *x1 = blkXmax+1; return blkXsize;
+  }                                    return        0;
 }
-void BlockXYsize (int *dx, int *dy) /*- - - - - - - - - - - - - - - - - - - -*/
+BOOL BlockXYsize (int *dx, int *dy) /*- - - - - - - - - - - - - - - - - - - -*/
 {
   if (BlockMark) { make_blkXYsize(); *dx = blkXsize;
-                                     *dy = blkYsize; }
+                                     *dy = blkYsize; return TRUE; }
+  else return FALSE;
 }
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
- *   Block insert/delete character, microMir style:
+/*-----------------------------------------------------------------------------
+ *   Block insert/delete character, microMir style, plus "tall cursor" mode:
  */
 #define C_IC  1    /* Insert character in block mode (сдвинуть текст влево)  */
 #define C_DC -1    /* Delete character in block mode (сдвинуть текст вправо) */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-static void gblockicdc (int op)
+static void gblockicdc (int op, tchar tc)
 {
   int y, trm = my_min(Ttxt->txrm, MAXTXRM); make_blkXYsize();
   tchar *LebufX0 = Lebuf+blkXmin,
@@ -262,15 +261,21 @@ static void gblockicdc (int op)
     TxSetY(Ttxt, y);
     Lleng = TxFRead(Ttxt, Lebuf);
     switch (op) {
-    case C_IC: blktmov(LebufX0, LebufX1, len); *LebufX0     = ' '; break;
-    case C_DC: blktmov(LebufX1, LebufX0, len); Lebuf[trm-1] = ' '; break;
+    case C_IC: blktmov(LebufX0, LebufX1, len); *LebufX0     = tc; break;
+    case C_DC: blktmov(LebufX1, LebufX0, len); Lebuf[trm-1] = tc; break;
     }
     TxFRep(Ttxt, Lebuf);
 } }
-void teicblock() { gblockicdc(C_IC); }
-void tedcblock() { gblockicdc(C_DC); }
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
- *   Запоминание блоков:
+void teicblock() { gblockicdc(C_IC, (tchar)' '); }
+void tedcblock() { gblockicdc(C_DC, (tchar)' '); }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+void teicharblk()
+{
+  make_blkXYsize(); if (blkXsize > 1) exc(E_BLOCKOUT);
+                    else     gblockicdc(C_IC, KbCode); BlockTx++; Tx++;
+}
+/*-----------------------------------------------------------------------------
+ *   Запоминание блоков (и очистка):
  */
 #define C_NONE   0 /* Просто запомнить                                       */
 #define C_DELETE 1 /* Запомнить с удалением (схлопыванием)                   */
@@ -296,4 +301,13 @@ static void gblockcut (int op)
 } }
 void tecsblock() { gblockcut(C_NONE);                          scblkoff(); }
 void tesdblock() { gblockcut(LeInsMode ? C_DELETE : C_CLEAR);  scblkoff(); }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+void teclrblock()
+{
+  make_blkXYsize();     if (blkXsize == 0) exc(E_NOOP);
+  for (int y = blkYmin; y <= blkYmax; y++) {
+    TxSetY(Ttxt, y);
+    Lleng = TxFRead(Ttxt, Lebuf); blktspac(Lebuf+blkXmin, blkXsize);
+            TxFRep (Ttxt, Lebuf);
+} }
 /*---------------------------------------------------------------------------*/

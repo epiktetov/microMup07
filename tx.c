@@ -50,15 +50,18 @@ txt *TxNew (BOOL qundo)                        /* Создание / удале�
   if (t == NIL)
     tprev->txnext = t = TxNewBuf();
 
-  t->txustk = DqNew(DT_ASC, 0, STKEXT);
+  t->txustk = DqNew(DT_ASC, 0, STKEXT); TxMarks0(t);
   t->txdstk = DqNew(DT_ASC, STKEXT, 0);
   t->txudeq = qundo ? DqNew(DT_BIN, 0, UNDOEXT) : NIL;
   t->txudcptr = t->txudlptr = 0;    t->txwndptr = NIL;
-  t->txlructr = 0;     t->txy = 0;
-  t->txmarkx = t->cx = t->tcx = 0;  t->txlm = 0;
-  t->txmarky = t->cy = t->tcy = 0;  t->txrm = MAXTXRM;
-  t->txstat |= TS_BUSY;  return t;
+  t->txlructr = 0;   t->txy = 0;    t->txlm = 0;
+             t->cx = t->tcx = 0;    t->txrm =    MAXTXRM;
+             t->cy = t->tcy = 0;    t->txstat |= TS_BUSY;  return t;
 }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+void TxMarks0(txt *t) { int i;
+                        for (i=0; i<TXT_MARKS; i++) { t->txmarkx[i] = 0;
+                                                      t->txmarky[i] = 0; }}
 void TxDel (txt *t)
 {
   t->txstat = 0; DqDel(t->txustk); t->txustk = NIL;
@@ -92,14 +95,15 @@ void TxDL(txt *t)
 {
   if (qTxDown(t)) exc(E_MOVDOWN);
   else {
-    small len = DqGetB(t->txdstk, txbuf);
-    tundo1add(t, UT_DL, txbuf, len);
-    if (t->txmarky > t->txy) t->txmarky--;  wndop(TW_DL, t);
+    small len = DqGetB(t->txdstk, txbuf);   tundo1add(t, UT_DL, txbuf, len);
+    int i;
+    for (i=0; i<TXT_MARKS; i++) if (t->txmarky[i] > t->txy) t->txmarky[i]--; 
+    wndop(TW_DL, t);
 } }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void TxDEL_beg(txt *t)
 {
-  int num_deleted = 0;
+  int i, num_deleted = 0;
   if (t->txy < 1) return; /* already in the first line: nothing to delete */
 
   while (!qDqEmpt(t->txustk)) {
@@ -107,27 +111,29 @@ void TxDEL_beg(txt *t)
     t->txy--;
     tundo1add(t, UT_DL, txbuf, len); num_deleted++;
   }
-  if (t->txmarky > num_deleted) t->txmarky -= num_deleted;
-  else                          t->txmarky  = 0;
-}
+  for (i=0; i<TXT_MARKS; i++) {
+    if (t->txmarky[i] > num_deleted) t->txmarky[i] -= num_deleted;
+    else                             t->txmarky[i]  = 0;
+} }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void TxDEL_end(txt *t)
 {
+  int i;
   while (!qDqEmpt(t->txdstk)) {
     small len = DqGetB(t->txdstk, txbuf);
     tundo1add(t, UT_DL, txbuf, len);
   }
-  if (t->txmarky > t->txy) t->txmarky = t->txy;
-}
+  for (i=0; i<TXT_MARKS; i++)
+    if (t->txmarky[i] > t->txy) t->txmarky[i] = 0;  /* deleting end-of-text  */
+}                                                   /* may delete some marks */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void TxEmpt (txt *t)
 {
   deq *d = t->txudeq; DqEmpt(t->txdstk);
-                      DqEmpt(t->txustk);
-  if (d) DqEmpt(d);
+                      DqEmpt(t->txustk); if (d) DqEmpt(d);
   t->txy = 0;
-  t->txudcptr = 0; t->txmarkx = t->cx = t->tcx = 0;
-  t->txudlptr = 0; t->txmarky = t->cy = t->tcy = 0; wndop(TW_EM, t);
+  t->txudcptr = 0;   t->cx = t->tcx = 0;      TxMarks0(t);
+  t->txudlptr = 0;   t->cy = t->tcy = 0;  wndop(TW_EM, t);
 }
 /*- - - - - - - - - - - - - - - - - - - - Convert Ascii file string to tchar */
 #define isUTFcont(x) ((x & 0xC0) == 0x80)
@@ -235,9 +241,10 @@ vanilla_char:
 /*---------------------------------------------------------------------------*/
 void TxIL(txt *t, char *text, small len)
 {
-  DqAddB   (t->txdstk, text, len);
-  tundo1add(t,  UT_IL, text, len); if (t->txmarky >= t->txy) t->txmarky++;
-  wndop(TW_IL, t);
+  DqAddB   (t->txdstk, text, len); int i;
+  tundo1add(t,  UT_IL, text, len); 
+  for (i=0; i<TXT_MARKS; i++)
+    if (t->txmarky[i] >= t->txy) t->txmarky[i]++;  wndop(TW_IL, t);
 }
 void TxTIL (txt *t, tchar *tp, small len)
 {
@@ -276,14 +283,20 @@ small TxFRead (txt *t, tchar *tp)
   blktspac(tp+len, MAXLPAC-len); return len;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-tchar *TxInfo (wnd *w, large y, int *pl)
+tchar *TxInfo (wnd *w, large y, int *pl)      /* used for repaint in vip.cpp */
 {
   txt *t = w->wtext;
-  if (!t || TxSetY(t, w->wty+y) == FALSE) { *pl = 0; return NIL; }
+  if (!t || TxSetY(t, (y += w->wty)) == FALSE) { *pl = 0; return NIL; }
   else {
     tchar *tc;
-    if (w == Lwnd && w->wty+y == Ly) tc = Lebuf;
-    else                  TxFRead(t, tc = tcbuf);
+    if (w == Lwnd && y == Ly) tc = Lebuf;
+    else {       
+      small len = TxFRead(t, tc = tcbuf); int i;
+      if (y > 0 && len < MAXLPAC-3) {
+        for (i=1; i<TXT_MARKS; i++)
+          if (t->txmarky[i] == y) { tc[len+1] = (i+'0')| AT_MARKFLG;
+                                    tc[len+2] =    ' ' | AT_MARKFLG; break; }
+    } }
     tc +=         w->wtx;
     *pl = MAXLPAC-w->wtx; return tc;
 } }

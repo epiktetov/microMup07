@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07    te = Text editor - Редактор текста     | (c) Epi MG, 2006-2007
+// МикроМир07    te = Text editor - Редактор текста     | (c) Epi MG, 2006-2011
 //------------------------------------------------------+--------------------*/
 #include "mic.h"          /* Old te.c (c) Attic 1989-96, (c) EpiMG 1998,2001 */
 #include "ccd.h"
@@ -27,15 +27,31 @@ BOOL tesetxy (small x, large y)
                            Ty = Ttxt->txy; return q;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void tesmark() { Ttxt->txmarkx = Tx;
-                 Ttxt->txmarky = Ty; }
+void tesmark() { Ttxt->txmarkx[0] = Tx;
+                 Ttxt->txmarky[0] = Ty; }
 void tecmark() 
 {
-  int tmp = Ttxt->txmarkx; Ttxt->txmarkx = Tx; Tx = tmp;
-      tmp = Ttxt->txmarky; Ttxt->txmarky = Ty; qsety(tmp);
+  int tmp = Ttxt->txmarkx[0]; Ttxt->txmarkx[0] = Tx; Tx = tmp;
+      tmp = Ttxt->txmarky[0]; Ttxt->txmarky[0] = Ty; qsety(tmp);
 }
-void tedown() { Ty++; }   void tetbeg() { tesetxy(Tx,          0); }
-void teup  () { Ty--; }   void tetend() { tesetxy(Tx, 2147483647); }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+void tesmarkN()                       /* Set/clear mark N | NOTE: codes must */
+{                                     /* and go to mark N |  be TE_S/CMARK+N */
+  int N = KbCode - TE_SMARK;
+  if (Ttxt->txmarky[N] != Ty) { Ttxt->txmarkx[N] = Tx;
+                                Ttxt->txmarky[N] = Ty; wndop(TW_ALL, Ttxt); }
+  else { Ttxt->txmarkx[N] = 0;
+         Ttxt->txmarky[N] = 0; wndop(TW_RP, Ttxt); }
+}
+void tecmarkN()
+{
+  int N = KbCode - TE_CMARK;
+  if (Ttxt->txmarky[N] > 0) { tesmark(); Tx =  Ttxt->txmarkx[N];
+                                         qsety(Ttxt->txmarky[N]); }
+}
+/*---------------------------------------------------------------------------*/
+void tedown() { Ty++; }  void tetbeg() { tesetxy(Tx,          0); }
+void teup  () { Ty--; }  void tetend() { tesetxy(Tx, 2147483647); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tecentr()             /* Esc NN Ctrl+E => В строку с номером KbCount-1  */
 {                          /*          else => Текущую строку в центр экрана */
@@ -76,7 +92,8 @@ static small mcdpat (tchar *buf, small i)           /* micros.dir paste line */
   return i; // returns length of filled up lfbuf
 }
 void teIL() { TxTIL(Ttxt, lfbuf, mcdpat(lfbuf,0)); }
-void teDL() { TxDL(Ttxt);                          }
+void teDL() { if (BlockMark) teclrblock();
+              else           TxDL  (Ttxt); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void teclrbeg(void) { TxDEL_beg(Ttxt); qsety(0); wndop(TW_ALL, Ttxt); }
 void teclrend(void) { TxDEL_end(Ttxt);           wndop(TW_ALL, Ttxt); }
@@ -120,11 +137,11 @@ void tenslin()  /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     TxFRead(Ttxt, lfbuf); blktmov(Lebuf, lfbuf, Tx);
     TxFRep (Ttxt, lfbuf);
 } }
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void temovup() 
+/*---------------------------------------------------------------------------*/
+void temovup()  /* moves either 1-line block or right-of-cursor part of line */
 { 
-  int x0,x1; if (Block1size(&x0, &x1)) BlockTy--;
-             else { x0 = Tx;
+  int x0,x1; if (Block1size(&x0, &x1)) BlockTy--;  /* exc(E_BLOCKOUT) if not */
+             else { x0 = Tx;                       /*           1-line block */
                     x1 = Ttxt->txrm; } 
   Ty--;
   TxFRead(Ttxt, Lebuf); blktmov (Lebuf+x0, lfbuf, x1-x0);
@@ -148,7 +165,7 @@ void temovdown()  /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     TxFRead(Ttxt, Lebuf); blktmov(lfbuf+x0, Lebuf+x0, x1-x0);
     TxFRep (Ttxt, Lebuf);
 } }
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+/*---------------------------------------------------------------------------*/
 void teformat()
 {
   int txw = my_min(Twnd->wsw, Ttxt->txrm)-1; tchar *Lepos = Lebuf;
@@ -189,16 +206,16 @@ void teformat()
 // DO NOT repeat the operation - let user do if s/he wants.
 //
   else if (!qTxDown(Ttxt)) {
-    small tbeg; len = TxFRead(Ttxt, lfbuf);
+    len = TxFRead(Ttxt, lfbuf);
     if (len == 0) TxDL(Ttxt);
     else {
-      Lx =  0; Lxrm = Ttxt->txrm; if (leNword(NIL, NIL, &tbeg)) tbeg = 0;
-      Lx = Tx;
+      small tbeg = 0;
+      while(tbeg < len && tcharIsBlank(lfbuf[tbeg])) tbeg++;
       if (Lleng+1+len-tbeg > txw) Ty++;
       else {
         TxDL(Ttxt);
-        Lebuf[Lleng++] = (tchar)' ';
-        blktmov(lfbuf+tbeg, Lebuf+Lleng, len-tbeg); Lleng += len-tbeg;
+        if (tbeg < len) { Lebuf[Lleng++] = (tchar)' ';
+          blktmov (lfbuf+tbeg, Lebuf+Lleng, len-tbeg); Lleng += len-tbeg; }
   } } }
   TxTIL(Ttxt, Lepos, Lleng);
 } 
@@ -322,13 +339,19 @@ void tesrw() { if (Ttxt->txredit == TXED_NO) Ttxt->txredit = TXED_YES; }
 /*---------------------------------------------------------------------------*/
 comdesc tecmds[] =
 {
-  { TE_UP,    teup,    CA_NBEG          }, /* курсор вверх                   */
-  { TE_DOWN,  tedown,           CA_NEND }, /* курсор вниз                    */
-  { TE_TBEG,  tetbeg,  CA_RPT           }, /* в начало текста                */
-  { TE_TEND,  tetend,  CA_RPT           }, /* в конец текста                 */
-  { TE_SMARK, tesmark, CA_RPT           }, /* установить маркер              */
-  { TE_CMARK, tecmark, 0                }, /* обменять курсор и маркер       */
-  { TE_CENTR, tecentr, CA_RPT           }, /* текущую строку в середину окна */
+  { TE_UP,     teup,     CA_NBEG        }, /* курсор вверх                   */
+  { TE_DOWN,   tedown,          CA_NEND }, /* курсор вниз                    */
+  { TE_TBEG,   tetbeg,   CA_RPT         }, /* в начало текста                */
+  { TE_TEND,   tetend,   CA_RPT         }, /* в конец текста                 */
+  { TE_SMARK,  tesmark,  CA_RPT         }, /* установить маркер              */
+  { TE_CMARK,  tecmark,  0              }, /* обменять курсор и маркер       */
+  { TE_CENTR,  tecentr,  CA_RPT         }, /* текущую строку в середину окна */
+  { TE_SMARK1, tesmarkN, CA_RPT },
+  { TE_CMARK1, tecmarkN, CA_RPT },
+  { TE_SMARK2, tesmarkN, CA_RPT }, { TE_SMARK4, tesmarkN, CA_RPT },
+  { TE_CMARK2, tecmarkN, CA_RPT }, { TE_CMARK4, tecmarkN, CA_RPT },
+  { TE_SMARK3, tesmarkN, CA_RPT }, { TE_SMARK5, tesmarkN, CA_RPT },
+  { TE_CMARK3, tecmarkN, CA_RPT }, { TE_CMARK5, tecmarkN, CA_RPT },
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   { TE_CR,     teCR,                       CA_NEND        }, /*       Enter  */
   { TE_RCR,    teRCR,                      CA_NEND        }, /* Shift+Enter  */
@@ -357,6 +380,7 @@ comdesc tecmds[] =
 /*
  * Implemented in clip.cpp (declaration in "clip.h"):
  */
+  { LE_CHAR,   teicharblk, CA_BLOCK|CA_CHANGE|CA_NEND }, /* tall cursor mode */
   { LE_IC,     teicblock,  CA_BLOCK|CA_CHANGE|CA_NEND },
   { LE_DC,     tedcblock,  CA_BLOCK|CA_CHANGE|CA_NEND },
   { LE_CCHAR,  tecsblock,  CA_BLOCK          |CA_RPT  }, /* запомнить блок   */
@@ -365,16 +389,17 @@ comdesc tecmds[] =
   { TE_CDLIN,  tecdlin,    CA_LCUT |CA_CHANGE|CA_NEND }, /* - с удалением    */
   { LE_PASTE,  cpaste,              CA_CHANGE         }, /* вспомнить        */
 /*
- * Implemented in ud.c (declaration in "ud.h"):
+ * Implemented in ud.c (declaration in "ud.h"), the same functions as in LE:
  */
-  { TE_UNDO,    teundo,    CA_CHANGE }, /* откатка                           */
-  { TE_UNUNDO,  teunundo,  CA_CHANGE }, /* откатка откатки                   */
-  { TE_SUNDO,   tesundo,   CA_CHANGE }, /* "медленная" откатка               */
-  { TE_SUNUNDO, tesunundo, CA_CHANGE }, /* "медленная" откатка откатки       */
+  { TE_UNDO,    leundo,    CA_CHANGE }, /* откатка                           */
+  { TE_UNUNDO,  leunundo,  CA_CHANGE }, /* откатка откатки                   */
+  { TE_SUNDO,   lesundo,   CA_CHANGE }, /* "медленная" откатка               */
+  { TE_SUNUNDO, lesunundo, CA_CHANGE }, /* "медленная" откатка откатки       */
   { 0,0,0 }
 };
-comdesc *Tdecode (int kcode)
+comdesc *Tdecode (int kcode)  /*- - - - - - - - - - - - - - - - - - - - - - -*/
 {
+  if (Mk_IsCHAR(kcode)) kcode = LE_CHAR;
   comdesc *cp;
   for (cp = tecmds; cp->cfunc; cp++)
     if ((int)cp->mi_ev == kcode)

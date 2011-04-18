@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07 ViewPort (interface Qt/C++ • legacy code) | (c) Epi MG, 2006-2007
+// МикроМир07 ViewPort (interface Qt/C++ • legacy code) | (c) Epi MG, 2006-2011
 //------------------------------------------------------+----------------------
 #include <QApplication>
 #include <QPainter>
@@ -123,9 +123,6 @@ void vipUpdateWinTitle (wnd *vp) { vp->sctw->mf->updateWinTitle(); }
 void vipRepaint(wnd *vp, QPainter& dc, MiScTwin *sctw, int x0, int x1,
                                                        int y0, int y1)
 {
-//+
-// fprintf(stderr, "vipRepaint(%d-%d,%d-%d) ", x0,x1, y0,y1);
-//-
   int wt = my_min(x1-x0+1, MAXLPAC);
   QRect cline;
   for (int y = y0; y <= y1; y++) {
@@ -288,7 +285,7 @@ void vipOnFocus (wnd *vp) /* if possible, goto window (cursor is not Ok yet) */
 }
 void vipFocusOff (wnd *vp)
 {
-  if (Lwnd) ExitLEmode(E_NOCOM);
+  if (Lwnd) ExitLEmode();
   if (vp == Twnd) { 
     vp->wcx = Tx; // save the last text position when un-focusing the current
     vp->wcy = Ty; // editor's window... just in case
@@ -318,27 +315,25 @@ int vipOnRegCmd (wnd *vp, int kcode)
   KbCode = kcode;
   while (KbCode) {
     if (Lwnd) {
-      if ((cp = Ldecode(KbCode)) == NULL) { ExitLEmode(E_NOCOM); continue; }
+      if ((cp = Ldecode(KbCode)) == NULL) { ExitLEmode(); continue; }
       switch (rc = LeCommand(cp)) {
-      case E_UP:    ExitLEmode(E_UP); // and FALL THROUGH
-      case E_LEXIT: continue;
-      case E_OK:   break;
-      default: vipBell();
-      }            break;
+      case E_LEXIT: continue; // <-- re-try the command on TE and/or TM level
+      case E_OK:   break; //
+      default: vipBell(); //
+      }            break; // we're done here, sucessfully or not (break loop)
     }
     else if ((cp = Tdecode(KbCode)) != NULL) rc = TeCommand(cp);
     else if ((cp = Ldecode(KbCode)) == NULL) rc = TmCommand(KbCode);
-    else {   
-      EnterLEmode(E_NOCOM); continue;
+    else {                     // ^
+      EnterLEmode(); continue; // this LE-level command, entering LE mode here
     }
-    switch (rc) {
-    case E_DOWN: EnterLEmode(E_DOWN); continue;
-    case E_LENTER: rc = E_OK;  break;
-    case E_OK:                 break;
-    default: vipBell();
+    switch (rc) {                    // TE/TM command return codes:
+    case E_LENTER: rc = E_OK; break; // - LenterARG called
+    case E_OK:                break; // - everything all right
+    default: vipBell();              // - some error encountered
     }                       
-    KbCode  = 0;
-  } KbCount = 1;
+    KbCode  = 0; // cleanup KbStuff (and force end-of-loop as well)
+  } KbCount = 1; //
     KbRadix = 0; return rc;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -442,7 +437,7 @@ void vipOnKeyCode (wnd *vp, int ev, int ca)
        if (ev == TK_LINFO) vp->sctw->info.updateInfo(MitLINE_BLOCK);
   else if (ev == TK_CHARK) vp->sctw->info.updateInfo(MitCHARK);
   else if (ev == TW_CDOWN) { wpos_off(vp);
-    if (Lwnd)  ExitLEmode (E_NOCOM); // set Ty to the last line in the window,
+    if (Lwnd) ExitLEmode();          // set Ty to the last line in the window,
     tesetxy (Tx, vp->wty+vp->wsh-1); // to avoid scrolling to the empty screen
     vp->sctw->repeatCmd(TW_SCROLDN); // in case when started with cursor on top
   }
@@ -531,7 +526,7 @@ int vipConvert (tchar *str, int str_len, int cvt_type, tchar *out)
   case cvTO_DECIMAL:
     if (KbRadix && 2 <= KbCount && KbCount <= 36) radix = KbCount;
     else 
-         if (line.startsWith("0x")) { radix = 16;line = line.remove(0, 2); }
+         if (line.startsWith("0x")) { radix = 16; line = line.remove(0, 2); }
     else if (line.startsWith("0b"))   radix =  2;
     else if (line.startsWith('0'))    radix =  8;
     else                              radix = 16;

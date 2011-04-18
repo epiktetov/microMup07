@@ -3,7 +3,7 @@
 //------------------------------------------------------+--------------------*/
 #ifndef MIC_H_INCLUDED  /* Old "nm.h" (c) Attic 1989-90, (c) EpiMG 1998-2001 */
 #define MIC_H_INCLUDED
-#define microVERSION "4.4.14" // released Thu Apr 14 23:30 PDT 2011
+#define microVERSION "4.4.16" // released Mon Apr 18 11:00 PDT 2011
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -36,8 +36,8 @@ typedef long tchar;                           /* Unicode символ с атр�
 #define AT_ITALIC  0x00040000 /* italic (red), incorrect Unicode    == KxTMP */
 #define AT_SUPER   0x00080000 /* sky blue (special chars) forces Insert mode */
 #define AT_UNDERL  0x00100000 /* reserved for underline                      */
-#define AT_COMMAND 0x00200000 /* rounded negative background (macro)         */
-#define AT_IN_FILE 0x003F0000 /* <---- mask of attributes saved in file ---- */
+#define AT_IN_FILE 0x001F0000 /* <---- mask of attributes saved in file ---- */
+#define AT_MARKFLG 0x00200000 /* numbered marker flag (brown gradient)       */
 #define AT_BG_CLR  0x00c00000 /* background color:                           */
 #define AT_BG_RED  0x00400000 /*  = red (cannot edit / "temporary" block)    */
 #define AT_BG_GRN  0x00800000 /*  = green (can edit, text unchanged)         */
@@ -81,50 +81,46 @@ extern BOOL dosEOL; /* - DOS/Windows style for end-of-line (CR/LF вместо C
 #define E_NOCOM      1   /* Неопознанная команда для данного уровня          */
 #define E_CHANGE     2   /* Запрещены изменения текста                       */
 #define E_KBREAK     3   /* Выполнение команды прервано с клавиатуры         */
-#define E_UP         4   /* Откатка переходит на внешний уровень             */
-#define E_DOWN       5   /* Откатка переходит на внутренний уровень          */
-#define E_NOUNDO     6   /* Откатка не поддерживается                        */
-#define E_LENTER     7   /* Started Argument Entering mode                   */
-#define E_LEXIT      8   /* Argument Entering mode completed                 */
+#define E_NOUNDO     4   /* Откатка не поддерживается                        */
+#define E_LENTER     5   /* Started Argument Entering mode                   */
+#define E_LEXIT      6   /* Argument Entering mode completed                 */
                          /*------------------------ События редактора строки */
-#define E_MOVBEG     9   /* Перемещение за левую границу                     */
-#define E_MOVEND    10   /* Перемещение за правую границу                    */
-#define E_EDTBEG    11   /* Изменение за левой границей                      */
-#define E_EDTEND    12   /* Изменение за правой зраницей                     */
-#define E_ATTR      13   /* Запрещена работа с атрибутами                    */
-#define E_ILCHAR    14   /* совсем непечатный символ                         */
-#define E_CCFUL     15   /* Буфер запомненных символов полон                 */
+#define E_MOVBEG     7   /* Перемещение за левую границу                     */
+#define E_MOVEND     8   /* Перемещение за правую границу                    */
+#define E_EDTBEG     9   /* Изменение за левой границей                      */
+#define E_EDTEND    10   /* Изменение за правой границей                     */
+#define E_ATTR      11   /* Запрещена работа с атрибутами                    */
+#define E_ILCHAR    12   /* совсем непечатный символ                         */
+#define E_CCFUL     13   /* Буфер запомненных символов полон                 */
                          /*--------------- События редактора текста и прочее */
-#define E_NOOP      16   /* Нечего делать (команда неприминима в этом месте) */
-#define E_BADPRM    17   /* Недопустимое значение параметра / повторителя    */
-#define E_LCUT      18   /* Запоминание строк в файле NDTSAV                 */
-#define E_MOVUP     19   /* Верхняя граница текста                           */
-#define E_MOVDOWN   20   /* Нижняя зраница текста                            */
-#define E_SETY      21   /* Позиционирование за границы текста               */
-#define E_FINISHED  22   /* Выполнение операции завершилось                  */
-#define E_LPASTE    23
-#define E_NOBLOCK   24
-#define E_BLOCKOUT  25
-#define E_SFAIL     26
-#define E_NOSPAT    27
-#define E_NORPAT    28
-#define E_ROUT      29
-#define E_FORMAT    30
-#define E_CPFER     31
-#define E_PRINT     32
-#define E_FINDER    33
-#define E_NOMEM     34  /* Нет памяти - могут быть  фатальные последствия    */
-#define E_CB        35  /* Clipboard error (Windows only)                    */
-#define E_MAX       36
+#define E_NOOP      14   /* Нечего делать (команда неприминима в этом месте) */
+#define E_BADPRM    15   /* Недопустимое значение параметра / повторителя    */
+#define E_LCUT      16   /* Запоминание строк в файле NDTSAV                 */
+#define E_MOVUP     17   /* Верхняя граница текста                           */
+#define E_MOVDOWN   18   /* Нижняя зраница текста                            */
+#define E_SETY      19   /* Позиционирование за границы текста               */
+#define E_FINISHED  20   /* Выполнение операции завершилось                  */
+#define E_LPASTE    21
+#define E_NOBLOCK   22
+#define E_BLOCKOUT  23
+#define E_SFAIL     24
+#define E_NOSPAT    25
+#define E_NORPAT    26
+#define E_ROUT      27
+#define E_FORMAT    28
+#define E_CPFER     39
+#define E_NOMEM     30  /* Нет памяти - могут быть  фатальные последствия    */
+#define E_CB        31  /* Clipboard error (Windows only)                    */
+#define E_MAX       32
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         struct deq_tag;         /* Forward declarations of some C structures */                  
 typedef struct deq_tag deq;     /*  dq.h */
         struct qfile_tag;
 typedef struct qfile_tag qfile; /* qfs.h */
         struct txt_tag;
-typedef struct txt_tag txt;     /* vip.h */
+typedef struct txt_tag txt;     /* twm.h */
         struct wnd_tag;
-typedef struct wnd_tag wnd;     /* vip.h */
+typedef struct wnd_tag wnd;     /* twm.h */
 /*---------------------------------------------------------------------------*/
 extern char *GetMain(long n); /* =malloc() but always returns non-NULL, rt.c */
 /*

@@ -13,6 +13,8 @@
 #include <stdlib.h>       /* calloc() used in tpstrdup()                     */
 #include <string.h>       /* strchr() used in leccase(), plus strlen()       */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+void LeStart() { blktspac(Lebuf, MAXLPAC); }
+
 tchar Lebuf[MAXLPAC];     /* Буфер строки                                    */
 tchar lfbuf[MAXLPAC];     /* альтернативный буфер                            */
 small Lleng;              /* Длина строки без хвостовых пробелов             */
@@ -53,11 +55,7 @@ void tleload (void)                                /* load LE line from text */
   Lchange = FALSE;
   tundoload(Ttxt);
 }
-void EnterLEmode (int er)
-{ 
-  TxSetY(Ttxt, Ty); if (er == E_DOWN) undodir = 1;
-                    tleload();        undodir = 0; // see ud.c
-}
+void EnterLEmode (void) { TxSetY(Ttxt, Ty); tleload(); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tleunload (void)                              /* unload LE line to text */
 {
@@ -67,13 +65,8 @@ void tleunload (void)                              /* unload LE line to text */
     if (Lchange) { TxSetY(Ttxt, Ty);
                    TxTRep(Ttxt, Lebuf, Lleng); Ttxt->txstat |= TS_CHANGED; }
 } }
-void ExitLEmode (int er)
-{ 
-  if (leARGmode) LenterARGcomplete(0);
-  else {
-    if (er == E_UP) undodir = -1;
-    tleunload();    undodir =  0;
-} }
+void ExitLEmode (void) { if (leARGmode) LenterARGcomplete(0);
+                         else                    tleunload(); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 BOOL tleread(void)    /* read Lebuf from text (read-only), true if non-empty */
 {
@@ -155,15 +148,17 @@ void leLLCE (tchar lchar)
   else                                     llchar(lchar); Lx++;
 }
 /*---------------------------------------------------------------------------*/
-void leIC()    { leic2(' ');                                }
-void leDC()    { llmove(Lx,   Lxre,      -1, NIL);          }
-void ledeol()  { llmove(Lx,   Lxre, REPLACE, NIL);          }
-void ledbgol() { llmove(Lxle, Lxre, Lxle-Lx, NIL); Lx=Lxle; }
-void lebs() 
-{
-  if (LeInsMode || (Lebuf[Lx] & AT_SUPER)) { Lx--; leDC();      }
-  else                                     { Lx--; llchar(' '); }
+void leIC()   { leic2(' ');                     }
+void leDC()   { llmove(Lx, Lxre,      -1, NIL); }
+void ledeol() { llmove(Lx, Lxre, REPLACE, NIL); }
+void ledbgol()
+{                
+  if (LeInsMode || (Lebuf[Lx] & AT_SUPER)) 
+       { llmove(Lxle, Lxre, Lxle-Lx, NIL); Lx = Lxle; }
+  else { llmove(Lxle,   Lx, REPLACE, NIL);            }
 }
+void lebs() { if (LeInsMode || (Lebuf[Lx] & AT_SUPER)) { Lx--; leDC();      }
+              else                                     { Lx--; llchar(' '); }}
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void lespchar() { if (KbRadix == 0) exc (E_ILCHAR);
                   else             leLLCE(KbCount); } // character by code
@@ -268,6 +263,13 @@ void leccup()  { leconvert(cvTO_UPPER);   }
 void leccdwn() { leconvert(cvTO_LOWER);   }
 void leccdec() { leconvert(cvTO_DECIMAL); }
 void lecchex() { leconvert(cvTO_RADIX);   }
+void lecbold()
+{
+  int x0,x1; if (! Block1size(&x0,&x1)) x1 = (x0 = Lx) + 1;
+  for (Lx = x0; Lx < x1; Lx++)        Lebuf[Lx] ^= AT_BOLD;
+  if (BlockMark) { BlockTx = x0;
+                   llmove(x0,x1, REPLACE, Lebuf+x0); } // just ot make sure
+}                                                      // window is updated
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void lemovleft() 
 { 
@@ -288,14 +290,13 @@ static tchar *tpstrdup (tchar *tline, int len) /* duplicate as Pascal string */
   *tpline = len;
   blktmov(tline, tpline+1, len); return tpline;
 }
-static int tpstrcmp (tchar *tp1, tchar *tp2)
-{
+static int tpstrcmp (tchar *tp1, tchar *tp2) /* the ordering (by lentgh then */
+{                                            /* by content) is not used now  */
   int len1 = *tp1++,
       len2 = *tp2++;     if (len1 != len2) return len1-len2;
   while (len1--) {
     tchar diff = (*tp1++) - (*tp2++); if (diff) return diff;
-  }
-  return 0;
+  }                                             return    0;
 }
 /*---------------------------------------------------------------------------*/
 static tchar  *leResARG, **leHistory;       /* LenterARG: ввод аргумента для */
@@ -465,6 +466,7 @@ comdesc lecmds[] =
   { LE_CCDWN,  leccdwn,         CA_CHANGE|CA_NEND }, /* -> строчная          */
   { LE_CCDEC,  leccdec,         CA_CHANGE|CA_NEND }, /* -> decimal           */
   { LE_CCHEX,  lecchex,         CA_CHANGE|CA_NEND }, /* -> hex               */
+  { LE_CBOLD,  lecbold,         CA_CHANGE|CA_NEND }, /* сделать жирным       */
   { LE_MOVRIGHT, lemovright,    CA_CHANGE|CA_NEND }, /* сдвинуть вправо      */
   { LE_MOVLEFT,  lemovleft,     CA_CHANGE|CA_NBEG }, /* сдвинуть влево       */
 /*
@@ -485,7 +487,7 @@ comdesc lecmds[] =
   { LE_CDCHAR, lecdchar, CA_BLOCK|CA_CHANGE|CA_NEND }, /* - с удалением      */
   { LE_CWORD,  lecword,                     CA_NEND }, /* запомнить слово    */
   { LE_CDWORD, lecdword,          CA_CHANGE|CA_NEND }, /* - с удалением      */
-  { LE_PASTE,  cpaste,   CA_LEARG|CA_CHANGE|CA_NEND }, /* вспомнить          */
+  { LE_PASTE,  cpaste,            CA_CHANGE|CA_NEND }, /* вспомнить          */
   { LE_CPCLOS, cpclose,  0                          }, /* запоминать сначала */
   { LE_CPOPEN, cpreopen, 0                          }, /* переоткрыть буфер  */
 /*
@@ -501,10 +503,10 @@ comdesc lequitcmd[] =
 {
   { TK_NONE, lequit, CA_LEARG }       /* any non-LE command in ArgEnter mode */
 };
-comdesc *Ldecode (int kcode)
+comdesc *Ldecode (int kcode)  /*- - - - - - - - - - - - - - - - - - - - - - -*/
 {
+  if (Mk_IsCHAR(kcode)) kcode = LE_CHAR; // return lecmds;
   comdesc *cp;
-  if (Mk_IsCHAR(kcode)) return lecmds;
   for (cp = lecmds; cp->cfunc; cp++) {
     if ((int)cp->mi_ev == kcode) {
       if ((cp->attr & CA_BLOCK) && BlockMark ) return NIL;

@@ -25,7 +25,7 @@ void tmInitialize (void)
   long memsize;
   char *membuf = MemInit(&memsize); DqInit(membuf, memsize);
   TxInit();
-  TeInit(); UdInit();  clipStart();
+  TeInit(); UdInit(); LeStart(); clipStart();
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 bool tmStart (QString param)
@@ -46,6 +46,7 @@ bool twStart (QString filename, long ipos)
 #ifdef Q_OS_WIN
     vipReady();
 #endif
+    Twnd->sctw->mf->raise ();
     Ty = ipos-1; return true; // set initial pos after wmedin (which reset it)
   }
   vipFreeWindow(Twnd); return false;
