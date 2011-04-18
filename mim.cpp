@@ -171,7 +171,9 @@ MiFrame::~MiFrame() //- - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiFrame::makeFonts() // makes textFont and boldFont from MiApp_defaultFont
 {
   textFont = QFont(MiApp_defaultFont, MiApp_defFontSize);
+#if QT_VERSION > 0x040700
   textFont.setStyleHint(QFont::TypeWriter, QFont::ForceIntegerMetrics);
+#endif
 //+
 //  QFontMetrics fm = textFont;
 //  int wi1 = fm.width("X"),
@@ -566,9 +568,9 @@ void MiScTwin::Text (QPainter& dc, int x, int y, int attr, QString text)
   if (attr & AT_BOLD) dc.setFont(mf->getBoldFont());
   else                dc.setFont(mf->getTextFont());
 
-  if (attr & AT_INVERT+AT_MARKFLG+AT_BG_CLR) {
-    const QColor *bg_color, *fg_color = &colorBlack;
-    if (attr & AT_INVERT+AT_MARKFLG) {
+  if (attr & (AT_INVERT|AT_MARKFLG|AT_BG_CLR)) {
+    const QColor *bg_color = &colorWhite, *fg_color = &colorBlack;
+    if (attr & (AT_INVERT|AT_MARKFLG)) {
            if ((attr & AT_BG_CLR) == AT_BG_RED) bg_color = &colorDarkRed;
       else if ((attr & AT_BG_CLR) == AT_BG_GRN) bg_color = &colorDarkGreen;
       else if ((attr & AT_BG_CLR) == AT_BG_BLU) bg_color = &colorDarkBlue;
@@ -579,7 +581,7 @@ void MiScTwin::Text (QPainter& dc, int x, int y, int attr, QString text)
     else if ((attr & AT_BG_CLR) == AT_BG_GRN) bg_color = &colorDarkWheat;
     else if ((attr & AT_BG_CLR) == AT_BG_BLU) bg_color = &colorLightCyan;
 
-    if (attr & AT_SUPER+AT_MARKFLG) { // special "insert mode" gradient cursor
+    if (attr & (AT_SUPER|AT_MARKFLG)) { // special insert-mode gradient cursor
       QLinearGradient grad(Tx2qtX(x), 0, Tx2qtX(x)+1.5*Tw2qtW(len), 0);
       grad.setColorAt(0, *bg_color);
       grad.setColorAt(1, gradColor); dc.setBrush(QBrush(grad));

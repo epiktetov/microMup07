@@ -288,8 +288,8 @@ void tmLoadIn (txt *t, QString  filename) /*- - - - - - - - - - - - - - - - -*/
 /*---------------------------------------------------------------------------*/
 BOOL tmsave (txt *t, BOOL needBackup)
 {
-  if (t->file == NULL || (t->txstat & TS_PSEUDO+TS_DIRLST) ||
-                        !(t->txstat & TS_CHANGED)) return TRUE;
+  if (t->file == NULL || (t->txstat & (TS_PSEUDO|TS_DIRLST)) ||
+                        !(t->txstat &  TS_CHANGED)) return TRUE;
   else
   if (t->file->ft != QftTEXT) return FALSE; // use twSave() for other types
   if (needBackup) {
@@ -323,7 +323,8 @@ bool tmSaveAs (txt *t, QString  fn)
         // Found other text with matching name - check if this is a ghost (then
         // delete it), or some active/unsaved text (then abort the operation):
         //
-        if (to->txstat & TS_CHANGED+TS_PERM+TS_WND){ vipBell(); return false; }
+        if (to->txstat & (TS_CHANGED|TS_PERM|TS_WND)) { vipBell(); 
+                                                        return false; }
         else TxDel(to);
     } }
     qfile *fd = QfsNew(fn, t->file);
@@ -337,8 +338,8 @@ bool tmSaveAs (txt *t, QString  fn)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 bool twSave (txt *t, wnd *vp, bool needBackup)
 {
-  if (t->txstat & TS_PSEUDO+TS_DIRLST) return true;
-  else if (t->file->ft == QftTEXT)     return tmsave(t, needBackup);
+  if (t->txstat & (TS_PSEUDO|TS_DIRLST)) return true;
+  else if (t->file->ft == QftTEXT)       return tmsave(t, needBackup);
   else if (t->txstat & TS_CHANGED) {
     QString new_name = vp->sctw->mf->saveAsDialog(t);
     if (new_name.isEmpty()) return false;
