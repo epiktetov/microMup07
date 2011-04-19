@@ -150,10 +150,9 @@ static void checkfile (txt *t)
     DqEmpt(t->txustk); t->txy = 0;
     DqEmpt(t->txdstk); t->txstat &= ~TS_FILE;
   }
-  if (t->txstat & TS_UNDO) {
-    DqEmpt(t->txudeq); t->txudcptr = t->txudlptr = 0;
-    // t->txstat &= ~TS_UNDO; keeping UNDO bit since txudeq still here
-} }
+  if (t->txstat & TS_UNDO) { DqEmpt(t->txudeq); 
+                                    t->txudcptr = t->txudlptr = 0; }
+}
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tmCheckFiles()
 { 
@@ -243,12 +242,11 @@ static void tmDirLST (txt *t)
          attr & QFile::ReadOther  ? 'r' : '-',
          attr & QFile::WriteOther ? 'w' : '-',
          attr & QFile::ExeOther   ? 'x' : '-', 
-         int(it->size()), QfsModDateText(*it).cStr(), 
-         (wchar_t *)(it->fileName().utf16())       );
-
-    Lleng = qstr2tcs(line, Lebuf); TxTIL(t, Lebuf, Lleng); 
-                                   TxDown(t);
-  } t->cx = t->txlm = DIRLST_FNPOS;
+         int(it->size()),  QfsModDateText(*it).cStr(),
+         (wchar_t *)(it->fileName().utf16())        );
+    TxTIL(t, Lebuf, qstr2tcs(line, Lebuf)); TxDown(t);
+  } 
+  t->cx = t->txlm = DIRLST_FNPOS;
 }
 bool tmDoLoad (txt *t)  /*- - - - - - - - - - - - - - - - - - - - - - - - - -*/
 {
@@ -267,7 +265,8 @@ bool tmDoLoad (txt *t)  /*- - - - - - - - - - - - - - - - - - - - - - - - - -*/
   t->txredit = editable ? TXED_YES : TXED_NO;
   t->txstat &= ~TS_CHANGED;     check_MCD(t);
   t->txstat |=  TS_FILE;
-  if (t->txudeq != NIL) t->txstat |= TS_UNDO; return true;
+  if (t->txudeq != NIL) { t->txstat  |= TS_UNDO;
+                          t->txudfile = t->txudcptr; } return true;
 }
 bool tmLoad (txt *t)  /*- - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 {
@@ -309,7 +308,8 @@ BOOL tmsave (txt *t, BOOL needBackup)
                        else          return teferr(t); t->txstat &= ~TS_NEW;
   }
   else if (! (t->txstat & TS_NEW)) QfsDelete(t->file);
-  t->txstat &= ~TS_CHANGED;               return true;
+  t->txstat  &= ~TS_CHANGED;
+  t->txudfile = t->txudcptr; return true;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 bool tmSaveAs (txt *t, QString  fn)
@@ -489,14 +489,17 @@ int TmCommand (int kcode)
     }
     else return E_SFAIL;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+  case TM_RELOAD:
+    if (Ttxt->file->ft == QftDIR) { TxEmpt(Ttxt); tmDirLST(Ttxt); }
+    else                       { checkfile(Ttxt); tmLoad  (Ttxt); }
+    twRedraw(Ttxt); break;
 #ifdef UNIX
   case TM_GREP:
-  case TM_GREP2:   if (tmGrep(kcode) < 0) vipBell(); break;
-  case TM_SYNCPOS: if (tmSyncPos()   < 0) vipBell(); break;
+  case TM_GREP2:   return (tmGrep(kcode) < 0) ? E_SFAIL : E_OK;
+  case TM_SYNCPOS: return (tmSyncPos()   < 0) ? E_SFAIL : E_OK;
 #endif
   default:
     return E_NOCOM;
-  }
-  return E_OK;
+  } return E_OK;
 }
 /*---------------------------------------------------------------------------*/

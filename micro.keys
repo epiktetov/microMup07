@@ -361,24 +361,26 @@ it has '|' symbols in all lines in 64th position (and, optionally, in 69th one)
   Esc PageUp  - up all levels (closing the window), with changes saved
   Esc Ctrl+A  - abandon all changes and leave the file (up one level)
   Esc Ctrl+B  - exit the file, save both original and new versions
-  Esc Insert  - save all changes without leaving the file (also Meta/Ctrl+S)
+  Meta/Ctrl+R - reload the file (or directory contents) from disk
+  Meta/Ctrl+S - save all changes without leaving the file
 
+  Ctrl+Meta+Ins - set text edit mode (green or blue cursor, can change text)
   Ctrl+Meta+Del - set text view mode (no changes allowed, red cursor)
-  Ctrl+Meta+Ins - set text edit mode (green or blue cursor)
 */
 k_(TM_INFILE, 0xc3003, mod_ESC+Mk_RIGHT,     0) /* перейти к имени файла */
-k_(TM_FNEW,   0xc3002, mod_ESC+Mk_DOWN,  KxSEL) /* войти в новый файл    */
-k_(TM_EXIT,   0xc3001, mod_ESC+Mk_UP,        0) /* выйти с сохранением   */
-k_(TM_QUIT,   0xc3010, mod_ESC+Mk_PAGEUP,    0) /* выйти совсем          */
+k_(TM_FNEW,   0xc3001, mod_ESC+Mk_DOWN,  KxSEL) /* войти в новый файл    */
+k_(TM_EXIT,   0xc300f, mod_ESC+Mk_UP,        0) /* выйти с сохранением   */
+k_(TM_QUIT,   0xc30ff, mod_ESC+Mk_PAGEUP,    0) /* выйти совсем          */
 k_(TM_EXOLD,  0xc300a, mod_ESC+mod_CTRL+'A', 0) /* выйти без сохранения  */
 k_(TM_EXBACK, 0xc300b, mod_ESC+mod_CTRL+'B', 0) /* - сохранив обе версии */
-k_(TM_UPDATE, 0xc3030, mod_ESC+Mk_INSERT,    0) /* сохранить изменения   */
-a_(TM_UPDATE,          mod_META+'S',         0)
+k_(TM_RELOAD, 0xc3011, mod_META+'R',         0)
+a_(TM_RELOAD,          mod_CTRL+'R',         0) /* перезагрузить файл    */
+k_(TM_UPDATE, 0xc3005, mod_META+'S',         0) /* сохранить изменения   */
 a_(TM_UPDATE,          mod_CTRL+'S',         0)
-k_(TE_SRO,    0xc3052, mod_CTRL+mod_META+Mk_DELETE, 0) /* просмотр текста */
-a_(TE_SRO,             mod_CTRL+mod_META+Mk_F12,    0)
 k_(TE_SRW,    0xc3051, mod_CTRL+mod_META+Mk_INSERT, 0) /* редактирование  */
 a_(TE_SRW,             mod_CTRL+mod_META+Mk_F11,    0)
+k_(TE_SRO,    0xc3052, mod_CTRL+mod_META+Mk_DELETE, 0) /* просмотр текста */
+a_(TE_SRO,             mod_CTRL+mod_META+Mk_F12,    0)
 /*
 REPETITION: Esc N - enter repetition counter (or argument) for the next command
                            where N is either ddd decimal number like   126

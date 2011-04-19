@@ -12,10 +12,9 @@
 #include "ud.h"
 #include <string.h>
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-txt  *texts;
+txt  *texts; static tchar *tcbuf;
 char *txbuf;
 char *afbuf;
-static tchar *tcbuf;
 
 local txt *TxNewBuf (void)
 {
@@ -50,7 +49,7 @@ txt *TxNew (BOOL qundo)                        /* Создание / удале�
   if (t == NIL)
     tprev->txnext = t = TxNewBuf();
 
-  t->txustk = DqNew(DT_ASC, 0, STKEXT); TxMarks0(t);
+  t->txustk = DqNew(DT_ASC, 0, STKEXT); t->txudfile = -1; TxMarks0(t);
   t->txdstk = DqNew(DT_ASC, STKEXT, 0);
   t->txudeq = qundo ? DqNew(DT_BIN, 0, UNDOEXT) : NIL;
   t->txudcptr = t->txudlptr = 0;    t->txwndptr = NIL;
@@ -60,8 +59,8 @@ txt *TxNew (BOOL qundo)                        /* Создание / удале�
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void TxMarks0(txt *t) { int i;
-                        for (i=0; i<TXT_MARKS; i++) { t->txmarkx[i] = 0;
-                                                      t->txmarky[i] = 0; }}
+                        for (i=0; i<TXT_MARKS; i++) { t->txmarkx[i] =  0;
+                                                      t->txmarky[i] = -1; }}
 void TxDel (txt *t)
 {
   t->txstat = 0; DqDel(t->txustk); t->txustk = NIL;
@@ -132,8 +131,8 @@ void TxEmpt (txt *t)
   deq *d = t->txudeq; DqEmpt(t->txdstk);
                       DqEmpt(t->txustk); if (d) DqEmpt(d);
   t->txy = 0;
-  t->txudcptr = 0;   t->cx = t->tcx = 0;      TxMarks0(t);
-  t->txudlptr = 0;   t->cy = t->tcy = 0;  wndop(TW_EM, t);
+  t->txudcptr = t->txudlptr = 0; t->cx = t->tcx = 0;     TxMarks0(t);
+  t->txudfile = -1;              t->cy = t->tcy = 0; wndop(TW_EM, t);
 }
 /*- - - - - - - - - - - - - - - - - - - - Convert Ascii file string to tchar */
 #define isUTFcont(x) ((x & 0xC0) == 0x80)
@@ -284,9 +283,9 @@ small TxFRead (txt *t, tchar *tp)
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 tchar *TxInfo (wnd *w, large y, int *pl)      /* used for repaint in vip.cpp */
-{
+{                                             /* to get current char mim.cpp */
   txt *t = w->wtext;
-  if (!t || TxSetY(t, (y += w->wty)) == FALSE) { *pl = 0; return NIL; }
+  if (!t || TxSetY(t, y) == FALSE) { *pl = 0; return tcbuf; }
   else {
     tchar *tc;
     if (w == Lwnd && y == Ly) tc = Lebuf;

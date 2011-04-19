@@ -396,9 +396,11 @@ void MiInfoWin::paintEvent (QPaintEvent *)
   QPainter dc(this); int Y = sctw->Ty2qtY(0)+sctw->fontBaseline;
   QString info;                                      int dx, dy;
   if (infoType == MitCHARK && sctw->vp->cx >= 0) {
-    int len; 
-    tchar *pt = TxInfo(sctw->vp, sctw->vp->cy, &len) + sctw->vp->cx;
-    info.sprintf("U+%X", (uint)(*pt & AT_CHAR));
+    tchar tc;
+    if (TxSetY(sctw->vp->wtext, sctw->vp->wty+sctw->vp->cy))
+         tc = TxInfo (sctw->vp, sctw->vp->wty+sctw->vp->cy, &dx)[sctw->vp->cx];
+    else tc = 0;
+    info.sprintf("U+%X", (uint)(tc & AT_CHAR));
     dc.drawText(sctw->Tx2qtX(0), Y, info);
   }
   else if (BlockXYsize(&dx ,&dy)) {

@@ -85,9 +85,11 @@ extern txt * Ttxt; /* Редактируемый текст                     
 extern large Ty;   /* Y курсора в тексте      (real programmers use global   */
 extern small Tx;   /* X курсора в тексте      vars for most important stuff) */
 /*
- * Principal method for getting text info (for window re-paint):
+ * Positioning in text (returns FALSE if could not reach specified line) and
+ * principal method of getting text info (used for window re-paint):
  */
-tchar *TxInfo (wnd *, large y, int *len);                 /* defined in tx.c */
+BOOL   TxSetY(txt *t, large y);
+tchar *TxInfo(wnd *w, large y, int *len);                 /* defined in tx.c */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void vipPrepareSearch(); /* using patterns prepared by tesParse() - see te.h */
 int  vipFind(tchar *str,

@@ -389,12 +389,12 @@ comdesc tecmds[] =
   { TE_CDLIN,  tecdlin,    CA_LCUT |CA_CHANGE|CA_NEND }, /* - с удалением    */
   { LE_PASTE,  cpaste,              CA_CHANGE         }, /* вспомнить        */
 /*
- * Implemented in ud.c (declaration in "ud.h"), the same functions as in LE:
+ * Implemented in ud.c (declaration in "ud.h"), the same functions as in le.c
  */
-  { TE_UNDO,    leundo,    CA_CHANGE }, /* откатка                           */
-  { TE_UNUNDO,  leunundo,  CA_CHANGE }, /* откатка откатки                   */
-  { TE_SUNDO,   lesundo,   CA_CHANGE }, /* "медленная" откатка               */
-  { TE_SUNUNDO, lesunundo, CA_CHANGE }, /* "медленная" откатка откатки       */
+  { TE_UNDO,    leundo,    0 }, /* откатка (may set TS_CHANGE) */
+  { TE_UNUNDO,  leunundo,  0 }, /* откатка откатки             */
+  { TE_SUNDO,   lesundo,   0 }, /* "медленная" откатка         */
+  { TE_SUNUNDO, lesunundo, 0 }, /* "медленная" откатка откатки */
   { 0,0,0 }
 };
 comdesc *Tdecode (int kcode)  /*- - - - - - - - - - - - - - - - - - - - - - -*/

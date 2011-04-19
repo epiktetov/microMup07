@@ -234,7 +234,10 @@ static void tsundo (BOOL slow)
     genundo(-1);   undone++;
     if (undo_typ == UT_LOAD)  continue; // never stop at tundoload() block op
     if (slow || (utyp & U_MARK)) break; // but stop unless "slow" or at marker
-} }
+  }
+  if (t->txudcptr == t->txudfile) t->txstat &= ~TS_CHANGED;
+  else                            t->txstat |=  TS_CHANGED;
+}
 void leundo()  { tsundo(FALSE); }
 void lesundo() { tsundo(TRUE ); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -252,7 +255,10 @@ static void tsunundo (BOOL slow)
     genundo(1);    redone++;
     if (undo_typ == UT_LOAD) { undo_blocked =  TRUE;   // entering LE mode
                 EnterLEmode(); undo_blocked = FALSE; } //  (temp.block changes)
-} }
+  }
+  if (t->txudcptr == t->txudfile) t->txstat &= ~TS_CHANGED;
+  else                            t->txstat |=  TS_CHANGED;
+}
 void leunundo()  { tsunundo(FALSE); }
 void lesunundo() { tsunundo(TRUE ); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

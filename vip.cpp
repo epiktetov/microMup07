@@ -128,8 +128,8 @@ void vipRepaint(wnd *vp, QPainter& dc, MiScTwin *sctw, int x0, int x1,
   for (int y = y0; y <= y1; y++) {
     tchar buf[MAXLPAC];
     int len;
-    tchar *pt_line = TxInfo(vp, y, &len) + x0;
-                                    len -= x0;
+    tchar *pt_line = TxInfo(vp, y + vp->wty, &len) + x0;
+                                              len -= x0;
          if (len < 0)  len = 0;
     else if (len > wt) len = wt;
     //
@@ -142,7 +142,7 @@ void vipRepaint(wnd *vp, QPainter& dc, MiScTwin *sctw, int x0, int x1,
                    || cline.contains(vp->cx, vp->cy) ) {
       if (len > 0) memcpy(buf, pt_line, len * sizeof(tchar));
       if (len < wt) {
-        memset(buf+len, 0x20, (wt-len) * sizeof(tchar)); len = wt;
+        memset(buf+len, 0x20, (wt-len) * sizeof(tchar)); len = wt; // †††
       }
       if (cline.contains(vp->cx, vp->cy)) buf[vp->cx - x0] ^= vp->ctc;
       if (BlockMark && cline.intersects(BlockMarkRect)) {
@@ -295,13 +295,14 @@ void vipFocusOff (wnd *vp)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void vipActivate (wnd *vp)
 {
-  if (!tmLoad(vp->wtext)) return;
-  Ttxt = vp->wtext;
-  if (Twnd != NIL) { Twnd->wcx = Tx;
-                     Twnd->wcy = Ty; }
-  Tx = vp->wcx;
-  Ty = vp->wcy; clipRefocus(); Twnd = vp; // no vipFocus(Twnd) here!
-}
+  if (tmLoad(vp->wtext)) {
+    Ttxt = vp->wtext; if (Twnd != NIL) { Twnd->wcx = Tx;
+                                         Twnd->wcy = Ty; }
+                     Tx = vp->wcx;
+    if (TxSetY(Ttxt, Ty = vp->wcy) == FALSE) Ty = Ttxt->txy;
+    clipRefocus(); 
+    Twnd = vp; // no vipFocus(Twnd) here!
+} }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void vipGotoXY (int x, int y)           /* click in the active window (Twnd) */
 {

@@ -18,13 +18,14 @@ struct txt_tag
   deq  *txudeq;             /* Дек - буфер откатки                           */
   large txudcptr;           /* - указатель в буфере откатки                  */
   large txudlptr;           /* - граница строчной откатки                    */
+  large txudfile;           /* - положение откатки равное "текст не менялся" */
   small txredit;            /* Можно ли менять текст:                        */
 #define TXED_YES  0         /* - можно                                       */
 #define TXED_NO   1         /* - нельзя                                      */
 #define TXED_NONO 2         /* - совсем нельзя                               */
   small txlm, txrm;         /* Left margin / правая граница текста           */
   small txmarkx[TXT_MARKS]; /* Маркеры (установлены в ноль если не занято),  */
-  large txmarky[TXT_MARKS]; /* см. te(c|s)mark в файле te.c и TxMarks(0|Upd) */
+  large txmarky[TXT_MARKS]; /* см. te(c|s)mark в файле te.c и TxMarks0(tx.c) */
   wnd  *txwndptr;           /* Список окон, наложенных на текст              */
   small txlructr;           /* Счетчик для алгоритма выталкивания            */
   small txstat;             /* Биты слова-состояния текста:                  */
@@ -55,7 +56,7 @@ typedef struct dirstk_tag dirstk;
 struct wnd_tag 
 {
   small  wtx;   large wty;  /* координаты левого верхнего угла окна в тексте */
-  small  wcx;   large wcy;  /* курсор в связанном с окном тексте             */
+  small  wcx;   large wcy;  /* курсор в связанном с окном тексте (inactive)  */
   int cx, cy;   tchar ctc;  /* - оконные координаты курсора и аттрибуты      */
   small wsh,          wsw;  /* высота и ширина окна                          */
   txt              *wtext;  /* ссылка на описатель текста                    */

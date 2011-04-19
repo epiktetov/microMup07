@@ -197,7 +197,7 @@ void tmshell (int kcode)
 // Now insert the command (along with the prompt == current directory) into the
 // text and execute UNIX shell command... then check if any files were changed
 //
-  TxTIL (Ttxt, tcmdbuffer, tcmdbuflen); TxMarks0(Ttxt); Ty++;
+  TxTIL (Ttxt, tcmdbuffer, tcmdbuflen);   Ty++;
   TxDown(Ttxt);
   unixShell_in_Ttxt(cmdbuffer); tmCheckFiles();
 }

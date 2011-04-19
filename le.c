@@ -491,12 +491,12 @@ comdesc lecmds[] =
   { LE_CPCLOS, cpclose,  0                          }, /* запоминать сначала */
   { LE_CPOPEN, cpreopen, 0                          }, /* переоткрыть буфер  */
 /*
- * Implemented in ud.c (declaration in "ud.h"):
+ * Implemented in ud.c (declaration in "ud.h"), the same functions as in te.c
  */
-  { TE_UNDO,    leundo,    CA_CHANGE }, /* откатка                           */
-  { TE_UNUNDO,  leunundo,  CA_CHANGE }, /* откатка откатки                   */
-  { TE_SUNDO,   lesundo,   CA_CHANGE }, /* "медленная" откатка               */
-  { TE_SUNUNDO, lesunundo, CA_CHANGE }, /* "медленная" откатка откатки       */
+  { TE_UNDO,    leundo,    CA_CHANGE }, /* откатка (always set Lchange) */
+  { TE_UNUNDO,  leunundo,  CA_CHANGE }, /* откатка откатки              */
+  { TE_SUNDO,   lesundo,   CA_CHANGE }, /* "медленная" откатка          */
+  { TE_SUNUNDO, lesunundo, CA_CHANGE }, /* "медленная" откатка откатки  */
   { 0,0,0 }
 };
 comdesc lequitcmd[] =
