@@ -31,7 +31,7 @@ bool MacEvents::eventFilter (QObject*, QEvent *ev)
     else                               twStart (filename,    1); return true;
   } else                                                         return false;
 }
-# define mimFONTFACENAME "Monaco"
+# define mimFONTFACENAME "Menlo Regular"
 # define mimFONTSIZE  12
 # define menuBarHeight 0
   bool MiApp_useDIAGRAD = true;
@@ -40,7 +40,7 @@ bool MacEvents::eventFilter (QObject*, QEvent *ev)
   bool MiApp_useDIAGRAD = false;
 #endif
 #ifdef Q_OS_LINUX
-# define mimFONTFACENAME "Bitstream Vera Sans Mono"
+# define mimFONTFACENAME "DejaVu Sans Mono"
 # define mimFONTSIZE  10
 #endif
 #ifdef Q_OS_WIN
@@ -172,7 +172,7 @@ void MiFrame::makeFonts() // makes textFont and boldFont from MiApp_defaultFont
 {
   textFont = QFont(MiApp_defaultFont, MiApp_defFontSize);
 #if QT_VERSION > 0x040700
-  textFont.setStyleHint(QFont::TypeWriter, QFont::ForceIntegerMetrics);
+  textFont.setStyleHint(QFont::AnyStyle, QFont::ForceIntegerMetrics);
 #endif
 //+
 //  QFontMetrics fm = textFont;
@@ -420,7 +420,7 @@ MiConfigDlg::MiConfigDlg(QWidget *parent) : QDialog(parent)
 {
   fontButton = new QPushButton(tr("Font"));
   fontLabel  = new QLabel();
-  fontLabel->setMinimumWidth(120); setFontLabelText();
+  fontLabel->setMinimumWidth(150); setFontLabelText();
   fontAdjust = new QLineEdit();
   fontAdjust->setMaximumWidth(32);
   fontAdjust->setText(myPackAdj2string(MiApp_fontAdjOver, MiApp_fontAdjUnder));
@@ -461,9 +461,18 @@ bool MiConfigDlg::Ask()
 }
 void MiConfigDlg::selectFont() // - - - - - - - - - - - - - - - - - - - - - - -
 {
-  bool ok;   QFont refont = QFont (MiApp_defaultFont,      MiApp_defFontSize);
+  QFont refont = QFont(MiApp_defaultFont, MiApp_defFontSize);
+  bool ok;   
+#ifdef notdef_Q_OS_MAC_does_not_work
   setModal(false); refont = QFontDialog::getFont(&ok, refont, parentWidget());
-  setModal(true);
+  setModal(true);         // ^
+#elif defined(Q_OS_MAC)   // cannot select some fonts (like Menlo) with native
+  QString title = "Font";
+  refont = QFontDialog::getFont(&ok, refont, parentWidget(),
+                              title, QFontDialog::DontUseNativeDialog);
+#else
+  refont = QFontDialog::getFont(&ok, refont, parentWidget());
+#endif
   if (ok) { MiApp_defaultFont = refont.family();
             MiApp_defFontSize = refont.pointSize(); setFontLabelText(); }
 }
