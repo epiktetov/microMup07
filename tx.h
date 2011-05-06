@@ -5,8 +5,9 @@
 #define TX_H_INCLUDED
 
 txt *TxNew(BOOL qundo); void TxInit(),                       TxMarks0(txt *t);
-BOOL qTxUp  (txt *t);   void TxDel (txt *t), TxUp  (txt *t), TxTop   (txt *t);
-BOOL qTxDown(txt *t);   void TxEmpt(txt *t), TxDown(txt *t), TxBottom(txt *t);
+BOOL qTxTop   (txt *t); void TxDel (txt *t), TxUp  (txt *t), TxTop   (txt *t);
+BOOL qTxBottom(txt *t); void TxEmpt(txt *t), TxDown(txt *t), TxBottom(txt *t);
+void TxEnableSynt(txt *t, small clang);
 /*
  * Conversions between Ascii file string (UTF-8 encoding) and tchar string 
  *                                 returns destination size, in char/bytes
@@ -24,12 +25,12 @@ void TxFRep(txt *t, tchar *p);
 void TxIL  (txt *t,  char *line, small len), TxDL(txt *t), TxDEL_beg(txt *t);
 void TxTIL (txt *t, tchar *line, small len),               TxDEL_end(txt *t);
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-#define STKEXT    4096                    /* Оптимальный экстент для стеков  */
-#define UNDOEXT   4096                    /* Оптимальный экстент для откатки */
+#define STKEXT MAXLUP             /* Оптимальный экстент для файловых стеков */
+#define UNDOEXT  4096             /* - - для откатки и прочей мелочевки      */
 #define MSG_EOF "^^ end of "
 
-extern char    *afbuf;
-extern char    *txbuf;
+extern char   afbuf[];
+extern char   txbuf[];
 extern small tab_size;
 extern txt     *texts;
 /*---------------------------------------------------------------------------*/

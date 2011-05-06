@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07           Qt-based File System            | (c) Epi MG, 2007
+// МикроМир07           Qt-based File System            | (c) Epi MG, 2007,2011
 //------------------------------------------------------+--------------------*/
 #ifndef QFS_H_INCLUDED
 #define QFS_H_INCLUDED
@@ -21,21 +21,20 @@ enum QfsFtype { QftPSEUDO = 0, QftTEXT = 1, QftDIR = 2 };
 struct qfile_tag        /* mic.h defines 'typedef struct qfile_tag == qfile' */
 {
   enum QfsFtype ft;
-#ifndef __cplusplus
-};
-#else
-  QString  full_name;         /* Каноническое имя файла (with absolute path) */
-  QString path, name;         /* Отдельно path и собственно имя файла        */
-  qint64        size;         /* Размер файла в байтах                       */
-  QDateTime  updated;         /* Время последней модификации                 */
+#ifdef __cplusplus          /* Видно только в C++ коде:                      */
+  QString  full_name;       /*   Каноническое имя файла (with absolute path) */
+  QString path, name;       /*   Отдельно path и собственно имя файла        */
+  qint64        size;       /*   Размер файла в байтах                       */
+  QDateTime  updated;       /*   Время последней модификации                 */
   bool      writable;
+#endif
 };
-struct qtxtfile : public qfile_tag { QFile Qf; };
-struct qdirfile : public qfile_tag { QDir  QD; };
-
+#ifdef __cplusplus
 qfile *QfsDup (qfile *file);
 QDir  *QfsDir (qfile *file);
 QFile *QfsFile(qfile *file);
+struct qtxtfile : public qfile_tag { QFile Qf; };
+struct qdirfile : public qfile_tag { QDir  QD; };
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 qfile *QfsNew (QString filename, qfile *referer); /* create file descriptor  */
 int  QfsOpen  (qfile *file,       int open_mode); /* Open returns: 0 no file */

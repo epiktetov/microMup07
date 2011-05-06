@@ -53,8 +53,9 @@ void clipFocusOff()
 txt *LCtxt = NULL;           /* Текст-хранилище строк (и всего прочего тоже) */
 static tchar ccbuf[MAXLPAC]; /* Буфер запомненных символов (неполная строка) */
 static small cclen = 0;      /* Мощность буфера запомненных символов/слов    */
-static bool cpopen = false;
-static bool cpempt = true;
+static bool cpopen = false;  /* Буфер "открыт" (идет запоминание, добавлять) */
+static bool cpnocl = false;  /* Запрещено сохранение строк (запоминаем char) */
+static bool cpempt = true;   /* Буфер пустой -- гарантировано ничего там нет */
 static char clbuf[MAXLUP];
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static void cptinit (bool needContent)
@@ -78,7 +79,7 @@ static void CPempty (void)
 {
   cptinit(false); TxEmpt(LCtxt);
   cclen = 0;
-  cpopen = cpempt = true;
+  cpopen = cpempt = true; cpnocl = false;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static void CSsave1 (int X, int len, bool trim)  /* Save 1 line at given pos */
@@ -89,7 +90,7 @@ static void CSsave1 (int X, int len, bool trim)  /* Save 1 line at given pos */
     tchar tc = Lebuf[X++];
     ccbuf[cclen++] = tc;
     if (!tcharIsBlank(tc)) lns = cclen;
-  }
+  }                                                cpnocl = true;
   if (trim && lns && lns < cclen-1) cclen = lns+1; cpempt = false;
 }
 void lecchar()  { CSsave1(Lx++, 1, false);         }  /* le "copy character" */
@@ -110,10 +111,12 @@ static void CSclose ()
     TxTIL(LCtxt, ccbuf, cclen); cclen = 0; LCtxt->txstat |= TS_CHANGED;
 } }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/          
-static void tecutlin() 
-{
-  if (cpopen) CSclose();
-  else        CPempty();
+static void tecutlin() /* Защита от случайного нажатия на F3 вместо F4: если */
+{                      /* последнее запоминаемое было символы, откзатать (но */
+  if (cpopen) {        /*                            только 1 раз, выполнить */
+    if (cpnocl) { cpnocl = false; exc(E_LCUT); }  /*  затребованную операцию */
+    else CSclose(); }                             /*   если user настаивает) */
+  else   CPempty();
   clbuf[0] = CpSCH_NEW_LINE; int len = TxRead(Ttxt, clbuf+1);
   TxBottom(LCtxt);
   TxIL(LCtxt, clbuf, len+1); LCtxt->txstat |= TS_CHANGED; cpempt = false;
@@ -124,8 +127,8 @@ void tecdlin() { tecutlin(); TxDL(Ttxt); }
 void cpclose() { CSclose(); cpopen = false; }
 void cpreopen() 
 { 
-  cptinit(false);  TxBottom(LCtxt);
-  if (!qTxUp(LCtxt)) { TxUp(LCtxt);
+  cptinit(false);   TxBottom(LCtxt);
+  if (!qTxTop(LCtxt)) { TxUp(LCtxt);
     int len = TxRead(LCtxt, clbuf);
     if (len > 0 && clbuf[0] != CpSCH_NEW_LINE)
       cclen = aftotc(clbuf, len, ccbuf);
@@ -137,8 +140,8 @@ void cpreopen()
 
 static void toClipboard()
 {
-  CSclose(); TxTop(LCtxt); bool add_EOL = false; QString cbData;
-  while (! qTxDown(LCtxt)) {
+  CSclose();  TxTop(LCtxt); bool add_EOL = false; QString cbData;
+  while (!qTxBottom(LCtxt)) {
     if (add_EOL) cbData += (QChar)clipEOL;
     Lleng = TxTRead(LCtxt, Lebuf); 
     int dx = (Lebuf[0] == (tchar)CpSCH_NEW_LINE) ? 1 : 0;
@@ -182,9 +185,9 @@ static void pasteFromLCtxt (bool in_Ttxt) /* paste into Ttxt or current line */
        if (Lx <  Lxle) exc(E_EDTBEG);
   else if (Lx >= Lxre) exc(E_EDTEND);
   else {
-    if (in_Ttxt && qTxDown(Ttxt)) { //   Have to take care of inserting empty
-      if (Lwnd)   ExitLEmode();     //  line at the end-of-text (usually this
-      TxSetY(Ttxt, Ty); teIL();     // is done by LeCommand automatically)
+    if (in_Ttxt && qTxBottom(Ttxt)) { //  Have to take care of inserting empty
+      if (Lwnd)   ExitLEmode();       // line at the end-of-text (usually this
+      TxSetY(Ttxt, Ty); teIL();       // is done by LeCommand automatically)
     }
     if (Lwnd == NULL) EnterLEmode();                  // inserting one-by-one
     cclen = aftotc(clpos, len, ccbuf);                // to enable slow undo
@@ -201,7 +204,7 @@ void cpaste()                              /* Paste: called either from te.c */
   if (cpempt) exc(E_NOOP); // (first paste resets ccopen, so the second one
   int oldLx = Lx;          // gets data from Clipboard instead of LCtxt)
   cptinit(true);
-  cpclose(); TxTop(LCtxt); if (qTxDown(LCtxt)) return;
+  cpclose(); TxTop(LCtxt); if (qTxBottom(LCtxt)) return;
 //
 // In entering-argument mode, paste only the content of first line (disabling
 // full-line paste) and silently ignore the rest:
@@ -209,7 +212,7 @@ void cpaste()                              /* Paste: called either from te.c */
   if (leARGmode) pasteFromLCtxt(false);
   else {
     pasteFromLCtxt(true);     // First stored line may be pasted either as line
-    while (!qTxDown(LCtxt)) { // or as characters, exit LE mode for the rest of
+    while(!qTxBottom(LCtxt)){ // or as characters, exit LE mode for the rest of
       if (Lwnd) ExitLEmode(); // save buffer (if paste isn't finished) and move
       Tx = oldLx;     Ty++;   // cursor to saved position one line below, rinse
       pasteFromLCtxt(true);   // and repeat pasting.

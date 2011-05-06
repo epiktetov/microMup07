@@ -3,7 +3,7 @@
 //------------------------------------------------------+--------------------*/
 #ifndef MIC_H_INCLUDED  /* Old "nm.h" (c) Attic 1989-90, (c) EpiMG 1998-2001 */
 #define MIC_H_INCLUDED
-#define microVERSION "4.4.25" // released Sun Apr 24 20:00 PDT 2011
+#define microVERSION "4.5" // released Thu May 5 22:00 PDT 2011
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -29,21 +29,30 @@ typedef int   BOOL;
 #define NIL      ((void*)0) /* указатель (same as standard NULL but shorter) */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 typedef long tchar;                           /* Unicode символ с атрибутами */
-#define AT_ALL     0x03FF0000
+#define AT_ALL     0x3FFF0000
 #define AT_CHAR    0x0000FFFF /* собственно Unicode символ (use only 16-bit) */
 #define AT_BOLD    0x00010000 /* Bold                               == KxTS  */
-#define AT_LIGHT   0x00020000 /* light (blue), used for prompts     == KxBLK */
-#define AT_ITALIC  0x00040000 /* italic (red), incorrect Unicode    == KxTMP */
+#define AT_PROMPT  0x00020000 /* prompts text (def. dark blue text) == KxBLK */
+#define AT_REGEX   0x00040000 /* indicates regex search (dark red)  == KxTMP */
 #define AT_SUPER   0x00080000 /* sky blue (special chars) forces Insert mode */
 #define AT_UNDERL  0x00100000 /* reserved for underline                      */
 #define AT_IN_FILE 0x001F0000 /* <---- mask of attributes saved in file ---- */
-#define AT_MARKFLG 0x00200000 /* numbered marker flag (brown gradient)       */
+#define AT_MARKFLG 0x00200000 /* numbered marker flag (brown gradient) =next */
+#define AT_INVERT  0x00200000 /* when added to AT_BG_CLR => indicates cursor */
 #define AT_BG_CLR  0x00c00000 /* background color:                           */
 #define AT_BG_RED  0x00400000 /*  = red (cannot edit / "temporary" block)    */
 #define AT_BG_GRN  0x00800000 /*  = green (can edit, text unchanged)         */
 #define AT_BG_BLU  0x00c00000 /*  = blue (text changed / regular block mark) */
-#define AT_INVERT  0x01000000 /* when added to AT_BG_CLR => indicates cursor */
+#define AT_BRIGHT  0x01000000 /* bright background (for error/matched marks) */
+#define AT_ERROR   0x01400000 /* - error mark                                */
+#define AT_MARKOK  0x01800000 /* - regular (ok) mark                         */
 #define AT_TAB     0x02000000 /* special attribute to preserve TABs in files */
+#define AT_QUOTE   0x04000000 /* "smart" quotes, shown as ‘x’ and “string”   */
+#define AT_QOPEN   0x04000000 /* - open             (kept in text as typed,  */
+#define AT_QCLOSE  0x05000000 /* - close             no changes made without */
+#define AT_KEYWORD 0x08000000 /* keywords                  user's permission)*/
+#define AT_COMMENT 0x10000000 /* comments                                    */
+#define AT_BADCHAR 0x20000000 /* incorrect Unicode char (moved +0x60/+0x350) */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #define AF_NONE    "\xCA\x80" /*   file representation for some attributes   */
 #define AF_LIGHT   "\xCA\x82" /*   (used to set nice prompt for LenterARG)   */
@@ -59,14 +68,13 @@ extern BOOL dosEOL; /* - DOS/Windows style for end-of-line (CR/LF вместо C
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #define MAXPATH    400                     /* Некоторые магические константы */
 #define MAXDIRSTK   12
-#define UBUFSIZ  32768 /* Буфер откатки                */
-#define UDHQUOTA 16384 /* Квота откатки (на один файл) */
+#define MAXSYNTBUF  42 /* Буфер для synt checker                             */
+#define UBUFSIZ  32780 /* Буфер откатки >= max(2*MAXLUP,2*tchar*MAXLPAC)+eps */
+#define UDHQUOTA 16384 /* Квота откатки (на один файл) только если нет места */
 #define UDLQUOTA  8192
-#define MAXFILES    64
-#define MAXDEQS    200 /*                    at least (MAXFILES*3+something) */
-#define MAXTXRM    360 /* Максимальная ширина текта в редакторе              */
-#define MAXLUP   32768 /* Максимальная длина строки в файле                  */
-#define MAXLPAC  16380 /* Максимальная длина строки в редакторе (le.c, te.c) */
+#define MAXTXRM    360 /* Максимальная ширина текта в редакторе (default)    */
+#define MAXLUP   16384 /* Максимальная длина строки в файле                  */
+#define MAXLPAC   4096 /* Максимальная длина строки в редакторе (le.c, te.c) */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #define Mk_IsCHAR(x) (' ' <= x && x < 0x10000) /* only 16bit Unicode allowed */
 #define Mk_IsSHIFT(x) (Qt::Key_Shift <= x && x < Qt::Key_F1)
@@ -95,7 +103,7 @@ extern BOOL dosEOL; /* - DOS/Windows style for end-of-line (CR/LF вместо C
                          /*--------------- События редактора текста и прочее */
 #define E_NOOP      14   /* Нечего делать (команда неприминима в этом месте) */
 #define E_BADPRM    15   /* Недопустимое значение параметра / повторителя    */
-#define E_LCUT      16   /* Запоминание строк в файле NDTSAV                 */
+#define E_LCUT      16   /* Запоминание строк в файле NDTSAV или после chars */
 #define E_MOVUP     17   /* Верхняя граница текста                           */
 #define E_MOVDOWN   18   /* Нижняя зраница текста                            */
 #define E_SETY      19   /* Позиционирование за границы текста               */

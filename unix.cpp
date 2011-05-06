@@ -43,7 +43,7 @@ void x2enter (void)           /* command line enter (2) ввести коман�
     tcmdbuflen += new_prompt_len - tcmdpromptlen;
     tcmdpromptlen = new_prompt_len;
   }
-  qstr2tcs(prompt,          tcmdbuffer,       AT_LIGHT);
+  qstr2tcs(prompt,          tcmdbuffer,      AT_PROMPT);
   aftotc(AF_LIGHT "->", -1, tcmdbuffer+tcmdpromptlen-2);
 /*
  * If invoked from command window, copy the current line (excluding old prompt)
@@ -51,7 +51,7 @@ void x2enter (void)           /* command line enter (2) ввести коман�
  */
   if ((Ttxt->txstat & TS_PSEUDO) && tleread()) {
     tchar      *p, *pend;
-    for (p = Lebuf, pend = p+Lleng; p < pend && (*p & AT_LIGHT); p++) ;
+    for (p = Lebuf, pend = p+Lleng; p < pend && (*p & AT_PROMPT); p++) ;
     if (p < pend) {
       blktmov(p, tcmdbuffer + tcmdpromptlen, pend-p);
       tcmdbuflen = tcmdpromptlen + (pend-p);
@@ -63,7 +63,7 @@ void x2enter (void)           /* command line enter (2) ввести коман�
 static void appendText (char *text, char *tend)
 {
 #ifdef notdef_may_be_later
-  if (qTxDown(Ttxt)) { teIL();  Lleng = 0; }  // insert new empty line here,
+  if (qTxBottom(Ttxt)) { teIL(); Lleng = 0; } // insert new empty line here,
   else       Lleng = TxTRead(Ttxt, Lebuf);    // or get partially filled one
   Lleng += aftotc(text, tend-text, Lebuf+Lleng);
   if (Lleng > Twnd->wsw) {
@@ -75,7 +75,7 @@ static void appendText (char *text, char *tend)
   }
   TxTRep(Ttxt, Lebuf, Tx = Lleng); }
 #else
-  if (qTxDown(Ttxt)) TxIL(Ttxt, text, Tx = tend-text);
+  if (qTxBottom(Ttxt)) TxIL(Ttxt, text, Tx = tend-text);
   else {
     Lleng = TxTRead(Ttxt, Lebuf);
     Lleng += aftotc(text, tend-text, Lebuf+Lleng);
@@ -225,7 +225,7 @@ int tmGrep (int kcode)                                               /* grep */
 static int scan_lines_up (char c1st, char *line_buffer)       /* SyncPos(tm) */
 {
   int len, steps = 0;
-  do {                         if (qTxUp(Ttxt)) return -1;
+  do {                        if (qTxTop(Ttxt)) return -1;
     TxUp(Ttxt);
     if ((len = TxRead(Ttxt, line_buffer)) <= 0) return -1;
     steps++;
@@ -240,8 +240,8 @@ int tmSyncPos (void)
   small len;               large file_pos, line_pos =  0, foo;
   wnd *other_wnd = NULL;
 
-        TxSetY(Ttxt,          Ty); if (qTxDown(Ttxt)) return -1;
-  len = TxRead(Ttxt, line_buffer); if (len <= 0)      return -1;
+        TxSetY(Ttxt,          Ty); if (qTxBottom(Ttxt)) return -1;
+  len = TxRead(Ttxt, line_buffer); if (len <= 0)        return -1;
   line_buffer[len] = 0;
   filename[0]      = 0;
 /*                                     ! NOTE: only works with ASCII filenames

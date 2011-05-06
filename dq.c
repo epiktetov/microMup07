@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07       Деки                                | (c) Epi MG, 2007-2008
+// МикроМир07       Деки                                | (c) Epi MG, 2007,2011
 //------------------------------------------------------+----------------------
 * Original "dq.c" (c) Attic 1989-91
 *                 (c) EpiMG 1997-2001
@@ -39,36 +39,23 @@ static deq deq0, *freedeqs = NIL, *gapdeq, *lockdeq;
 static BOOL  DqReserveExt = TRUE;
 static long  DqReqMem; /* required memory for extend_gap(), used by qFilSwap */
 /*---------------------------------------------------------------------------*/
-void DqInit(char *membuf, long bufsize)      /* create "anti-deq" that cover */
-{                                            /* memory the other deqs cannot */
-  deq0.dprev = &deq0;  deq0.dend = membuf;   /* use (it has reverse beg/end) */
+void DqInit(char *membuf, long bufsize)     /* create "anti-deq" that covers */
+{                                           /* memory that other deqs cannot */
+  deq0.dbext = 0; gapdeq = NIL;             /* use (it has reverse beg/end)  */
+  deq0.deext = 0;
+  deq0.dprev = &deq0;  deq0.dend = membuf;
   deq0.dnext = &deq0;  deq0.dbeg = membuf+bufsize;
-  deq0.dbext = 0;
-  deq0.deext = 0; gapdeq = NIL;
-}
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void DqNewBuf()
-{
-  deq *p = (deq*) GetMain(MAXDEQS * sizeof(deq)), *pprev = NIL;
-  int i;
-  for (p += MAXDEQS, i = MAXDEQS; i--; pprev = p) {
-    --p;
-    p->dnext = pprev;
-  }
-  freedeqs = p;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 deq *DqNew (small typ, small bext, small eext)
 {
-  deq *d,  *dn; if (freedeqs == NIL) DqNewBuf();
-  d = freedeqs;
-      freedeqs = d->dnext;
-  dn = deq0.dprev;
-  d->dprev = dn;     dn->dnext = d;
-  d->dnext = &deq0; deq0.dprev = d; d->dbeg = d->dend = dn->dend;
-  d->dtyp  = typ;
-  d->dbext = bext;
-  d->deext = eext; return d;
+  deq *d; if (freedeqs) { d = freedeqs; freedeqs = d->dnext; }
+          else            d = (deq*)GetMain(sizeof(deq));
+  deq *dn = deq0.dprev;
+  d->dprev = dn;
+  dn->dnext = d;                    d->dtyp  = typ;
+  d->dnext = &deq0; deq0.dprev = d; d->dbext = bext;
+  d->dbeg = d->dend = dn->dend;     d->deext = eext; return d;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 BOOL DqDel (deq *d)
@@ -138,9 +125,9 @@ static int extend_gap (deq *d, long len, BOOL move_previous)
   } }
   lockdeq = NIL; gapdeq = NIL; DqReserveExt = TRUE; return 0;
 }
-static void extgap (deq *d, long len, BOOL qpr)
+void extgap (deq *d, long len, BOOL move_previous)
 {
-  if (extend_gap(d, len, qpr) < 0) exc(E_NOMEM);
+  if (extend_gap(d, len, move_previous) < 0) exc(E_NOMEM);
 }
 /*---------------------------------------------------------------------------*/
 void DqAddB (deq *d, char *data, int len)
@@ -156,7 +143,7 @@ void DqAddB (deq *d, char *data, int len)
   }
   else {
     int real_len = (len+1) & (~1); 
-    extgap(d, real_len+4, TRUE);
+    extgap (d, real_len+4,  TRUE);
     d->dbeg -= real_len+4;   pb  = d->dbeg;    *(small*)pb = len;
     blkmov(data, pb+2, len); pb += real_len+2; *(small*)pb = len;
 } }
@@ -165,10 +152,8 @@ void DqAddE (deq *d, char *data, int len)
 {
   char *pb;
   if (d->dtyp == DT_ASC) {
-    if (dosEOL) {
-      extgap(d, len+2, FALSE);
-      pb = lblkmov(data, d->dend, len); *pb++ = CR; *pb++ = LF;
-    }
+    if (dosEOL) { extgap(d, len+2, FALSE);
+                  pb = lblkmov(data, d->dend, len); *pb++ = CR; *pb++ = LF; }
     else { 
       extgap(d, len+1, FALSE);
       pb = lblkmov(data, d->dend, len); *pb++ = LF;
@@ -243,21 +228,6 @@ int DqGetE (deq *d, char *out)
   d->dend -= real_len;                                 return len;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void DqMoveBtoE (deq *from, deq *to)
-{
-  int len, real_len; extgap(to, MAXLUP, TRUE);
-  {
-    char *pb = DqLookupForw(from, 0, &len, &real_len);
-    DqAddE(to, pb, len);     from->dbeg  +=  real_len;
-} }
-void DqMoveEtoB (deq *from, deq *to)
-{
-  int len, real_len; extgap(to, MAXLUP, FALSE);
-  {
-    char *pb = DqLookupBack(from, DqLen(from), &len, &real_len);
-    DqAddB(to, pb, len);                 from->dend -= real_len;
-} }
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void DqEmpt (deq *d) { if (d->dbext < d->deext) d->dend = d->dbeg;
                        else                     d->dbeg = d->dend; 
 }                                                                   
@@ -330,12 +300,12 @@ BOOL tmswap (BOOL freedesc)
 {
   small *pcode = freedesc ? descswr : memswr, lrum, mask;
   txt *t, *tm;
-  for (; (mask = *pcode++); pcode++) {    /* Применим очередное правило      */
-    for (;;) {                            /*   для каждого подходящего файла */
-      for (t = texts, tm = NIL, lrum = 0; t; t = t->txnext)
-       if ((t->txstat & ~(TS_NEW|TS_PSEUDO)) == mask && t->txlructr > lrum) {
-         tm = t; lrum = t->txlructr;
-      }
+  for (; (mask = *pcode++); pcode++) { /* Применим очередное правило... */
+    for (;;) {
+      for (t = texts, tm = NIL, lrum = 0; t; t = t->txnext) {
+        if ((t->txstat & ~(TS_NEW|TS_PSEUDO)) == mask && t->txlructr > lrum) {
+          tm = t; lrum = t->txlructr;
+      } }
       if ((t = tm) == NIL) break; /* самого подходящего не нашлось */
       lrum = *pcode;
       if (lrum & S_SFILE) {

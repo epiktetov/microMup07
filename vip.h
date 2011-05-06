@@ -14,6 +14,7 @@ wnd *vipSplitWindow(wnd *wbase,                 int kcode_XFORK);
 bool vipFreeWindow (wnd *wnd);
 wnd *vipFindWindow (wnd *wbase, int kcode_XWINDOW);
 void vipUpdateWinTitle(wnd *w);
+void vipCleanupWindow (wnd *w);        /* <- called from MiScTwin destructor */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 extern "C" {
 #endif
@@ -32,7 +33,7 @@ extern BOOL BlockTemp;       /* block is "temporary"                         */
 extern wnd *windows;  /* <-- used in tm.c to loop through all active windows */
 #ifdef MIM_H_INCLUDED /*- - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 /* 
- * Repaint client repaint in text coordinates (inclusive):
+ * Repaint client area in text coordinates (inclusive, i.e. y0=y1 => one line):
  */
 void vipRepaint(wnd *vp, QPainter& dc, MiScTwin *sctw, int x0, int x1,
                                                        int y0, int y1);
@@ -44,19 +45,18 @@ extern int Scrolling; // 0 = no, negative = scrolling up, positive = down
  * surprisingly, still have to rely on this in МикроМир07 on wxGTK, since text
  * drawing is way too slow
  */
-extern void wndop (small op, txt *t); /* Показать изменение текста:    */
-#define TW_EM  0                      /* - text empty                  */
-#define TW_IL  1                      /* - insert line                 */
-#define TW_DL  2                      /* - delete line                 */
-#define TW_RP  3                      /* - replace                     */
-#define TW_ALL 4                      /* redraw all (too many changes) */
+extern void wndop (small op, txt *t); /* Показать изменение текста:     */
+#define TW_EM  0                      /* - text empty                   */
+#define TW_IL  1                      /* - insert line                  */
+#define TW_DL  2                      /* - delete line                  */
+#define TW_RP  3                      /* - replace current line         */
+#define TW_DWN 4                      /* - redraw down the current line */
+#define TW_ALL 5                      /* redraw all (too many changes)  */
 
-extern void wrdrw  (wnd *w);  /* Перерисовать окно wxmin/wymin - wxmax/wymax */
-extern void wroll  (wnd *w);  /* Ролировать окно wx/ymin - wx/ymax на wdx/dy */
-extern void wredraw(wnd *w);
-extern void wadjust(wnd *w, int x, int y);
-
-extern int wxmin, wxmax, wymin, wymax, wdx, wdy;
+extern void wadjust (wnd *vp, int tx, int ty);
+void vipRedrawLine  (wnd *vp,         int ty);
+void vipRedrawWindow(wnd *vp);
+void vipRedraw      (wnd *vp, int tx, int ty, int width, int height);
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void vipReady();
 void vipBell();

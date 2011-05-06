@@ -23,6 +23,7 @@ small Lxle, Lxre;         /* левая/правая граница для ре�
 large Ly;                 /* Y строки в тексте (для окна)                    */
 small Lx;                 /* X курсора в строке (а не в окне!)               */
 BOOL  LeInsMode;          /* Режим вставки (если 0, то режим замены)         */
+BOOL  Lclang;             /* Язык редактируемого текста (из Ttxt->clang)     */
 BOOL  Lredit;             /* Можно менять строку                             */
 BOOL  Lchange;            /* Строка изменялась                               */
 txt  *Ltxt;               /* Текст, в который сливается откатка              */
@@ -51,9 +52,9 @@ void tleload (void)                                /* load LE line from text */
   Ltxt = Ttxt; Lx = Tx; Lxlm = Lxle = Ttxt->txlm;
   Lwnd = Twnd; Ly = Ty; Lxrm = Lxre = Ttxt->txrm; 
   Lleng = TxFRead(Ttxt, Lebuf);
-  Lredit = qTxDown(Ttxt) ? FALSE : (Ttxt->txredit == TXED_YES);
+  Lredit = qTxBottom(Ttxt) ? FALSE : (Ttxt->txredit == TXED_YES);
   Lchange = FALSE;
-  tundoload(Ttxt);
+  tundoload(Ttxt); Lclang = Ttxt->clang;
 }
 void EnterLEmode (void) { TxSetY(Ttxt, Ty); tleload(); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -64,14 +65,16 @@ void tleunload (void)                              /* unload LE line to text */
     Tx = Lx;
     if (Lchange) { TxSetY(Ttxt, Ty);
                    TxTRep(Ttxt, Lebuf, Lleng); Ttxt->txstat |= TS_CHANGED; }
+    else
+      if (Lclang) vipRedrawLine(Twnd, Ty - Twnd->wty);
 } }
 void ExitLEmode (void) { if (leARGmode) LenterARGcomplete(0);
                          else                    tleunload(); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 BOOL tleread(void)    /* read Lebuf from text (read-only), true if non-empty */
 {
-           TxSetY (Ttxt, Ty); if (qTxDown(Ttxt)) return FALSE;
-  Lleng  = TxTRead(Ttxt, Lebuf);                 return (Lleng > 0);
+           TxSetY (Ttxt, Ty); if (qTxBottom(Ttxt)) return FALSE;
+  Lleng  = TxTRead(Ttxt, Lebuf);                   return (Lleng > 0);
 }
 /*---------------------------------------- Базовый уровень строчных операций */
 void blktspac (tchar *p, small len)
@@ -111,22 +114,21 @@ void llmove (small xl, small xr, small dx, tchar *ns) /* xl - start position */
       lefill  (Lebuf+xr+dx, -dx, ns);
   } }
   Lleng = leleng();
-  wxmin = (small)(xl - Lwnd->wtx); wxmax = (small)(xr - Lwnd->wtx); wdx = dx;
-  wymin = (small)(Ly - Lwnd->wty); wymax = (small)(wymin + 1);      wdy = 0;
-  wroll(Lwnd);
+  if (Lclang)
+       vipRedrawLine(Lwnd,                 Ly - Lwnd->wty          );
+  else vipRedraw    (Lwnd, xl - Lwnd->wtx, Ly - Lwnd->wty, xr-xl, 1);
 }
 void ledeol();    /* == llmove(Lx, Lxre, REPLACE, NIL); used in leLLCE below */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static void llchar (tchar lchar)
 {
-  small x = Lx;
-  lundoadd(Ltxt, x, x+1, REPLACE, Lebuf+x, &lchar);
+  small x = Lx; lundoadd(Ltxt, x, x+1, REPLACE, Lebuf+x, &lchar);
 
   if ((Lebuf[x++] = lchar) != ' ') { if (Lleng <  x) Lleng = x;        }
   else                             { if (Lleng == x) Lleng = leleng(); }
-
-  wxmin = (small)(Lx - Lwnd->wtx); wxmax = wxmin + 1;
-  wymin = (small)(Ly - Lwnd->wty); wymax = wymin + 1; wrdrw(Lwnd);
+  if (Lclang) 
+       vipRedrawLine(Lwnd,                 Ly - Lwnd->wty     );
+  else vipRedraw    (Lwnd, Lx - Lwnd->wtx, Ly - Lwnd->wty, 1,1);
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static void leic2 (tchar lchar) /* low-level character insert and char entry */
@@ -305,20 +307,13 @@ static int leKBCode[2] = { TE_CR, TE_RCR }; /*-------------------------------*/
 int leOptFlags, leOptMode;
 txt *Atxt = NIL;                            /* Псевдо-текст для ввода строки */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-static void redrawLwnd()
-{
-  wadjust(Lwnd, 0, Ly);
-  wxmin = 0;              wxmax = Lwnd->wsw; 
-  wymin = Ly - Lwnd->wty; wymax = wymin + 1; wrdrw  (Lwnd);
-}
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static void laSetOption (int option)
 {
   const char *smode = "..", *imode = NIL; int i;
   switch (option) {
   case LeARG_STANDARD:   Lattr = 0;         smode = "st"; break;
-  case LeARG_REGEXP:     Lattr = AT_ITALIC; smode = "re"; break;
-  case LeARG_WILDCARD:   Lattr = AT_LIGHT;  smode = "wc"; break;
+  case LeARG_WILDCARD:   Lattr = AT_PROMPT; smode = "wc"; break;
+  case LeARG_REGEXP:     Lattr = AT_REGEX;  smode = "re"; break;
   case LeARG_IGNORECASE:
     if (leOptMode & LeARG_IGNORECASE) imode = "cs";
     else                              imode = "ic";
@@ -331,8 +326,10 @@ static void laSetOption (int option)
   Lebuf[2] = (Lebuf[2] & AT_ALL) + smode[1];
   for (i = Lxlm; i < Lleng; i++)
     if (!(Lebuf[i] & AT_SUPER))
-      Lebuf[i] = Lattr | (Lebuf[i] & ~(AT_ITALIC+AT_LIGHT));
+      Lebuf[i] = Lattr | (Lebuf[i] & ~(AT_PROMPT|AT_REGEX));
 }
+static void redrawLwnd() { wadjust  (Lwnd, 0, Ly);
+                           vipRedraw(Lwnd, 0, Ly - Lwnd->wty, Lwnd->wsw, 1); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void LenterARG(tchar *buf, int *bufLen, /* buffer for argument & its length  */
                            int promLen, /* len of prompt (in buffer already) */
@@ -401,8 +398,8 @@ static void LeHistorySelect (int delta)
     blktmov(leHistory[cPos]+1, Lebuf+Lxle, len);
     blktspac(Lebuf+Lleng, MAXLPAC-Lleng);
     if (Lleng > Lxle) {
-           if (Lebuf[Lxle] & AT_LIGHT)  laSetOption(LeARG_WILDCARD);
-      else if (Lebuf[Lxle] & AT_ITALIC) laSetOption(LeARG_REGEXP);
+           if (Lebuf[Lxle] & AT_PROMPT) laSetOption(LeARG_WILDCARD);
+      else if (Lebuf[Lxle] & AT_REGEX)  laSetOption(LeARG_REGEXP);
       else                              laSetOption(LeARG_STANDARD);
   } }
   else vipBell();
@@ -416,8 +413,8 @@ static void LenterARGcomplete (int rcode)
                  *leResARGlen = Lleng;  Lattr     = 0;
   blktmov (Lebuf, leResARG, Lleng);
   if (leHistory) LeHistorySave();
-  wxmin = 0;              wxmax = Twnd->wsw;  Lwnd = NIL;
-  wymin = Ly - Twnd->wty; wymax = wymin + 1; wrdrw(Twnd);
+  Lwnd = NIL;
+  vipRedraw(Twnd, 0, Ly - Twnd->wty, Twnd->wsw, 1);
 
   KbCode = (rcode == TE_CR)  ? leKBCode[0] :
            (rcode == TE_RCR) ? leKBCode[1] : rcode;

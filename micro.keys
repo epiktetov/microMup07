@@ -439,11 +439,10 @@ a_((micom_enum)0x2122, mod_ALT+'2',           0) /* ™ */
 a_((micom_enum)0x2039, mod_ALT+mod_SHIFT+'#', 0) /* ‹ */
 a_((micom_enum)0x203A, mod_ALT+mod_SHIFT+'$', 0) /* › */
 a_((micom_enum)0x00A7, mod_ALT+'6',           0) /* § */
-a_((micom_enum)0x00B6, mod_ALT+'7',           0) /* ¶ */
+a_((micom_enum)0x2021, mod_ALT+mod_SHIFT+'&', 0) /* ‡ */
 a_((micom_enum)0x2022, mod_ALT+'8',           0) /* • */
 a_((micom_enum)0x00B0, mod_ALT+mod_SHIFT+'*', 0) /* ° */
 a_((micom_enum)0x2013, mod_ALT+'-',           0) /* – */
-a_((micom_enum)0x2260, mod_ALT+'=',           0) /* ≠ */
 a_((micom_enum)0x00B1, mod_ALT+mod_SHIFT+'+', 0) /* ± */
 a_((micom_enum)0x00AE, mod_ALT+'R',           0) /* ® */
 a_((micom_enum)0x2020, mod_ALT+'T',           0) /* † */
@@ -457,12 +456,17 @@ a_((micom_enum)0x2019, mod_ALT+mod_SHIFT+'}', 0) /* ’ */
 a_((micom_enum)0x00AB, mod_ALT+'\\',          0) /* « */
 a_((micom_enum)0x00BB, mod_ALT+mod_SHIFT+'|', 0) /* » */
 a_((micom_enum)0x00A9, mod_ALT+'G',           0) /* © */
+a_((micom_enum)0x2206, mod_ALT+'J',           0) /* ∆ */
+a_((micom_enum)0xF8FF, mod_ALT+mod_SHIFT+'K', 0) /*  */
 a_((micom_enum)0x2026, mod_ALT+';',           0) /* … */
+a_((micom_enum)0x2248, mod_ALT+'X',           0) /* ≈ */
 a_((micom_enum)0x221A, mod_ALT+'V',           0) /* √ */
+a_((micom_enum)0x25CA, mod_ALT+mod_SHIFT+'V', 0) /* ◊ */
 a_((micom_enum)0x00B5, mod_ALT+'M',           0) /* µ */
 a_((micom_enum)0x2264, mod_ALT+',',           0) /* ≤ */
 a_((micom_enum)0x2265, mod_ALT+'.',           0) /* ≥ */
 a_((micom_enum)0x00F7, mod_ALT+'/',           0) /* ÷ */
+a_((micom_enum)0x00BF, mod_ALT+mod_SHIFT+'?', 0) /* ¿ */
 #endif
 a_(TK_NONE, mod_ALT+Mk_PAD_PLUS,  0)
 a_(TK_NONE, mod_ALT+Mk_PAD_MINUS, 0)

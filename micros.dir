@@ -13,10 +13,13 @@ Text & Window Manager                                          |twm.h
 UNIX-specific stuff and tmSyncPos                              |unix.h
                                                                |unix.cpp
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -|- - - - - - - -
-ViewPort (interface between wx/C++ and legacy C code) and some |vip.h
-     other stuff used in both C and C++ code (like QString ops)|vip.cpp
 Clipboard (using QClipboard) and Char/Line Storage operations, |clip.h
                                       plus block copy and stuff|clip.cpp
+Syntax checker / text colorizer                                |synt.h
+                                                               |synt.cpp
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -|- - - - - - - -
+ViewPort (interface between wx/C++ and legacy C code) and some |vip.h
+     other stuff used in both C and C++ code (like QString ops)|vip.cpp
 ---------------------------------------------------------------|---------------
 Qt project file, adds microMir.icns micros.icns micons.psd etc |qtmim.pro
 Desktop file for Linux, adds qtmim.png                         |qtmim.desktop
@@ -34,11 +37,12 @@ Line Editor                                                    |le.h
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -|- - - - - - - -
 Texts -- Тексты                                                |tx.h
                                                                |tx.c
-Деки                                                           |dq.h
+Деки (deques) для Tx и Undo                                    |dq.h
                                                                |dq.c
 Откатка - Undo                                                 |ud.h
                                                                |ud.c
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -|- - - - - - - -
 runtime (memory management and string manipulation functions)  |rt.c
 ---------------------------------------------------------------|---------------
+Keywords for various languages (currently only C/C++)          |keywords.txt
                                                                |test.txt

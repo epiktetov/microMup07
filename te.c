@@ -60,7 +60,7 @@ void tecentr()             /* Esc NN Ctrl+E => В строку с номером
   if (KbRadix != 0) qsety(KbCount ? KbCount-1 : 0); 
   else {
     wadjust(Twnd, Tx, Ty); whh = (Twnd->wsh-1) >> 1; y = my_max(Ty-whh, 0);
-    wadjust(Twnd, Tx,  y); while (!qTxDown(Ttxt) && whh--) TxDown(Ttxt);
+    wadjust(Twnd, Tx,  y); while (!qTxBottom(Ttxt) && whh--)  TxDown(Ttxt);
     wadjust(Twnd, Tx, Ttxt->txy);
 } }
 /*---------------------------------------------------------------------------*/
@@ -118,8 +118,8 @@ void teslin() { teslice(TRUE);  }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tenblin()                               /* merge |like█  --> |like█this */
 {                                            /*       |this       |          */
-  int len;  Lleng = TxFRead(Ttxt, Lebuf);
-  TxDown(Ttxt); if (qTxDown(Ttxt)) exc(E_LPASTE);
+  int len;   Lleng = TxFRead(Ttxt, Lebuf);
+  TxDown(Ttxt); if (qTxBottom(Ttxt)) exc(E_LPASTE);
   len = TxTRead(Ttxt, lfbuf);
   len = lstrlen(my_min(len, Ttxt->txrm), lfbuf);
   if (Tx + len > Ttxt->txrm) exc(E_LPASTE);
@@ -133,8 +133,8 @@ void tenslin()  /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   else {
     Lleng = TxFRead(Ttxt, Lebuf);
     TxDL(Ttxt);
-    if (qTxDown(Ttxt)) {  TxTIL(Ttxt, Lebuf, Lleng); exc(E_LPASTE); }
-    TxFRead(Ttxt, lfbuf); blktmov(Lebuf, lfbuf, Tx);
+    if (qTxBottom(Ttxt)) { TxTIL(Ttxt, Lebuf, Lleng); exc(E_LPASTE); }
+    TxFRead(Ttxt, lfbuf);  blktmov(Lebuf, lfbuf, Tx);
     TxFRep (Ttxt, lfbuf);
 } }
 /*---------------------------------------------------------------------------*/
@@ -159,8 +159,8 @@ void temovdown()  /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                                 blktspac(Lebuf+x0,           x1-x0);
   TxFRep(Ttxt, Lebuf);
   TxDown(Ttxt);
-  if (qTxDown(Ttxt)) { blktspac(lfbuf, x0);
-                       mcdpat  (lfbuf, x1); TxTIL(Ttxt, lfbuf, Lleng); }
+  if (qTxBottom(Ttxt)) { blktspac(lfbuf, x0);
+                         mcdpat  (lfbuf, x1); TxTIL(Ttxt, lfbuf, Lleng); }
   else {
     TxFRead(Ttxt, Lebuf); blktmov(lfbuf+x0, Lebuf+x0, x1-x0);
     TxFRep (Ttxt, Lebuf);
@@ -179,7 +179,7 @@ void teformat()
 //
   if (Lleng > 0 && Lebuf[Lleng-1] == TeSCH_CONTINUE) {
     while (Lebuf[Lleng-1] == TeSCH_CONTINUE) {
-      if (qTxDown(Ttxt)) Lleng--;
+      if (qTxBottom(Ttxt)) Lleng--;
       else {
         len = TxTRead(Ttxt, lfbuf); TxDL(Ttxt);
         blktmov(lfbuf, Lebuf + Lleng - 1, len); Lleng += len - 1;
@@ -205,7 +205,7 @@ void teformat()
 // into suggested width; when empty line added it always does). In this case,
 // DO NOT repeat the operation - let user do if s/he wants.
 //
-  else if (!qTxDown(Ttxt)) {
+  else if (!qTxBottom(Ttxt)) {
     len = TxFRead(Ttxt, lfbuf);
     if (len == 0) TxDL(Ttxt);
     else {
@@ -283,8 +283,8 @@ void tesdown (void)
   for(;;) {
     Lleng = TxTRead(Ttxt, Lebuf); x = vipFind(Lebuf, Lleng, x+1, FALSE);
     if (x < 0) {  
-      if (qkbhin())     exc(E_KBREAK); TxDown(Ttxt);
-      if (qTxDown(Ttxt)) exc(E_SFAIL); // x == -1 here, exactly start of line
+      if (qkbhin())       exc(E_KBREAK); TxDown(Ttxt);
+      if (qTxBottom(Ttxt)) exc(E_SFAIL); // x == -1 here, exactly start of line
     } 
     else { Ty = Ttxt->txy;
            Tx = x; return; }
@@ -295,8 +295,8 @@ void tesup(void)
   int x = Tx; tesPrepare();
   for(;;) {
     if (x < 1) { 
-      if (qTxUp(Ttxt)) exc(E_SFAIL); TxUp(Ttxt);
-      if (qkbhin())   exc(E_KBREAK);
+      if (qTxTop(Ttxt)) exc(E_SFAIL); TxUp(Ttxt);
+      if (qkbhin())    exc(E_KBREAK);
     }
     Lleng = TxTRead(Ttxt, Lebuf); 
     x = vipFind(Lebuf, Lleng, (x < 0) ? Lleng : x-1, TRUE);
@@ -324,8 +324,8 @@ static int tereplace()
   blktmov(lfbuf, Lebuf+x0, len); 
   TxFRep(Ttxt, Lebuf); return 0;
 }
-void terdown() { if (                 tereplace() < 0) tesdown(); }
-void terup()   { if (qTxDown(Ttxt) || tereplace() < 0) tesup();   }
+void terdown() { if (                   tereplace() < 0) tesdown(); }
+void terup()   { if (qTxBottom(Ttxt) || tereplace() < 0) tesup();   }
 /*---------------------------------------------------------------------------*/
 void teswidth (void)                              /* <- currently not mapped */
 {
@@ -424,10 +424,10 @@ int TeCommand (comdesc *cp)
   }
   for (rpt = (cp->attr & CA_RPT) ? 1 : KbCount; rpt; rpt--) {
     TxSetY(Ttxt, Ty);
-    if (qkbhin())                              return E_KBREAK;
-    if ((cp->attr & CA_NBEG) && qTxUp  (Ttxt)) return E_MOVUP;
-    if ((cp->attr & CA_NEND) && qTxDown(Ttxt)) return E_MOVDOWN;
-    if ((cp->attr & CA_EXT)  && qTxDown(Ttxt)) {
+    if (qkbhin())                                return E_KBREAK;
+    if ((cp->attr & CA_NBEG) && qTxTop   (Ttxt)) return E_MOVUP;
+    if ((cp->attr & CA_NEND) && qTxBottom(Ttxt)) return E_MOVDOWN;
+    if ((cp->attr & CA_EXT)  && qTxBottom(Ttxt)) {
       teIL(); 
       Ttxt->txstat |= TS_CHANGED; TxSetY(Ttxt, Ty);
     }

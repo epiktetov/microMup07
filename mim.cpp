@@ -49,17 +49,21 @@ bool MacEvents::eventFilter (QObject*, QEvent *ev)
 #endif
 #define IGNORE_CASE Qt::CaseInsensitive
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-QColor colorBlack    (  0,  0,  0); // black
-QColor colorWhite    (255,255,255); // white
-QColor colorWinBgnd  (255,255,255); // white
-QColor colorWinGrad  (255,240,213); // wheat
-QColor colorDarkRed  (120,  0,  0); // dark red cursor (cannot edit text)
-QColor colorDarkGreen(  0,100,  0); // dark green cursor
-QColor colorDarkBlue (  0,  0,150); // dark blue cursor / "light" text
-QColor colorLightBlue(  0,100,255); // special characters
-QColor colorLightPink(200,200,172); // "temporary" block
-QColor colorLightCyan(172,200,255); // "permanent" block
-QColor colorDarkWheat(213,150, 36); // dark wheat (for TAB and control chars)
+QColor colorBlack     (  0,  0,  0); // black (used for regular text)
+QColor colorWhite     (255,255,255); // white (inverted text under cursor)
+QColor colorWinBgnd   (255,255,255); // white
+QColor colorWinGrad   (255,240,213); // wheat == #fff0D5 (H=39° S=16% B=100%)
+QColor colorDarkWheat (213,150, 36); // dark wheat (#d59624, S=83% and B=84%)
+QColor colorDarkBrown (108, 70,  0); // darker brown  (#6c4600, S=100% B=42%)
+QColor colorDarkGrey  ( 85, 85, 85); // dark grey (#555555, B=33%) for comments
+QColor colorDarkRed   (120,  0,  0); // dark red cursor (cannot edit), regex
+QColor colorDarkGreen (  0,100,  0); // dark green cursor
+QColor colorDarkBlue  (  0,  0,150); // dark blue cursor / prompt text
+QColor colorLightBlue (  0,100,255); // special characters
+QColor colorLightPink (200,200,172); // "temporary" block, not very pink really
+QColor colorLightCyan (172,200,255); // "permanent" block
+QColor colorSolidGreen(204,255,155); // "good" mark (used for matched brackets)
+QColor colorSolidRed  (255,155,155); // "bad" mark, indicates some error
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 inline QString myPackAdj2string (int X, int Y)
 {
@@ -275,8 +279,10 @@ void MiFrame::DeleteScTwin (MiScTwin *sctw)
   if (scwin) {
     if (sctw == scwin) main->setFocus();
     else {
-      main->vp  = scwin->vp; // reattach ViewPort data from old QWindow to new
-      main->vp->sctw = main; // one (seems easier than re-parenting QWindow)
+      wnd * main_vp =  main->vp; // swap ViewPort data between QWindow (easier
+      wnd *scwin_vp = scwin->vp; //                          than re-parenting)
+      main->vp = scwin_vp;  main->vp->sctw =  main;
+      scwin->vp = main_vp; scwin->vp->sctw = scwin;
     }
     delete scwin;     scwin = NULL;
     main->vpResize(); shrinkwrap();
@@ -396,11 +402,12 @@ void MiInfoWin::paintEvent (QPaintEvent *)
   QPainter dc(this); int Y = sctw->Ty2qtY(0)+sctw->fontBaseline;
   QString info;                                      int dx, dy;
   if (infoType == MitCHARK && sctw->vp->cx >= 0) {
-    tchar tc;
-    if (TxSetY(sctw->vp->wtext, sctw->vp->wty+sctw->vp->cy))
-         tc = TxInfo (sctw->vp, sctw->vp->wty+sctw->vp->cy, &dx)[sctw->vp->cx];
-    else tc = 0;
-    info.sprintf("U+%X", (uint)(tc & AT_CHAR));
+    tchar tc = 0, *textln;
+    if (TxSetY(sctw->vp->wtext, sctw->vp->wty+sctw->vp->cy)) {
+      textln = TxInfo(sctw->vp, sctw->vp->wty+sctw->vp->cy, &dx);
+      tc = textln[sctw->vp->wtx+sctw->vp->cx]; // ^
+    }                                          // assuming end of textln string
+    info.sprintf("U+%X",(uint)(tc & AT_CHAR)); // cleared with spaces after EOL
     dc.drawText(sctw->Tx2qtX(0), Y, info);
   }
   else if (BlockXYsize(&dx ,&dy)) {
@@ -488,7 +495,8 @@ MiScTwin::MiScTwin(MiFrame *frame, const QColor *prim,
                    setAttribute(Qt::WA_OpaquePaintEvent);   UpdateMetrics();
   info.show();     setFocusPolicy(Qt::ClickFocus);          UpdateGradient();
 }
-MiScTwin::~MiScTwin() { if (gradPixmap) delete gradPixmap; }
+MiScTwin::~MiScTwin() { vipCleanupWindow(vp);
+                        if (gradPixmap) delete gradPixmap; }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiScTwin::vpResize (int width, int height)
 {
@@ -573,26 +581,55 @@ void MiScTwin::Erase (QPainter& dc, int tx, int ty, int len)
                 X+(MiApp_useDIAGRAD?Y:0), 0, Tw2qtW(len), Th2qtH(1));
 }
 //-----------------------------------------------------------------------------
+// Colors/fonts used (from attribute bits of tchar, see AT_xxx in mic.h header)
+//
+// AT_BOLD (indep) set ʁbold fontʀ - permanent (saved in file) no special meaning
+// AT_PROMPT       ʂdark blueʀ text - used for prompts, indicates wildcard search
+// AT_REGEX        ʄdark redʀ chars - incorrect UTF-8 chars, marks regex search
+// AT_SUPER        ʈsky blueʀ chars - special characters -- forces Insert mode
+// AT_UNDERL       reserved for underline
+//
+// AT_MARKFLG (alone) numbered marker flag (DarkWheat gradient) == AT_INVERT
+// AT_BG_CLR:         background color (by itself, used for selection blocks):
+//   AT_BG_RED        - red, temporary block / "can't edit" cursor / error mark
+//   AT_BG_GRN        - green, "can edit, text unchanged" cursor / matched mark
+//   AT_BG_BLU        - blue, regular block mark / "text changed" cursor
+// AT_BRIGHT          bright background (for error / "bracket matched" marks)
+// AT_INVERT          when added to AT_BG_CLR => indicates cursor, replace mode
+// AT_INVERT+AT_SUPER with AT_BG_CLR indicates gradient cursor, insert mode
+//
+// AT_TAB      converts space into DarkWheat » (should not be used otherwise)
+// AT_QOPEN    - opening quote ‘“
+// AT_QCLOSE   - closing quote ’”
+// AT_KEYWORD  dark brown text, used to highlight known keywords
+// AT_COMMENT  dark grey text, indicates comments (depend on the language)
+// AT_BADCHAR  bright red text for bad UTF-8 characters
+//
 void MiScTwin::Text (QPainter& dc, int x, int y, int attr, QString text)
 {
   int len = text.length();    QPen noPen(Qt::NoPen);
   if (attr & AT_BOLD) dc.setFont(mf->getBoldFont());
   else                dc.setFont(mf->getTextFont());
 
-  if (attr & (AT_INVERT|AT_MARKFLG|AT_BG_CLR)) {
+  if (attr & (AT_INVERT|AT_BG_CLR)) {
     const QColor *bg_color = &colorWhite, *fg_color = &colorBlack;
-    if (attr & (AT_INVERT|AT_MARKFLG)) {
+    if (attr & AT_BRIGHT) {
+           if ((attr & AT_BG_CLR) == AT_BG_RED) bg_color = &colorSolidRed;
+      else if ((attr & AT_BG_CLR) == AT_BG_GRN) bg_color = &colorSolidGreen;
+      else                                      bg_color = &colorLightCyan;
+    }
+    else if (attr & AT_INVERT) {
            if ((attr & AT_BG_CLR) == AT_BG_RED) bg_color = &colorDarkRed;
       else if ((attr & AT_BG_CLR) == AT_BG_GRN) bg_color = &colorDarkGreen;
       else if ((attr & AT_BG_CLR) == AT_BG_BLU) bg_color = &colorDarkBlue;
-      else                                      bg_color = &colorDarkWheat;
+      else                 { attr |= AT_SUPER;  bg_color = &colorDarkWheat; }
       fg_color = &colorWhite;
     }
     else if ((attr & AT_BG_CLR) == AT_BG_RED) bg_color = &colorLightPink;
     else if ((attr & AT_BG_CLR) == AT_BG_GRN) bg_color = &colorDarkWheat;
     else if ((attr & AT_BG_CLR) == AT_BG_BLU) bg_color = &colorLightCyan;
 
-    if (attr & (AT_SUPER|AT_MARKFLG)) { // special insert-mode gradient cursor
+    if (attr & AT_SUPER) { // special insert-mode gradient cursor (or marker)
       QLinearGradient grad(Tx2qtX(x), 0, Tx2qtX(x)+1.5*Tw2qtW(len), 0);
       grad.setColorAt(0, *bg_color);
       grad.setColorAt(1, gradColor); dc.setBrush(QBrush(grad));
@@ -602,23 +639,35 @@ void MiScTwin::Text (QPainter& dc, int x, int y, int attr, QString text)
     dc.drawRect(Tx2qtX(x), Ty2qtY(y), Tw2qtW(len), Th2qtH(1));
     dc.setPen(*fg_color);
   }
-  else { if (attr & AT_TAB)    dc.setPen(colorDarkWheat);
-    else if (attr & AT_SUPER)  dc.setPen(colorLightBlue);
-    else if (attr & AT_LIGHT)  dc.setPen(colorDarkBlue);
-    else if (attr & AT_ITALIC) dc.setPen(colorDarkRed);
-    else                       dc.setPen(colorBlack);
-    Erase(dc, x, y, len);
+  else { if (attr & AT_TAB)     dc.setPen(colorDarkWheat);
+    else if (attr & AT_KEYWORD) dc.setPen(colorDarkBrown);
+    else if (attr & AT_REGEX)   dc.setPen(colorDarkRed);
+    else if (attr & AT_PROMPT)  dc.setPen(colorDarkBlue);
+    else if (attr & AT_SUPER)   dc.setPen(colorLightBlue);
+    else if (attr & AT_BADCHAR) dc.setPen(colorSolidRed);
+    else if (attr & AT_COMMENT) dc.setPen(colorDarkGrey); //- testing that last
+    else                        dc.setPen(colorBlack);    // to preserve colors
+    Erase(dc, x, y, len);                                 // in comments (jic)
   }
   dc.drawText(Tx2qtX(x), Ty2qtY(y)+fontBaseline, text);
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 inline QChar vChar (tchar tc) // convert chars below space into printable ones
 { 
-  tchar tcc = tc & AT_CHAR;      if (tcc  >  ' ') return int(tcc);
+  if (tc & AT_QUOTE) {
+    switch (tc & (AT_CHAR|AT_QOPEN|AT_QCLOSE)) {
+    case AT_QOPEN |'\'': return QChar(0x2018); // ‘
+    case AT_QCLOSE|'\'': return QChar(0x2019); // ’
+    case AT_QOPEN | '"': return QChar(0x201C); // “
+    case AT_QCLOSE| '"': return QChar(0x201D); // ”
+    default:             return int(tc & AT_CHAR);
+  } }
+  else {
+    tchar tcc = (tc & AT_CHAR);  if (tcc  >  ' ') return int(tcc);
                             else if (tcc  <  ' ') return int(tcc)+'@';
                             else if (tc & AT_TAB) return QChar(0x0BB); // »
                             else                  return ' ';
-}                                                   
+} }
 inline tchar vAttr (tchar tc) 
 { 
   tchar attr = tc & AT_ALL; return ((tc & AT_CHAR) < ' ') ? AT_TAB|attr : attr;
@@ -643,16 +692,15 @@ void MiScTwin::Repaint (int x, int y, int width, int height, bool NOW)
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiScTwin::Scroll (int srcx, int ty, int width, int height, int dy)
 {
-  QRect rect(Tx2qtX(srcx), Ty2qtY(ty+dy), Tw2qtW(width),
-                                          Th2qtH(height+my_abs(dy)));
-  scroll(0, Th2qtH(dy), rect);
+// Unfortunately, when "info" window intersects with scrolling rectangle (which
+// will be "always" -- as otherwise this function is not used), Qt 4.x does not
+// behave very good. It either forces redraw of everything or leaves ugly marks
+// (depending on scrolling direction).  To work around, adjust scrolling region
+// to exclude last two lines (and invalidate exclusion to be repainted over).
 //
-// For some mysterious reasons (bug in Qt?) "info" window leaves ugly traces on
-// the screen, but only on Linux and Windows (never on Mac). Just repaint over:
-#ifndef Q_OS_MAC
-  QRect infoRect =  info.geometry();
-  infoRect.translate(0, Th2qtH(dy)); update(infoRect);
-#endif
+  QRect rect(Tx2qtX(srcx), Ty2qtY(ty+dy), Tw2qtW(width), Th2qtH(height-2));
+  scroll (0, Th2qtH(dy), rect);
+  Repaint(srcx, ty+height+dy-2, width, 2, false);
 }
 //-----------------------------------------------------------------------------
 void MiScTwin::keyPressEvent (QKeyEvent *event)
@@ -710,7 +758,7 @@ void MiScTwin::timerEvent(QTimerEvent *)
     QApplication::syncX();   // only for X11 (does nothing on other platforms)
 } }
 void MiScTwin::repeatCmd (int kcode) { cmd2repeat = kcode;
-                                       timerID = startTimer(0); }
+                                       timerID = startTimer(10); }
 void MiScTwin::stopTimer()
 {
   if (cmd2repeat) { cmd2repeat = 0; killTimer(timerID); }

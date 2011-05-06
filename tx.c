@@ -10,23 +10,12 @@
 #include "tx.h"
 #include "le.h" /* uses Lebuf etc (in TxInfo) */
 #include "ud.h"
+#include "synt.h"
 #include <string.h>
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-txt  *texts; static tchar *tcbuf;
-char *txbuf;
-char *afbuf;
-
-local txt *TxNewBuf (void)
-{
-  txt *t = (txt*) GetMain(MAXFILES * sizeof(txt)), *tprev = NIL;
-  int i;
-  for (t += MAXFILES, i = MAXFILES; i--; tprev = t) {
-    --t;
-    t->txnext = tprev;
-    t->txstat = t->txlructr = 0; t->file = 0;
-  }
-  return t;
-}
+txt *texts  =  NIL;  static tchar tcbuf[MAXLPAC]; int tcbuflen = 0;
+char afbuf[MAXLUP];
+char txbuf[MAXLUP+2];
 /*-----------------------------------------------------------------------------
  * Каждый текст представляет собой Л2-список, реализованный на двух деках
  * (фактически стеках):
@@ -36,63 +25,99 @@ local txt *TxNewBuf (void)
  * Внимание, при непрерывной реализации деков верхний стек должен располагаться
  * ниже по адресам чем нижний (whatever that means - Epi.)
  */
-void TxInit() 
-{
-  texts = TxNewBuf();                               txbuf = GetMain(MAXLUP+2);
-  tcbuf = (tchar*) GetMain(MAXLPAC*sizeof(tchar));  afbuf = GetMain(MAXLUP);
-}
+void TxInit() { blktspac(tcbuf, MAXLPAC); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 txt *TxNew (BOOL qundo)                        /* Создание / удаление текста */
 {
   txt *t, *tprev;
   for (tprev = NIL, t = texts; t && t->txstat != 0; t = t->txnext) tprev = t;
-  if (t == NIL)
-    tprev->txnext = t = TxNewBuf();
-
+  if (t == NIL) {
+    t = (txt*)GetMain(sizeof(txt)); /* если не нашли свободного дескриптора: */
+    t->txstat = 0;     t->file = 0; /* сделаем новый, добавим в конец списка */
+    t->txnext = NIL;                /* (не было предыдущего = список пустой) */
+    if (tprev) tprev->txnext = t;
+    else               texts = t;
+  }
   t->txustk = DqNew(DT_ASC, 0, STKEXT); t->txudfile = -1; TxMarks0(t);
   t->txdstk = DqNew(DT_ASC, STKEXT, 0);
-  t->txudeq = qundo ? DqNew(DT_BIN, 0, UNDOEXT) : NIL;
-  t->txudcptr = t->txudlptr = 0;    t->txwndptr = NIL;
-  t->txlructr = 0;   t->txy = 0;    t->txlm = 0;
-             t->cx = t->tcx = 0;    t->txrm =    MAXTXRM;
-             t->cy = t->tcy = 0;    t->txstat |= TS_BUSY;  return t;
+  t->txudeq = qundo ? DqNew(DT_BIN, 0, UNDOEXT) : NIL; t->txlm = 0;
+  t->txudcptr = t->txudlptr  = 0;   t->txwndptr = NIL; t->txrm =    MAXTXRM;
+  t->clustk   = t->cldstk    = 0;   t->txlructr = 0;   t->txstat |= TS_BUSY;
+  t->clang       = 0; t->txy = 0;
+  t->cx = t->tcx = 0; memset(t->thisSynts, 0xDE, sizeof(int) * MAXSYNTBUF);
+  t->cy = t->tcy = 0; memset(t->prevSynts,    0, sizeof(int) * MAXSYNTBUF);
+  return t;
 }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+void TxEnableSynt (txt *t, small clang)       /* add deqs for syntax checker */
+{
+  if (clang && t->clustk == NIL && t->cldstk == NIL) {
+    t->clang = clang;
+    t->clustk = DqNew(DT_BIN, 0, STKEXT);
+    t->cldstk = DqNew(DT_BIN, STKEXT, 0);
+} }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void TxMarks0(txt *t) { int i;
                         for (i=0; i<TXT_MARKS; i++) { t->txmarkx[i] =  0;
                                                       t->txmarky[i] = -1; }}
 void TxDel (txt *t)
 {
-  t->txstat = 0; DqDel(t->txustk); t->txustk = NIL;
-                 DqDel(t->txdstk); t->txdstk = NIL; QfsClear(t->file);
-  if (t->txudeq) DqDel(t->txudeq); t->txudeq = NIL;          t->file = NIL;
+  t->txstat = 0; DqDel(t->txustk); t->txustk = NIL; QfsClear(t->file);
+                 DqDel(t->txdstk); t->txdstk = NIL;          t->file = NIL;
+  if (t->txudeq) DqDel(t->txudeq); t->txudeq = NIL;
+  if (t->clustk) DqDel(t->clustk); t->clustk = NIL;
+  if (t->cldstk) DqDel(t->cldstk); t->cldstk = NIL; t->clang = 0;
 }
 /*---------------------------------------------------------------------------*/
-BOOL qTxUp  (txt *t) { return qDqEmpt(t->txustk); } /* Перемещения по тексту */
-BOOL qTxDown(txt *t) { return qDqEmpt(t->txdstk); }
-void TxUp   (txt *t)
+BOOL qTxTop   (txt *t) { return qDqEmpt(t->txustk); }
+BOOL qTxBottom(txt *t) { return qDqEmpt(t->txdstk); }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+void TxUp (txt *t)                                  /* Перемещения по тексту */
 {
-  if (qTxUp(t))       exc(E_MOVUP);
-  DqMoveEtoB(t->txustk, t->txdstk); t->txy--;
-}
-void TxTop (txt *t) { while(!qTxUp(t)) TxUp(t); }
+  if (qTxTop(t)) exc(E_MOVUP);
+  else {                    /* now inline: DqMoveEtoB(t->txustk, t->txdstk); */
+    int len, real_len;
+    char *pb;  extgap(t->txdstk, MAXLUP, TRUE);
+    pb = DqLookupBack(t->txustk, DqLen(t->txustk), &len, &real_len);
+    DqAddB(t->txdstk, pb, len);        t->txustk->dend -= real_len;
+    t->txy--;
+    if (t->clustk && !qDqEmpt(t->clustk)) {
+      len = DqGetE(t->clustk, (char*)(t->thisSynts));
+            DqAddB(t->cldstk, (char*)(t->thisSynts), len);
+      if (qDqEmpt(t->clustk)) t->prevSynts[0] = 0;
+      else
+        DqCopyBackward(t->clustk, DqLen(t->clustk), (char*)(t->prevSynts), 0);
+} } }
+void TxTop (txt *t) { while(!qTxTop(t)) TxUp(t); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void TxDown (txt *t)
 {
-  if (qTxDown(t))   exc(E_MOVDOWN);
-  DqMoveBtoE(t->txdstk, t->txustk); t->txy++;
-}
-void TxBottom (txt *t) { while (!qTxDown(t)) TxDown(t); }
+  if (qTxBottom(t)) exc(E_MOVDOWN); /* was DqMoveBtoE(t->txdstk, t->txustk); */
+  else {
+    int len, real_len;
+    char *pb;  extgap(t->txustk, MAXLUP, TRUE);
+    pb = DqLookupForw(t->txdstk, 0, &len, &real_len);
+    DqAddE(t->txustk, pb, len); t->txdstk->dbeg += real_len;
+    t->txy++;
+    if (t->clustk) {
+      if (qDqEmpt(t->cldstk)) 
+           len = SyntParse (t, pb, len,    t->prevSynts) * sizeof(int);
+      else len = DqGetB(t->cldstk, (char*)(t->prevSynts));
+      DqAddE(t->clustk, (char *)(t->prevSynts), len);
+      if (qDqEmpt(t->cldstk)) t->thisSynts[0] = 0xDE;
+      else DqCopyForward(t->cldstk, 0, (char*)(t->thisSynts), 0);
+} } }
+void TxBottom (txt *t) { while (!qTxBottom(t)) TxDown(t); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 BOOL TxSetY (txt *t, large y)
 {
-  while (t->txy < y) { if (qTxDown(t)) return FALSE; TxDown(t); }
-  while (t->txy > y) { if (qTxUp(t))   return FALSE; TxUp(t);   } return TRUE;
+  while(t->txy < y) { if (qTxBottom(t)) return FALSE; TxDown(t); }
+  while(t->txy > y) { if (qTxTop(t))    return FALSE; TxUp(t);   } return TRUE;
 }
 /*--------------------------------------------------- Модификации текста ----*/
 void TxDL(txt *t)
 {
-  if (qTxDown(t)) exc(E_MOVDOWN);
+  if (qTxBottom(t)) exc(E_MOVDOWN);
   else {
     small len = DqGetB(t->txdstk, txbuf);   tundo1add(t, UT_DL, txbuf, len);
     int i;
@@ -127,9 +152,9 @@ void TxDEL_end(txt *t)
 }                                                   /* may delete some marks */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void TxEmpt (txt *t)
-{
-  deq *d = t->txudeq; DqEmpt(t->txdstk);
-                      DqEmpt(t->txustk); if (d) DqEmpt(d);
+{                    if (t->txudeq) DqEmpt(t->txudeq);
+  DqEmpt(t->txdstk); if (t->clustk) DqEmpt(t->clustk);
+  DqEmpt(t->txustk); if (t->cldstk) DqEmpt(t->cldstk);
   t->txy = 0;
   t->txudcptr = t->txudlptr = 0; t->cx = t->tcx = 0;     TxMarks0(t);
   t->txudfile = -1;              t->cy = t->tcy = 0; wndop(TW_EM, t);
@@ -140,18 +165,16 @@ void TxEmpt (txt *t)
 small aftotc (const char *orig, int len, tchar *dest_buf)
 {
   const char *orig_end = orig + ((len < 0) ? (int)strlen(orig) : len);
-  tchar attr = 0;                               unsigned /*w,*/ x,y,z;
+  tchar attr = 0;                                      unsigned x,y,z;
   small ltc  = 0;
   while (ltc < MAXLPAC && orig < orig_end) {
     char c = *orig++;
-    if (c == ACPR && orig < orig_end) {
-      attr = (tchar)(AT_IN_FILE & (*orig++ << 16));  continue;
+    if (c == ACPR && orig < orig_end && (*orig & 0xC0) == 0x80) {
+      attr = (tchar)(AT_IN_FILE & (*orig++ << 16));    continue;
     }
-    else if (c == TAB) {
-     /* 
-      * Replace TAB with proper number of spaces and mark the first space with 
-      * AT_TAB attribute:
-      */
+    else if (c == TAB) { /* Replace TAB with proper number of spaces and mark 
+                          * the first space with AT_TAB attribute (+keep attr)
+                          */
       *dest_buf++ = (tchar)' ' | AT_TAB | attr;
       for (ltc++; (ltc % TABsize) != 0
                 && ltc < MAXLPAC; ltc++) *dest_buf++ = (tchar)' ' | attr;
@@ -163,7 +186,7 @@ small aftotc (const char *orig, int len, tchar *dest_buf)
       w = c       & 0x0F;
       x = *orig++ & 0x3F; /* 4-byte:     11110www 10xxxxxx 10yyyyyy 10zzzzzz */
       y = *orig++ & 0x3F; /*                   -> 000wwwxx xxxxyyyy yyzzzzzz */
-      z = *orig++ & 0x3F; /*        (not supported due to QChar limitations) */
+      z = *orig++ & 0x3F; /*           (unsupported due to QChar limitation) */
       *dest_buf++ = ((tchar)w << 18) | 
                     ((tchar)x << 12) | ((tchar)y << 6) | z | attr; }
 #endif
@@ -180,8 +203,9 @@ small aftotc (const char *orig, int len, tchar *dest_buf)
       *dest_buf++ = ((tchar)y << 6) | z | attr;
     }
     else if ((c & 0x80) != 0)
-         { *dest_buf++ = (ctotc(c) + 0x60) | attr | AT_ITALIC; }
-    else { *dest_buf++ =  ctotc(c)         | attr;             }     
+     { if (c & 0x40) { *dest_buf++ = (ctotc(c) + 0x350) | attr | AT_BADCHAR; }
+       else          { *dest_buf++ = (ctotc(c) +  0x60) | attr | AT_BADCHAR; }}
+    else             { *dest_buf++ =  ctotc(c)          | attr;               }
     ltc++;
   }
   return ltc;
@@ -199,20 +223,22 @@ small tctoaf (tchar *orig, int len, char *dest_buf)
       if (laf < MAXLUP-2) { *dest_buf++ = ACPR;
                             *dest_buf++ = ACPR2 | attr; laf += 2; }
     }
-    if (c & AT_TAB) {
-     /*
-      * T-char has AT_TAB attributes - probably it is the head of the sequence
-      * of spaces, if all t-chars until the next tab-stop are spaces, then
-      * replace them with single TAB.
-      */
+    cna = c & AT_CHAR; /* = character sans attributes */
+    if (c & AT_TAB) { 
       for (j = itc+1; j < len && (j % TABsize) != 0; j++)
         if ((char)orig[j] != ' ') goto vanilla_char;
-
-      *dest_buf++ = TAB;
-      itc = j - 1; continue;
+      /*  ^
+       * Replacing space with AT_TAB back to TAB only works if all tchars up to
+       *  the next tab-stop are spaces, otherwise attribute is silently ignored
+       */
+      *dest_buf++ = TAB; itc = j - 1; continue;
     }
-vanilla_char:
-    cna = c & AT_CHAR;
+    if (c & AT_BADCHAR) {
+           if ( 0xE0 <= cna && cna <= 0x11F) *dest_buf++ = (char)(cna -  0x60);
+      else if (0x410 <= cna && cna <= 0x44F) *dest_buf++ = (char)(cna - 0x350);
+      else goto vanilla_char;                                         continue;
+    }
+vanilla_char: 
 #ifdef notdef
     if (cna > 0xFFFF && laf < MAXLUP-3) {     /* 000wwwxx xxxxyyyy yyzzzzzz */
       laf += 3;                                              /* plus 3 byte */ 
@@ -235,6 +261,7 @@ vanilla_char:
     }
     else *dest_buf++ = (char)cna;
   }
+  while (laf && *(--dest_buf) == ' ') laf--; /* remove trailing spaces */
   return laf;
 }
 /*---------------------------------------------------------------------------*/
@@ -252,7 +279,7 @@ void TxTIL (txt *t, tchar *tp, small len)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void TxRep (txt *t, char *text, small len)
 {
-  if (!qTxDown(t)) {
+  if (!qTxBottom(t)) {
     small olen = DqGetB(t->txdstk, txbuf);
     tundo2add(t,  txbuf, olen, text, len);
     DqAddB   (t->txdstk,       text, len); wndop(TW_RP, t);
@@ -265,11 +292,11 @@ void TxFRep (txt *t, tchar *tp) { TxTRep(t, tp, lstrlen(MAXLPAC, tp)); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 small TxRead (txt *t, char *tp)
 {
-  return qTxDown(t) ? 0 : DqCopyB(t->txdstk, tp);
+  return qTxBottom(t) ? 0 : DqCopyForward(t->txdstk,0, tp,0);
 }
 small TxTRead (txt *t, tchar *tp)
 {
-  if (qTxDown(t)) {
+  if (qTxBottom(t)) {
     small  len = aftotc        (MSG_EOF, -1, tp);
     return len + QfsFullName2tc(t->file, tp+len);
   } 
@@ -284,19 +311,19 @@ small TxFRead (txt *t, tchar *tp)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 tchar *TxInfo (wnd *w, large y, int *pl)      /* used for repaint in vip.cpp */
 {                                             /* to get current char mim.cpp */
-  txt *t = w->wtext;
-  if (!t || TxSetY(t, y) == FALSE) { *pl = 0; return tcbuf; }
-  else {
-    tchar *tc;
-    if (w == Lwnd && y == Ly) tc = Lebuf;
-    else {       
-      small len = TxFRead(t, tc = tcbuf); int i;
-      if (y > 0 && len < MAXLPAC-3) {
-        for (i=1; i<TXT_MARKS; i++)
-          if (t->txmarky[i] == y) { tc[len+1] = (i+'0')| AT_MARKFLG;
-                                    tc[len+2] =    ' ' | AT_MARKFLG; break; }
-    } }
-    tc +=         w->wtx;
-    *pl = MAXLPAC-w->wtx; return tc;
-} }
+  txt *t = w->wtext;                          /* (return buf may be changed) */
+  int len = 0;
+  if (t && TxSetY(t, y)) {
+    if (w == Lwnd && y == Ly) blktmov(Lebuf, tcbuf, len = Lleng);
+    else                                 len = TxTRead(t, tcbuf);
+    if (y > 0 && len < MAXLPAC-3) {
+      int i;
+      for (i=1; i<TXT_MARKS; i++)             /* add 2-chars mark at the end */
+        if (t->txmarky[i] == y) {     len++;  /* of test line (after space)  */
+          tcbuf[len++] = (i+'0')|AT_MARKFLG;
+          tcbuf[len++] =    ' ' |AT_MARKFLG; break;
+  } }   }
+  if (len < tcbuflen) blktspac(tcbuf+len, tcbuflen - len);
+  *pl = tcbuflen = len;                      return tcbuf;
+}
 /*---------------------------------------------------------------------------*/

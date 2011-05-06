@@ -12,6 +12,7 @@
 #endif
 #include "vip.h"
 #include "clip.h"
+#include "synt.h"
 extern "C" {
 #include "dq.h"
 #include "le.h" // uses Lebuf for dirlist generation
@@ -25,7 +26,7 @@ void tmInitialize (void)
   long memsize;
   char *membuf = MemInit(&memsize); DqInit(membuf, memsize);
   TxInit();
-  TeInit(); UdInit(); LeStart(); clipStart();
+  TeInit(); LeStart(); clipStart();
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 bool tmStart (QString param)
@@ -47,7 +48,7 @@ bool twStart (QString filename, long ipos)
     vipReady();
 #endif
     Twnd->sctw->mf->raise ();
-    Ty = ipos-1; return true; // set initial pos after wmedin (which reset it)
+    Ty = ipos-1; return true; // set initial pos after twEdit (which reset it)
   }
   vipFreeWindow(Twnd); return false;
 }
@@ -80,7 +81,7 @@ void wdetach (txt *t, wnd *w) /*- - - - - - - - - - - - - - - - - - - - - - -*/
 static void twRedraw (txt *t)    /* redraw all attached windows after rename */
 {
   for (wnd *w = t->txwndptr; w; w = w->wnext) { vipUpdateWinTitle(w); 
-                                                          wredraw(w); }
+                                                vipRedrawWindow  (w); }
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 bool twEdit (wnd *wind, QString filename, txt *referer)
@@ -88,9 +89,10 @@ bool twEdit (wnd *wind, QString filename, txt *referer)
   txt *tfound = tmDesc(filename, true, referer);
   if (!tfound || !tmLoad(tfound))  return false;
   Ttxt = tfound;
-  Tx = Ttxt->cx;
-  Ty = Ttxt->cy;     wattach(Ttxt, wind);
-  vipUpdateWinTitle(wind); wredraw(wind); return true;
+  Tx = Ttxt->cx; wattach(Ttxt, wind);
+  Ty = Ttxt->cy;
+  vipUpdateWinTitle(wind);
+  vipRedrawWindow  (wind); return true;
 }
 /*---------------------------------------------------------------------------*/
 void twDirPop (void)
@@ -163,18 +165,6 @@ void tmCheckFiles()
     if (w->wtext) tmLoad(w->wtext);        // windows exist in memory - reload
 }                                          // texts for all active windows
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-static void check_MCD (txt *t)
-{
-  // TODO; better check:
-  //
-  if (t->file->name.compare(QfsROOTFILE, QfsIGNORE_CASE) == 0) {
-    t->txstat |= TS_MCD; t->txlm = 0;
-                         t->txrm = MCD_LEFT;
-  }
-  else { t->txstat &= ~TS_MCD; t->txlm = 0;
-                               t->txrm = MAXTXRM; }
-}
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 txt *tmDesc (QString filename, bool needUndo, txt *referer)
 {
   small force_txstat = 0;
@@ -191,12 +181,12 @@ txt *tmDesc (QString filename, bool needUndo, txt *referer)
   qfile *fd = QfsNew(filename, referer ? referer->file : NULL);
   filename = fd->full_name;
   txt *t;
-  for (t = texts; t; t = t->txnext)
+  for (t = texts; t; t = t->txnext) {
     if ((t->txstat & TS_BUSY) && t->file &&
         filename.compare(t->file->full_name, QfsIGNORE_CASE) == 0) {
       QfsClear(fd);
       checkfile(t); return t; // found existing text
-    }
+  } }
   while ((t = TxNew(needUndo ? TRUE : FALSE)) == NIL) tmswap(TRUE);
   t->file = fd;         t->txstat |= force_txstat;
   if (fd->ft == QftDIR) t->txstat |= TS_DIRLST;
@@ -248,6 +238,16 @@ static void tmDirLST (txt *t)
   } 
   t->cx = t->txlm = DIRLST_FNPOS;
 }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+static void check_MCD (txt *t)
+{
+  if (t->file->name.compare(QfsROOTFILE, QfsIGNORE_CASE) == 0) {
+    t->txstat |= TS_MCD; t->txlm = 0;
+                         t->txrm = MCD_LEFT;
+  }
+  else { t->txstat &= ~TS_MCD; t->txlm = 0;
+                               t->txrm = MAXTXRM; }
+}
 bool tmDoLoad (txt *t)  /*- - - - - - - - - - - - - - - - - - - - - - - - - -*/
 {
   switch (t->file->ft) {
@@ -266,7 +266,9 @@ bool tmDoLoad (txt *t)  /*- - - - - - - - - - - - - - - - - - - - - - - - - -*/
   t->txstat &= ~TS_CHANGED;     check_MCD(t);
   t->txstat |=  TS_FILE;
   if (t->txudeq != NIL) { t->txstat  |= TS_UNDO;
-                          t->txudfile = t->txudcptr; } return true;
+                          t->txudfile = t->txudcptr; } 
+  small lang =  SyntKnownLang(t);
+  if (lang) TxEnableSynt(t,lang); return true;
 }
 bool tmLoad (txt *t)  /*- - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 {
@@ -319,10 +321,10 @@ bool tmSaveAs (txt *t, QString  fn)
     for (txt *to = texts; to; to = to->txnext) {
       if ((to->txstat & TS_BUSY) && to->file &&
           fn.compare(to->file->full_name, QfsIGNORE_CASE) == 0) {
-        //
-        // Found other text with matching name - check if this is a ghost (then
-        // delete it), or some active/unsaved text (then abort the operation):
-        //
+//
+// Found other text with matching name: check if this is a ghost (has no active
+// windows, delete it), or some active/unsaved text (then abort the operation):
+//
         if (to->txstat & (TS_CHANGED|TS_PERM|TS_WND)) { vipBell(); 
                                                         return false; }
         else TxDel(to);
@@ -384,10 +386,6 @@ void tmDoFentr (void)
 void tmFnewByTtxt (void)                 /* войти в новый файл (имя из Ttxt) */
 {
   if (!tleread()) return;
-/*++
-  TxSetY(Ttxt, Ty); if (qTxDown(Ttxt)) return;
-  Lleng  = TxTRead(Ttxt, Lebuf);
-*/
   int lm, rm;
        if (Block1size(&lm, &rm)); // sets lm/rm, nothing more to do
   else if (Ttxt->txstat & TS_MCD) { 
@@ -397,10 +395,6 @@ void tmFnewByTtxt (void)                 /* войти в новый файл (�
          USE_MCD_MARGIN(MCD_RIGHT) //
     else USE_MCD_MARGIN(MCD_LEFT)  // allow both double-delimiter (64+69th pos)
     else return;                   // and single-delimiter (64th posd only) fmt
-/*++
-                                    if (Lleng < (lm = MCD_RIGHT+1)) return;
-                                    else         rm = Lleng;                
-*/
   }
   else if (Ttxt->txstat & TS_DIRLST) { lm = DIRLST_FNPOS; rm = Lleng; }
   else if (Tx > Lleng) return;
@@ -476,7 +470,8 @@ int TmCommand (int kcode)
       wattach  (Ttxt, wind); Ttxt->tcx = Twnd->wtx; wind->wcy = Ty;
       twDirCopy(Twnd, wind); Ttxt->tcy = Twnd->wty; wind->wcx = Tx;
       vipActivate(wind);
-      vipUpdateWinTitle(wind);   wredraw(wind);        return E_OK;
+      vipUpdateWinTitle(wind);
+      vipRedrawWindow  (wind); return E_OK;
     }
     else return E_SFAIL;
 

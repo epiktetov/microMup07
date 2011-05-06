@@ -23,7 +23,9 @@ struct txt_tag
 #define TXED_YES  0         /* - можно                                       */
 #define TXED_NO   1         /* - нельзя                                      */
 #define TXED_NONO 2         /* - совсем нельзя                               */
-  small txlm, txrm;         /* Left margin / правая граница текста           */
+  small clang;              /* Язык для раскрашивания текста ('C','S'hell..) */
+  deq *clustk, *cldstk;     /* - верхний и нижний стеки для раскрашивания    */
+  small txlm,     txrm;     /* Left margin / правая граница текста           */
   small txmarkx[TXT_MARKS]; /* Маркеры (установлены в ноль если не занято),  */
   large txmarky[TXT_MARKS]; /* см. te(c|s)mark в файле te.c и TxMarks0(tx.c) */
   wnd  *txwndptr;           /* Список окон, наложенных на текст              */
@@ -44,6 +46,8 @@ struct txt_tag
   small cx, tcx;            /* Последняя позиция курсора в тексте            */
   large cy, tcy;            /*                    и окна на тексте           */
   struct txt_tag *txnext;
+  int thisSynts[MAXSYNTBUF];
+  int prevSynts[MAXSYNTBUF];
 };
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 struct dirstk_tag

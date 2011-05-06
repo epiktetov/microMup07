@@ -14,14 +14,14 @@ win32:RC_FILE = qtmim.rc
 DEPENDPATH += .
 INCLUDEPATH += .
 
-HEADERS += mic.h mim.h   ccd.h micro.keys qfs.h   twm.h   vip.h   clip.h
-SOURCES +=  rt.c mim.cpp ccd.cpp          qfs.cpp twm.cpp vip.cpp clip.cpp
+HEADERS += mic.h mim.h   ccd.h micro.keys qfs.h   twm.h   clip.h   synt.h
+SOURCES +=  rt.c mim.cpp ccd.cpp          qfs.cpp twm.cpp clip.cpp synt.cpp
 !win32 {
   HEADERS += unix.h
   SOURCES += unix.cpp
 }
-HEADERS += te.h le.h tx.h dq.h ud.h
-SOURCES += te.c le.c tx.c dq.c ud.c
+HEADERS += vip.h   te.h le.h tx.h dq.h ud.h
+SOURCES += vip.cpp te.c le.c tx.c dq.c ud.c
 OBJECTS_DIR = obj
 
 # Customization
@@ -44,7 +44,7 @@ macx {
   QMAKE_EXTRA_TARGETS += icns keys
 }
 MimFILES  = micros.dir qtmim.pro qtmim.desktop qtmim.rc mim.Info.plist
-MimFILES += micons.psd qtmim.ico qtmim.png LICENSE
+MimFILES += micons.psd qtmim.ico qtmim.png keywords.txt LICENSE
 zip.target  = zip
 zip.depends = Qtmim.zip
 

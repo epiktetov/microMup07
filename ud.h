@@ -4,8 +4,8 @@
 #ifndef UD_H_INCLUDED                             /* Old ud.h (c) Attic 1989 */
 #define UD_H_INCLUDED 
 
-void UdInit(); void tundoload  (txt *t);
-               void tundounload(txt *t); BOOL udcut(txt *t);
+void tundoload  (txt *t);
+void tundounload(txt *t); BOOL udcut(txt *t);
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #define UT_IL    1 /* тип записи: строка всталена */
 #define UT_DL    2 /*             строка удалена  */

@@ -13,6 +13,7 @@
 #include "twm.h"
 #include "vip.h"
 #include "clip.h" // clipRefocus()
+#include "synt.h"
 extern "C" {
 #include "le.h"
 #include "te.h"
@@ -58,26 +59,30 @@ wnd *vipSplitWindow (wnd *wbase, int kcode)   /* TE_VFORK creates new window */
   else {
     int h = wbase->wsh / 2; // ... and TE_HFORK splits existing one
     if (h < 3) return NULL;
-    wnd *wind = vipNewWindow(wbase, wbase->wsw, h, kcode);
-    if (wind) wredraw(wbase);                 return wind;
+    wnd *wind = vipNewWindow (wbase, wbase->wsw, h, kcode);
+    if (wind) vipRedrawWindow(wbase);          return wind;
 } }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 bool vipFreeWindow (wnd *vp) /* returns true if last window has been deleted */
 {
-  wnd *next_active     = NULL;  L2_DELETE(windows, vp, wdprev, wdnext);
-  if (Twnd == vp) Twnd = NULL;
-  if (vp->wsibling) {
-    vp->wsibling->wsh  += vp->wsh;
-    vp->wsibling->wsibling = NULL; next_active = vp->wsibling;
-  }
+  wnd *sibling = vp->wsibling;               // if the window had a sibling,
+  if (sibling) { sibling->wsh  += vp->wsh;   // update its height to adjust
+                 sibling->wsibling = NULL; } // and unlink from this window
   MiFrame *frame = vp->sctw->mf;
-  frame->DeleteScTwin(vp->sctw);
-  free(vp);
-  if (next_active) { vipActivate(next_active);
-                     frame->updateWinTitle (); return false; }
-  else {
-    delete frame; return (windows == NULL);
-} }
+  frame->DeleteScTwin(vp->sctw); // deleting MiScTwin triggers vipCleanupWin()
+  if (sibling) {
+    vipActivate(sibling);                  // activate the sibling window, and
+    frame->updateWinTitle(); return false; // update frame title to reflect it
+  }
+  else { delete frame; return (windows == NULL); } // returns true if was last
+}                                                  // window, twExit will exit
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+void vipCleanupWindow (wnd *vp)     /* called when MiScTwin deleted from GUI */
+{                                   /* should cleanup Twnd  (and wnd struct) */
+  if (Twnd == vp) Twnd = NULL;
+  if (vp->wsibling)  vp->wsibling->wsibling = NULL;
+  L2_DELETE(windows, vp, wdprev, wdnext); free(vp);
+}
 /*---------------------------------------------------------------------------*/
 inline void vipGetPosition (wnd *vp, int& x, int& y)
 {
@@ -123,110 +128,51 @@ void vipUpdateWinTitle (wnd *vp) { vp->sctw->mf->updateWinTitle(); }
 void vipRepaint(wnd *vp, QPainter& dc, MiScTwin *sctw, int x0, int x1,
                                                        int y0, int y1)
 {
-  int wt = my_min(x1-x0+1, MAXLPAC);
+// fprintf(stderr, "  repaint(x=%d:%d,y=%d:%d,H=%d)\n",
+//                              x0,x1,  y0,y1,  y1-y0+1);
+//+
+  int width = my_min(x1-x0+1, MAXLPAC);
   QRect cline;
-  for (int y = y0; y <= y1; y++) {
-    tchar buf[MAXLPAC];
-    int len;
-    tchar *pt_line = TxInfo(vp, y + vp->wty, &len) + x0;
-                                              len -= x0;
-         if (len < 0)  len = 0;
-    else if (len > wt) len = wt;
-    //
-    // Check if need to draw cursor and/or block mark -- to simplify the logic,
-    // just copy text and add cursor / block attributes (INVERT and appropriate 
-    // color) to the buffer:
-    //
-    cline = QRect(x0, y, wt, 1);
-    if ((BlockMark && cline.intersects(BlockMarkRect))
-                   || cline.contains(vp->cx, vp->cy) ) {
-      if (len > 0) memcpy(buf, pt_line, len * sizeof(tchar));
-      if (len < wt) {
-        memset(buf+len, 0x20, (wt-len) * sizeof(tchar)); len = wt; // †††
-      }
-      if (cline.contains(vp->cx, vp->cy)) buf[vp->cx - x0] ^= vp->ctc;
-      if (BlockMark && cline.intersects(BlockMarkRect)) {
-        int xfrom = my_max(x0, BlockMarkRect.left()),
-              xto = my_min(x1, BlockMarkRect.right());
-        tchar attr = BlockTemp ? AT_BG_RED : AT_BG_BLU;
-        for (int x = xfrom; x <= xto; x++) buf[x - x0] |= attr;
-      }
-      pt_line = buf;
+  for (int y = y0; y <= y1; y++) {         int len;
+    tchar *pt_line = TxInfo(vp, y + vp->wty, &len);  // get the text line...
+    if (vp->wtext && vp->wtext->clang)               // colorize if required
+             SyntColorize(vp->wtext, pt_line, len);  // & discard out-of-win
+    pt_line += vp->wtx;                              //     part (before wtx)
+        len -= vp->wtx; cline = QRect(x0,y,width,1);
+//
+// NOTE: TxInfo returns len of the filled up buffer, but the buffer itself is
+// much larger - tcbuf[MAXLPAC], and it's discardable, so no problem to write
+// past the end-of-pt_line (we only use len because Erase is faster than Text)
+//
+         if (len < x0) len = x0;   // Draw BlockMark and curosor into buffer
+    else if (len > x1) len = x1+1; // (block first, as area may contain both,
+    bool spoiled = false;          //                    keeping cursor color)
+    if (BlockMark && cline.intersects(BlockMarkRect)) {
+      tchar attr = BlockTemp ? AT_BG_RED : AT_BG_BLU;
+      int xfrom = my_max(x0, BlockMarkRect.left()),
+           xend = my_min(x1, BlockMarkRect.right());
+      if (len <= xend) len = xend+1;
+      for (int x = xfrom; x <= xend; x++) pt_line[x] |= attr;  spoiled = true;
     }
-    if (len > 0 ) sctw->Text (dc, x0,     y, pt_line, len);
-    if (len < wt) sctw->Erase(dc, x0+len, y,       wt-len);
-} }
-/*---------------------------------------------------------------------------*/
-inline void win_repaint (wnd *vp, int x0, int x1, int y0, int y1)
-{
-  vp->sctw->Repaint(x0, y0, x1-x0, y1-y0);
-}
-inline void BlockMark_repaint (wnd *vp)
-{
-  win_repaint(vp, BlockMarkRect.left(), BlockMarkRect.right() +1,
-                   BlockMarkRect.top(), BlockMarkRect.bottom()+1);
-}
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void scblkon (BOOL isTemp) { BlockMark = TRUE;   BlockTx = Tx;
-                             BlockTemp = isTemp; BlockTy = Ty; }
-void scblkoff() 
-{ 
-  if (BlockMark) { BlockMark = FALSE; BlockMark_repaint(Twnd); 
-                                      BlockMarkRect = QRect(0,0,0,0); }
-}
-/*-----------------------------------------------------------------------------
- * Переизобразим текст после модификации на всех прикрепленных к нему окнах.
- */
-void wndop (small op, txt *t)
-{
-  int y = t->txy, dy;
-  wnd *w;
-  for (w = t->txwndptr; w != NULL; w = w->wnext) {
-    wxmin = 0; wxmax = w->wsw; wdx = 0;
-    wymin = 0; wymax = w->wsh; wdy = 0;
-    switch (op) {
-    case TW_EM: w->wty = 0;
-                w->wtx = 0; wrdrw(w);   continue;
-    case TW_ALL:            wredraw(w); continue;
-    case TW_RP:
-      if (w->wty <= y && y < w->wty + w->wsh) {
-        wymin = y - w->wty;
-        wymax = wymin +  1; wrdrw(w); /* Current line */
-      }
-      continue;
-    case TW_IL: dy = +1; break;
-    case TW_DL: dy = -1; break;
-    default:          continue;
+    if (cline.contains(vp->cx, vp->cy)) {  // strip all attrs from under cursor
+      if (len <= vp->cx) len = vp->cx+1;   //
+      pt_line[vp->cx] = (pt_line[vp->cx] & AT_CHAR) | vp->ctc; spoiled = true;
     }
-         if (y <  w->wty) w->wty += dy;
-    else if (y >= w->wty+w->wsh); // nothing to do
-    else {
-      wdy += dy;
-      wymin = y - w->wty; wroll(w);
-  } }
-}
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-int wxmin, wxmax, wdx, /*  Перемещение внутри (wxmin..wxmax - wymin..wymax)  */
-    wymin, wymax, wdy; /*    на (wdx, wdy) в окне (w)                        */
-
-void wroll (wnd *vp)
+    if (len  > x0) sctw->Text (dc,  x0, y, pt_line+x0, len-x0);
+    if (len <= x1) sctw->Erase(dc, len, y,           x1-len+1);
+    if (spoiled)
+      blktspac(pt_line+x0, x1-x0+1); // if spoiled (by cursor or BlockMark),
+} }                                  // cleanup everything to avoid ghosts
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// MiScTwin::Repaint does not call vipRepaint directly, but instead "updates"
+// (invalidates) specified region, so Qt will schedule the repaint for that
+//
+void vipRedraw (wnd *vp, int tx, int ty, int width, int height)
 {
-  if (wxmin < 0) wxmin = 0; if (wxmax > vp->wsw) wxmax = vp->wsw;
-  if (wymin < 0) wymin = 0; if (wymax > vp->wsh) wymax = vp->wsh;
-  int rollH = wymax-wymin - my_abs(wdy);
-  if (MiApp_useDIAGRAD || wdx || rollH <= 0) win_repaint(vp, wxmin, wxmax, 
-                                                             wymin, wymax);
-  else { // ^ scrolling only possible with horizontal
-         // gradient (not diagonal one) and only in vertical direction
-         //
-    if (wdy > 0) { vp->sctw->Scroll (wxmin, wymin, wxmax-wxmin, rollH, wdy);
-                   vp->sctw->Repaint(wxmin, wymin, wxmax-wxmin,        wdy); }
-    else {
-      vp->sctw->Scroll (wxmin, wymin-wdy, wxmax-wxmin, rollH, wdy);
-      vp->sctw->Repaint(wxmin, wymax+wdy, wxmax-wxmin,        wdy);
-} } }
-void wrdrw  (wnd *vp) { win_repaint(vp, wxmin, wxmax, wymin, wymax); }
-void wredraw(wnd *vp) { win_repaint(vp, 0,   vp->wsw, 0,   vp->wsh); }
+  vp->sctw->Repaint(tx, ty, width, height);
+}
+void vipRedrawLine  (wnd *vp, int ty) { vp->sctw->Repaint(0, ty, vp->wsw, 1); }
+void vipRedrawWindow(wnd *vp) { vp->sctw->Repaint(0, 0, vp->wsw, vp->wsh);    }
 /*---------------------------------------------------------------------------*/
 void wpos (wnd *vp, int x, int y)        /* repaint cursor at given position */
 {
@@ -240,37 +186,94 @@ void wpos (wnd *vp, int x, int y)        /* repaint cursor at given position */
   vp->sctw->Repaint(vp->cx = x, vp->cy = y, 1,1);
   if (vp->sctw->info.isVisible()) vp->sctw->info.updateInfo();
 }
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void wpos_off (wnd *vp)
+void wpos_off (wnd *vp) //- - - - - - - - - - - - - - - - - - - - - - - - - - -
 {
   int ocx = vp->cx; vp->cx = -1;
   int ocy = vp->cy; vp->cy = -1; vp->sctw->Repaint(ocx, ocy, 1,1);
 }
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void wadjust (wnd *w, int x, int y) // "Натянуть" окно на точку (x,y) в тексте
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+inline void BlockMark_repaint (wnd *vp)
 {
-  int ddx = x - w->wtx; int moved = 0; // +1: can roll, -1: cannot
-  int ddy = y - w->wty;
-  if (ddy < 0 || (ddy -= w->wsh-1) > 0) { w->wty += ddy; moved = +1; }
-  if (ddx < 0 || (ddx -= w->wsw-1) > 0) { w->wtx += ddx; moved = -1; }
-  if (BlockMark) {
-    int x0 = my_min(x - w->wtx, BlockTx - w->wtx),
-        x1 = my_max(x - w->wtx, BlockTx - w->wtx),
-        y0 = my_min(y - w->wty, BlockTy - w->wty),
-        y1 = my_max(y - w->wty, BlockTy - w->wty);
-    if (x0 < 0) x0 = 0;  if (x1 > w->wsw) x1 =  w->wsw;
-    if (y0 < 0) y0 = 0;  if (y1 > w->wsh) y1 =  w->wsh;
-    QRect block(x0, y0, x1-x0+1, y1-y0+1);
-    if (BlockMarkRect != block) {
-                             BlockMark_repaint(w);
-      BlockMarkRect = block; BlockMark_repaint(w);
-  } }
-  if (moved) {
-    if (moved > 0 && my_abs(ddy) < w->wsh-1) {
-      wxmin = 0; wxmax = w->wsw; wdx = 0;
-      wymin = 0; wymax = w->wsh; wdy = -ddy; wroll(w);
+  vp->sctw->Repaint(BlockMarkRect.left(),  BlockMarkRect.top(),
+                    BlockMarkRect.width(), BlockMarkRect.height());
+}
+void scblkon (BOOL isTemp) { BlockMark = TRUE;   BlockTx = Tx;
+                             BlockTemp = isTemp; BlockTy = Ty; }
+void scblkoff() 
+{ 
+  if (BlockMark) { BlockMark = FALSE; BlockMark_repaint       (Twnd);
+                                      BlockMarkRect = QRect(0,0,0,0); }
+}
+/*---------------------------------------------------------------------------*/
+void vipRoll (wnd *vp, int wymin, int wymax, int dy) /* rolls region up/down */
+{
+  int rollH = wymax - wymin - my_abs(dy);
+  if (MiApp_useDIAGRAD || rollH < 3) vp->sctw->Repaint(0, wymin,
+                                                 vp->wsw, wymax-wymin);
+  else { // ^ scrolling is only possible
+         // with horizontal gradient (not diagonal one), avoid scrolling small
+         // regions (because of interference with MiInfoWin, see mim.cpp file)
+         //
+    if (dy > 0) { vp->sctw->Scroll (0, wymin, vp->wsw, rollH, dy);
+                  vp->sctw->Repaint(0, wymin, vp->wsw,        dy); }
+    else {
+      vp->sctw->Scroll (0, wymin-dy, vp->wsw, rollH, dy);
+      vp->sctw->Repaint(0, wymax+dy, vp->wsw,       -dy);
+} } }
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//  Переизобразим текст после модификации на всех прикрепленных к нему окнах
+//
+void wndop (small op, txt *text)
+{
+  int y = text->txy, dy;
+  for (wnd *vp = text->txwndptr; vp; vp = vp->wnext) {
+    //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    switch (op) {                                    // Simple redraw operation
+    case TW_EM: vp->wty = 0;
+                vp->wtx = 0; // and FALL THROUGH
+    case TW_ALL:
+      vipRedrawWindow(vp); continue;
+    case TW_RP:
+      if (vp->wty <= y  &&   y < vp->wty + vp->wsh)
+        vp->sctw->Repaint(0, y - vp->wty,  vp->wsw, 1); // current line
+      continue;
+    case TW_DWN:
+      if (y < vp->wty + vp->wsh) {         // all lines down from current one
+        int y1  =  my_max(0, y - vp->wty); //
+        vp->sctw->Repaint(0, y1, vp->wsw, vp->wsh - y1);
+      }
+      continue;
+    //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    case TW_IL: dy = +1; break;                  // Rolling some text up / down
+    case TW_DL: dy = -1; break;                  // (may be faster than redraw)
+    default:          continue;
     }
-    else win_repaint(w, 0, w->wsw, 0, w->wsh);
+         if (y <  vp->wty)  vp->wty += dy;
+    else if (y >= vp->wty + vp->wsh); // nothing to do
+    else
+      vipRoll(vp, y - vp->wty, vp->wsh, dy);
+} }
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void wadjust (wnd *vp, int x, int y) // "Натянуть" окно на точку (x,y) в тексте
+{
+  int ddx = x - vp->wtx; int moved = 0; // +1: can roll, -1: cannot
+  int ddy = y - vp->wty;
+  if (ddy < 0 || (ddy -= vp->wsh-1) > 0) { vp->wty += ddy; moved = +1; }
+  if (ddx < 0 || (ddx -= vp->wsw-1) > 0) { vp->wtx += ddx; moved = -1; }
+  if (BlockMark) {
+    int x0 = my_min(x - vp->wtx, BlockTx - vp->wtx),
+        x1 = my_max(x - vp->wtx, BlockTx - vp->wtx),
+        y0 = my_min(y - vp->wty, BlockTy - vp->wty),
+        y1 = my_max(y - vp->wty, BlockTy - vp->wty);
+    if (x0 < 0) x0 = 0; if (x1 > vp->wsw) x1 = vp->wsw;
+    if (y0 < 0) y0 = 0; if (y1 > vp->wsh) y1 = vp->wsh;
+    QRect block(x0, y0, x1-x0+1, y1-y0+1);
+    if (BlockMarkRect != block) { BlockMark_repaint(vp);
+        BlockMarkRect =  block;   BlockMark_repaint(vp); }
+  }
+  if (moved) {
+    if (moved > 0 && my_abs(ddy) < vp->wsh-1) vipRoll(vp, 0, vp->wsh, -ddy);
+    else vipRedrawWindow(vp);
 } }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void vipReady() 
@@ -343,36 +346,18 @@ inline int vip1sixth (wnd *vp)  /* calculate medium jump size (1/6th of wsh) */
   int N = (vp->wsh + 2) / 6; return (N > 0) ? N : 1;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-#ifdef notdef
-static int vipWinScroll (wnd *vp, int dx, int dy)
-{
-  wxmin = 0; wxmax = vp->wsw; if (dx < 0 && vp->wtx+dx < 0) dx = -vp->wtx;
-  wymin = 0; wymax = vp->wsh; if (dy < 0 && vp->wty+dy < 0) dy = -vp->wty;
-  vp->wtx += dx;   wdx = -dx;
-  vp->wty += dy;   wdy = -dy; if (dx || dy) wroll(vp);        return E_OK;
-}
-#endif
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static int vipCmdScroll (wnd *vp, int kcode, int dx, int dy)
 {
   int rc  = vipOnRegCmd(vp, kcode);
   if (rc != E_OK) return rc;
-  wxmin = 0; wxmax = vp->wsw; if (dx < 0 && vp->wtx+dx < 0) dx = -vp->wtx;
-  wymin = 0; wymax = vp->wsh; if (dy < 0 && vp->wty+dy < 0) dy = -vp->wty;
-  vp->wtx += dx;   wdx = -dx;
-  vp->wty += dy;   wdy = -dy; if (dx || dy) wroll(vp);        return E_OK;
+  if (dx < 0 && vp->wtx+dx < 0) dx = -vp->wtx; vp->wtx += dx;
+  if (dy < 0 && vp->wty+dy < 0) dy = -vp->wty; vp->wty += dy;
+       if (dx) vipRedrawWindow(vp);
+  else if (dy) vipRoll(vp, 0, vp->wsh, -dy);     return E_OK;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 int vipOnTwxCmd (wnd *vp, int kcode)
 {
-#ifdef notdef
-  switch (kcode) {
-  case TW_SCROLUP: return vipWinScroll(vp, 0, -KbCount);
-  case TW_SCROLDN: return vipWinScroll(vp, 0,  KbCount);
-  case TW_SCROLLF: return vipWinScroll(vp, -KbCount, 0);
-  case TW_SCROLRG: return vipWinScroll(vp,  KbCount, 0);
-  }
-#endif
   switch (kcode) {
   case TW_SCROLLF: return vipCmdScroll(vp, LE_LEFT, -KbCount, 0);
   case TW_SCROLRG: return vipCmdScroll(vp, LE_RIGHT, KbCount, 0);

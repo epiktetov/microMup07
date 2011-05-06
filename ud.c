@@ -47,10 +47,9 @@ typedef struct { /* UL_InLE -- замена внутри строки (tchar) */
  /* Старая подстрока */
 } lineundo;
 
-static BOOL undo_blocked = FALSE;
-static char *ubuf, *eubuf;
+static BOOL undo_blocked =  FALSE;
+static char ubuf[UBUFSIZ], *eubuf;
 BOOL UdMark = FALSE;
-void UdInit (void) { ubuf = GetMain(UBUFSIZ); }
 /*-----------------------------------------------------------------------------
  *               Добавить сформированную запись откатки к файлу
  */
