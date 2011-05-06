@@ -13,6 +13,7 @@
 BOOL dosEOL = false;                              /* Настраиваемые параметры */
 int TABsize = 4;
 static bool MiApp_debugKB = false;
+       bool MiApp_useDIAGRAD = true;
 QString MiApp_defaultFont, MiApp_defFontAdjH;
 int     MiApp_defFontSize;
 int     MiApp_fontAdjOver, MiApp_fontAdjUnder, MiApp_defWidth, MiApp_defHeight;
@@ -34,10 +35,8 @@ bool MacEvents::eventFilter (QObject*, QEvent *ev)
 # define mimFONTFACENAME "Menlo Regular"
 # define mimFONTSIZE  12
 # define menuBarHeight 0
-  bool MiApp_useDIAGRAD = true;
 #else
   int menuBarHeight;
-  bool MiApp_useDIAGRAD = false;
 #endif
 #ifdef Q_OS_LINUX
 # define mimFONTFACENAME "DejaVu Sans Mono"
