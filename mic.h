@@ -3,7 +3,7 @@
 //------------------------------------------------------+--------------------*/
 #ifndef MIC_H_INCLUDED  /* Old "nm.h" (c) Attic 1989-90, (c) EpiMG 1998-2001 */
 #define MIC_H_INCLUDED
-#define microVERSION "4.5" // released Thu May 5 22:00 PDT 2011
+#define microVERSION "4.5.6" // released Fri May 6 23:40 PDT 2011
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -70,7 +70,7 @@ extern BOOL dosEOL; /* - DOS/Windows style for end-of-line (CR/LF вместо C
 #define MAXDIRSTK   12
 #define MAXSYNTBUF  42 /* Буфер для synt checker                             */
 #define UBUFSIZ  32780 /* Буфер откатки >= max(2*MAXLUP,2*tchar*MAXLPAC)+eps */
-#define UDHQUOTA 16384 /* Квота откатки (на один файл) только если нет места */
+#define UDHQUOTA 24576 /* Квота откатки (на один файл) только если нет места */
 #define UDLQUOTA  8192
 #define MAXTXRM    360 /* Максимальная ширина текта в редакторе (default)    */
 #define MAXLUP   16384 /* Максимальная длина строки в файле                  */

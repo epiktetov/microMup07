@@ -37,7 +37,7 @@ CR LF (или только LF). Таким образом, появление с
 
 static deq deq0, *freedeqs = NIL, *gapdeq, *lockdeq;
 static BOOL  DqReserveExt = TRUE;
-static long  DqReqMem; /* required memory for extend_gap(), used by qFilSwap */
+static long  DqReqMem; /* <-- required memory for extgap(), used by qFilSwap */
 /*---------------------------------------------------------------------------*/
 void DqInit(char *membuf, long bufsize)     /* create "anti-deq" that covers */
 {                                           /* memory that other deqs cannot */
@@ -46,6 +46,32 @@ void DqInit(char *membuf, long bufsize)     /* create "anti-deq" that covers */
   deq0.dprev = &deq0;  deq0.dend = membuf;
   deq0.dnext = &deq0;  deq0.dbeg = membuf+bufsize;
 }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+//#include <stdio.h>
+//void DqPrintDeqs(const char *title)
+//{
+//  long gap, len; fprintf(stderr, "%s", title);
+//  deq *d;
+//  if (deq0.dnext != &deq0) {
+//    gap = cpdiff(deq0.dnext->dbeg, deq0.dend);
+//    if (gap > 0) fprintf(stderr, "%ld-", gap);
+//  }
+//  for (d = deq0.dnext; d != &deq0; d = d->dnext) {
+//    fprintf(stderr, "%c%c", d->dbext? '{' : '[', d->dtyp);
+//         if (d == lockdeq) fprintf(stderr, "*");
+//    else if (d ==  gapdeq) fprintf(stderr, "+");
+//    len = DqLen(d);
+//         if (len > 1048576) fprintf(stderr, "%.1fM", (double)len/1048576);
+//    else if (len > 1024)    fprintf(stderr, "%.1fk", (double)len/1024);
+//    else                    fprintf(stderr, "%ld",           len);
+//    fprintf(stderr, "%c", d->deext ? '}' : ']');
+//    gap = cpdiff(d->dnext->dbeg, d->dend);
+//         if (gap > 1048576) fprintf(stderr, "-%.1fM-", (double)gap/1048576);
+//    else if (gap > 1024)    fprintf(stderr, "-%.1fk-", (double)gap/1024);
+//    else if (gap > 0)       fprintf(stderr, "-%ld-",           gap);
+//  }
+//  fprintf(stderr, "\n");
+//}
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 deq *DqNew (small typ, small bext, small eext)
 {
@@ -68,90 +94,90 @@ BOOL DqDel (deq *d)
     d->dnext = freedeqs;  freedeqs = d; return TRUE;
 } }
 /*---------------------------------------------------------------------------*/
-static long extragap(deq *d) 
-{                             
-  deq *d2 = d->dnext;
-  long len = cpdiff(d2->dbeg, d->dend);
-  if (DqReserveExt) {
-    long maxext = my_max(d->deext, d2->dbext);
-    if (len > maxext) len -= maxext;
-    else              len  =      0;
-  }
-  return (d->dextra = len & (~1));
-}
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-static long DqFree() 
-{                     
-  deq *d = &deq0;
+static long DqFree()                  /* calculate total free memory in deqs */
+{                                     /*   if DqReserveExt => don't consider */
+  deq *d = &deq0;                     /*   memory under extents to be "free" */
   long f = 0;
-  do { f += extragap(d); } while ((d = d->dnext) != &deq0); return f;
+  do {
+    long len = cpdiff(d->dnext->dbeg, d->dend);
+    if (DqReserveExt) {
+      long maxext = my_max(d->deext, d->dnext->dbext);
+      if (len > maxext) len -= maxext;
+      else              len  =      0;
+    }
+    f += (d->dextra = len & (~1));
+  }
+  while ((d = d->dnext) != &deq0); return f;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-static int extend_gap (deq *d, long len, BOOL move_previous)
-{
-  deq *d2;
-  long  m;                           lockdeq = d;
-  if (move_previous) d = d->dprev; d2 = d->dnext;
-/*
- * Если промежуток имеет достаточный размер, то ничего не делать
- */
-   if (cpdiff (d2->dbeg, d->dend) >= len) { lockdeq = NIL; return 0; }
-/*
- * Иначе найдем место для оптимального экстента и освободим необходимую память
- */
-  if (d ->deext > len) len = d ->deext;
-  if (d2->dbext > len) len = d2->dbext; DqReqMem = len;
-  gapdeq = d;
-  if (DqFree() < len)  /* нет места => просим диспетчера текстов потесниться */
-  {                                             qFilSwap();
-    if (DqFree() < len) { DqReserveExt = FALSE; qFilSwap(); }
-    if (DqFree() < len) {
-      vipError( "Нет памяти (out ot memory)"); return -1;
-  } }
-/*
- * Соберем ее в нашем промежутке
- */
-  for (m = 0, d = &deq0; d2 = d, d = d2->dnext, d2 != gapdeq; ) {
-    if (m += d2->dextra) {
-      lblkmov(d->dbeg, d->dbeg - m, cpdiff(d->dend, d->dbeg));
-      d->dbeg -= m;
-      d->dend -= m;
-  } }
-  for (m = 0, d2 = &deq0; d = d2, d2 = d2->dprev, d2 != gapdeq; ) {
-    if (m += d2->dextra) {
-      lblkmov(d2->dbeg, d2->dbeg + m, cpdiff(d2->dend, d2->dbeg));
-      d2->dbeg += m;
-      d2->dend += m;
-  } }
-  lockdeq = NIL; gapdeq = NIL; DqReserveExt = TRUE; return 0;
-}
 void extgap (deq *d, long len, BOOL move_previous)
 {
-  if (extend_gap(d, len, move_previous) < 0) exc(E_NOMEM);
+  deq *d1st, *d2nd; /* нужна память в промежутке между [d1st}-..gap..-{d2nd] */
+  long delta;
+  if (move_previous) { d1st = d->dprev; d2nd = d;        }
+  else               { d1st = d;        d2nd = d->dnext; }
+
+  if (cpdiff(d2nd->dbeg, d1st->dend) >= len) return; /* уже есть! */
+  lockdeq = d;
+  gapdeq = d1st;
+//+
+// fprintf(stderr, "x(len=%ld%s", len, move_previous ? ",prev" : "");
+// DqPrintDeqs(":");
+//-
+  if (d1st->deext > len) len = d1st->deext;
+  if (d2nd->dbext > len) len = d2nd->dbext; DqReqMem = len;
+  if (DqFree() < len) {
+    if (!qFilSwap()) {      /* Если нет места: просим диспетчера потесниться */
+      DqReserveExt = FALSE; /* (выкидываем заменимое) fail -> ingnore extent */
+      if (DqFree() < len) {
+        vipError( "Нет памяти (out ot memory)"); exc(E_NOMEM);
+  } } }
+  for (delta = deq0.dextra, d = deq0.dnext; d != d2nd; d = d->dnext) {
+    if (delta > 0) {
+      lblkmov(d->dbeg, d->dbeg - delta, DqLen(d)); d->dbeg -= delta;
+                                                   d->dend -= delta;
+    }
+    delta += d->dextra;
+  }
+  for (delta = 0, d = deq0.dprev; d != d1st; d = d->dprev) {
+    delta += d->dextra;
+    if (delta > 0) {
+      lblkmov(d->dbeg, d->dbeg + delta, DqLen(d)); d->dbeg += delta;
+                                                   d->dend += delta;
+  } }
+//+
+// DqPrintDeqs("Dq:");
+//-
+  lockdeq = gapdeq = NIL; DqReserveExt = TRUE;
 }
 /*---------------------------------------------------------------------------*/
 void DqAddB (deq *d, char *data, int len)
 {
   char *pb;
-  if (d->dtyp == DT_ASC) {
-    if (dosEOL) {
-      extgap(d, len+2, TRUE);                 d->dbeg -= len+2;
-      pb = lblkmov(data, d->dbeg, len); *pb++ = CR; *pb++ = LF;
-    }
-    else { extgap(d, len+1, TRUE);     d->dbeg -= len+1;
-           pb = lblkmov(data, d->dbeg, len); *pb++ = LF; }
-  }
-  else {
+  if (DT_IsBIN(d->dtyp)) {
     int real_len = (len+1) & (~1); 
     extgap (d, real_len+4,  TRUE);
     d->dbeg -= real_len+4;   pb  = d->dbeg;    *(small*)pb = len;
     blkmov(data, pb+2, len); pb += real_len+2; *(small*)pb = len;
-} }
+  }
+  else if (dosEOL) {
+    extgap(d, len+2, TRUE);                 d->dbeg -= len+2;
+    pb = lblkmov(data, d->dbeg, len); *pb++ = CR; *pb++ = LF;
+  }
+  else { extgap(d, len+1, TRUE);     d->dbeg -= len+1;
+         pb = lblkmov(data, d->dbeg, len); *pb++ = LF; }
+}
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void DqAddE (deq *d, char *data, int len)
 {
   char *pb;
-  if (d->dtyp == DT_ASC) {
+  if (DT_IsBIN(d->dtyp)) {
+    int real_len = (len+1) & (~1);
+    extgap (d, real_len+4, FALSE); 
+    pb = d->dend;       d->dend += real_len+4; *(small*)pb = len;
+    blkmov(data, pb+2, len); pb += real_len+2; *(small*)pb = len;
+  }
+  else {
     if (dosEOL) { extgap(d, len+2, FALSE);
                   pb = lblkmov(data, d->dend, len); *pb++ = CR; *pb++ = LF; }
     else { 
@@ -159,28 +185,22 @@ void DqAddE (deq *d, char *data, int len)
       pb = lblkmov(data, d->dend, len); *pb++ = LF;
     }
     d->dend = pb;
-  }
-  else {
-    int real_len = (len+1) & (~1);
-    extgap (d, real_len+4, FALSE); 
-    pb = d->dend;       d->dend += real_len+4; *(small*)pb = len;
-    blkmov(data, pb+2, len); pb += real_len+2; *(small*)pb = len;
 } }
 /*---------------------------------------------------------------------------*/
 char *DqLookupForw(deq *d, int pos, int *len_out, int *real_len_out)
 {
   char *pb, *pbeg; small *pi;
   int len, real_len;
-  if (d->dtyp == DT_ASC) {
+  if (DT_IsBIN(d->dtyp)) {
+    pi = (small*)(d->dbeg + pos);         len = *pi++;
+    pbeg = (char*)pi; real_len = ((len+1) & (~1)) + 4;
+  } 
+  else {
     pbeg = d->dbeg + pos;
     for (pb = pbeg+1; pb < d->dend && pb[-1] != LF; pb++);
     len = (real_len = pb - pbeg) - 1;
     if (len < 0) exc(E_MOVDOWN);
     if (len > 0 && pb[-2] == CR) len--;
-  } 
-  else {
-    pi = (small*)(d->dbeg + pos);         len = *pi++;
-    pbeg = (char*)pi; real_len = ((len+1) & (~1)) + 4;
   }
   if (len > MAXLUP-1) len = MAXLUP-1;
   if (len_out) *len_out = len;
@@ -196,16 +216,16 @@ char *DqLookupBack(deq *d, int pos, int *len_out, int *real_len_out)
 {
   char *pb, *pend; small *pi;
   long len, real_len;
-  if (d->dtyp == DT_ASC) {
+  if (DT_IsBIN(d->dtyp)) {
+    pi = (small*)(pend = d->dbeg + pos);    len = *(--pi);
+    real_len = ((len+1) & (~1)) + 4; pb = pend-real_len+2;
+  } 
+  else {
     pend = d->dbeg + pos;
     for (pb = pend-1; pb > d->dbeg && pb[-1] != LF; pb--);
     len = (real_len = pend - pb) - 1;
     if (len < 0) exc(E_MOVUP);
     if (len > 0 && pend[-2] == CR) len--;
-  } 
-  else {
-    pi = (small*)(pend = d->dbeg + pos);    len = *(--pi);
-    real_len = ((len+1) & (~1)) + 4; pb = pend-real_len+2;
   }
   if (len > MAXLUP-1) len = MAXLUP-1;
   if (len_out) *len_out = len;
@@ -234,19 +254,22 @@ void DqEmpt (deq *d) { if (d->dbext < d->deext) d->dend = d->dbeg;
 void DqCutB_byX (deq *d, long  dx) { d->dbeg += dx;           }
 void DqCutE_toX (deq *d, long len) { d->dend = d->dbeg + len; }
 /*---------------------------------------------------------------------------*/
-BOOL DqLoad (deq *d, qfile *f, large size)
+int DqLoad (deq *d, qfile *f, large size)
 {
-  large actual_size; char *p;
-  DqEmpt(d);
-  if (            extend_gap(d, size+2, FALSE)  < 0) return FALSE;
-  if ((actual_size = QfsRead(f, size, d->dbeg)) < 0) return FALSE;
-  p = d->dbeg + actual_size;
-  if (d->dtyp == DT_ASC) { 
+  long actual_size;  int rc = 2; DqEmpt(d);
+  long mem_available = DqFree();
+  if (mem_available < size) {
+    vipFileTooBigError(f, size); if (DT_IsBIN(d->dtyp)) return -1;
+    size = mem_available - MAXLUP - MAXLPAC;               rc = 1;
+  }
+  extgap (d, size+10, FALSE); actual_size = QfsRead(f, size, d->dbeg);
+  if (actual_size < 0) return -2;
+  else {
+    char *p = d->dbeg + actual_size;
     if (p[-1] == EOFchar)  p--;
     if (p[-1] != LF) *p++ = LF; 
-  }
-  d->dend = p; return TRUE;
-}
+    if (rc == 1) p = scpy("«...»\n",p); d->dend = p; return rc;
+} }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 BOOL DqSave (deq *d, qfile *f) 
 {                               

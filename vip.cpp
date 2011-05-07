@@ -568,6 +568,11 @@ void vipError (QString msg)
 {
   QMessageBox::warning(NULL, QString("µMup07 error"), msg);
 }
+void vipFileTooBigError (qfile *f, large size)
+{
+  vipError(QString("File %1 is too big (size: %2), truncated")
+                         .arg(QfsShortName(f)).arg(size));
+}
 void vipBell()                                { QApplication::beep();       }
 void vipTrace1(const char *fmt, int arg)      { fprintf(stderr, fmt,  arg); }
 void vipTrace2(const char *fmt, int x, int y) { fprintf(stderr, fmt, x, y); }

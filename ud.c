@@ -263,19 +263,17 @@ void lesunundo() { tsunundo(TRUE ); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  *                Укоротить буфер откатки до положенной квоты
  */
-BOOL udcut (txt *t)
+void udcut (txt *t)
 {
   long len, minptr;
-  if (t->txudeq == NIL || (len = DqLen(t->txudeq)) <= UDHQUOTA
-                       || (minptr = my_min(t->txudcptr, t->txudlptr)) <= 0) 
-    return FALSE;
-  else {
+  if (t->txudeq && (len    = DqLen (t->txudeq))                > UDHQUOTA
+                && (minptr = my_min(t->txudcptr, t->txudlptr)) > 0) {
     int real_len;
     if ((len -= UDLQUOTA) < minptr) minptr = len;
     for (len = 0; len < minptr; ) { 
       DqCopyForward(t->txudeq, len, NIL, &real_len); len += real_len;
     }
     t->txudcptr -= len;
-    t->txudlptr -= len;  DqCutB_byX(t->txudeq, len);     return TRUE;
+    t->txudlptr -= len;  DqCutB_byX(t->txudeq, len);
 } }
 /*---------------------------------------------------------------------------*/

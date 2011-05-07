@@ -38,11 +38,11 @@ txt *TxNew (BOOL qundo)                        /* Создание / удале�
     if (tprev) tprev->txnext = t;
     else               texts = t;
   }
-  t->txustk = DqNew(DT_ASC, 0, STKEXT); t->txudfile = -1; TxMarks0(t);
-  t->txdstk = DqNew(DT_ASC, STKEXT, 0);
-  t->txudeq = qundo ? DqNew(DT_BIN, 0, UNDOEXT) : NIL; t->txlm = 0;
-  t->txudcptr = t->txudlptr  = 0;   t->txwndptr = NIL; t->txrm =    MAXTXRM;
-  t->clustk   = t->cldstk    = 0;   t->txlructr = 0;   t->txstat |= TS_BUSY;
+  t->txustk = DqNew(DT_TEXT, 0, MAXLUP); t->txudfile = -1; TxMarks0(t);
+  t->txdstk = DqNew(DT_TEXT, MAXLUP, 0);
+  t->txudeq = qundo ? DqNew(DT_UNDO, 0, UDLQUOTA) : NIL; t->txlm = 0;
+  t->txudcptr = t->txudlptr  = 0;     t->txwndptr = NIL; t->txrm =    MAXTXRM;
+  t->clustk   = t->cldstk    = 0;     t->txlructr = 0;   t->txstat |= TS_BUSY;
   t->clang       = 0; t->txy = 0;
   t->cx = t->tcx = 0; memset(t->thisSynts, 0xDE, sizeof(int) * MAXSYNTBUF);
   t->cy = t->tcy = 0; memset(t->prevSynts,    0, sizeof(int) * MAXSYNTBUF);
@@ -53,8 +53,8 @@ void TxEnableSynt (txt *t, small clang)       /* add deqs for syntax checker */
 {
   if (clang && t->clustk == NIL && t->cldstk == NIL) {
     t->clang = clang;
-    t->clustk = DqNew(DT_BIN, 0, STKEXT);
-    t->cldstk = DqNew(DT_BIN, STKEXT, 0);
+    t->clustk = DqNew(DT_SYNT, 0, MAXLPAC);
+    t->cldstk = DqNew(DT_SYNT, MAXLPAC, 0);
 } }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void TxMarks0(txt *t) { int i;
@@ -95,7 +95,7 @@ void TxDown (txt *t)
   if (qTxBottom(t)) exc(E_MOVDOWN); /* was DqMoveBtoE(t->txdstk, t->txustk); */
   else {
     int len, real_len;
-    char *pb;  extgap(t->txustk, MAXLUP, TRUE);
+    char *pb;  extgap(t->txustk, MAXLUP, FALSE);
     pb = DqLookupForw(t->txdstk, 0, &len, &real_len);
     DqAddE(t->txustk, pb, len); t->txdstk->dbeg += real_len;
     t->txy++;

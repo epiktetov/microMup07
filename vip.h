@@ -111,6 +111,9 @@ int vipConvert (tchar *str, int str_len, int cvt_type, tchar *out_buf);
 void vipError (const char *message);                              /* vip.cpp */
 void vipTrace1(const char *fmt, int arg);
 void vipTrace2(const char *fmt, int x, int y);
+#ifdef QFS_H_INCLUDED
+  void vipFileTooBigError(qfile *f, large size);
+#endif
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #ifdef __cplusplus
 }

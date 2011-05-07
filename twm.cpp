@@ -250,18 +250,18 @@ static void check_MCD (txt *t)
 }
 bool tmDoLoad (txt *t)  /*- - - - - - - - - - - - - - - - - - - - - - - - - -*/
 {
+  int oc = 0;
   switch (t->file->ft) {
   case QftPSEUDO:     return true; // PSEUDO file always considered "loaded"
   case QftDIR: tmDirLST(t); break;
   case QftTEXT:
-    {
-      int oc = QfsOpen(t->file, FO_READ);
-      if (oc < 0) return false;
-      if (oc > 0 && !DqLoad(t->txdstk, t->file, t->file->size)) oc = -2;
+      oc = QfsOpen(t->file, FO_READ); // DqLoad: -1:fail,0:empty,1:trunc,2:ok
+      if (oc < 0) return false;       //
+      if (oc > 0) oc = DqLoad(t->txdstk, t->file, t->file->size);
       QfsClose(t->file);
       if (oc < 0) return false; // zero result (empty file) is also acceptable
-  } }
-  bool editable = !(t->txstat & TS_RDONLY) && t->file->writable;
+  }
+  bool editable = !(t->txstat & TS_RDONLY) && t->file->writable && (oc != 1);
   t->txredit = editable ? TXED_YES : TXED_NO;
   t->txstat &= ~TS_CHANGED;     check_MCD(t);
   t->txstat |=  TS_FILE;

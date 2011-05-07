@@ -12,23 +12,24 @@ struct deq_tag
   small    dbext, deext;   /* оптимальный размер экстента для начала / конца */
   struct deq_tag *dnext,   /* следующий дек                                  */
                  *dprev;   /* предыдущий дек                                 */
-  small            dtyp;   /* тип дека                                       */
   addr           dextra;   /* промежуток свыше квоты                         */
+  small            dtyp;   /* тип дека: 't'ext, 'u'ndo, 's'ynt-info          */
 };
-/* Типы деков - dtyp:          */
-#define DT_ASC  0 /* текстовый */
-#define DT_BIN  1 /* двоичный  */
-//+fine DT_NONE 2 /* никакого неестественного интеллекта */
+/* Типы деков - поле dtyp (младший бит означает двоичный дек:  */
+#define DT_TEXT 't' /* верхний/нижний стек для текстов (ascii) */
+#define DT_UNDO 'u' /* буфер откатки                  (binary) */
+#define DT_SYNT 's' /* буфер для Syntax checker       (binary) */
 /*---------------------------------------------------------------------------*/
 deq *DqNew(small typ, small bext, small eext);
 BOOL DqDel(deq *d);
 
+#define DT_IsBIN(dtyp) (dtyp & 1)
 #define            cpdiff(p1, p2) (p1 - p2)
 #define DqLen(d)   cpdiff(d->dend, d->dbeg)
 #define qDqEmpt(d) ((d)->dbeg == (d)->dend)
 
+int  DqLoad(deq *d, qfile *f, large size);   /* -1:fail,0:empty,1:trunc,2:ok */
 void DqEmpt(deq *d);
-BOOL DqLoad(deq *d, qfile *f, large size);
 BOOL DqSave(deq *d, qfile *f);                 /* if move_prev => extend gap */
 void extgap(deq *d, long len, BOOL move_prev); /* for previous (upper) deque */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -39,9 +40,6 @@ char *DqLookupForw(deq *d, int pos, int *len_out, int *real_len_out);
 char *DqLookupBack(deq *d, int pos, int *len_out, int *real_len_out);
 int DqCopyForward (deq *d, int pos, char *pb_out, int *real_len_out);
 int DqCopyBackward(deq *d, int pos, char *pb_out, int *real_len_out);
-
-//+#define DqCopyB(d,out) DqCopyForward (d,0,       out,0)
-//+#define DqCopyE(d,out) DqCopyBackward(d,DqLen(d),out,0)
 
 int DqGetB(deq *d, char *out);
 int DqGetE(deq *d, char *out);

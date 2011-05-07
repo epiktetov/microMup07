@@ -25,13 +25,9 @@ void TxFRep(txt *t, tchar *p);
 void TxIL  (txt *t,  char *line, small len), TxDL(txt *t), TxDEL_beg(txt *t);
 void TxTIL (txt *t, tchar *line, small len),               TxDEL_end(txt *t);
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-#define STKEXT MAXLUP             /* Оптимальный экстент для файловых стеков */
-#define UNDOEXT  4096             /* - - для откатки и прочей мелочевки      */
-#define MSG_EOF "^^ end of "
+extern char   afbuf[]; extern small tab_size;
+extern char   txbuf[]; extern txt     *texts;
 
-extern char   afbuf[];
-extern char   txbuf[];
-extern small tab_size;
-extern txt     *texts;
+#define MSG_EOF "^^ end of "
 /*---------------------------------------------------------------------------*/
 #endif                                                      /* TX_H_INCLUDED */
