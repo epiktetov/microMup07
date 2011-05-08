@@ -276,4 +276,6 @@ void udcut (txt *t)
     t->txudcptr -= len;
     t->txudlptr -= len;  DqCutB_byX(t->txudeq, len);
 } }
+void udclear (txt *t) { DqEmpt(t->txudeq);
+                        t->txudcptr = t->txudlptr = 0; }
 /*---------------------------------------------------------------------------*/

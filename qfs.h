@@ -11,12 +11,14 @@
 #define QfsROOTFILE  "micros.dir"
 #define QfsELLIPSIS   QString::fromUtf8("…")
 #define QfsEMPTY_NAME QString::fromUtf8("÷")
+#define QfsXEQ_PREFIX QString::fromUtf8("«")
 #ifdef Q_OS_LINUX
 #  define QfsIGNORE_CASE Qt::CaseSensitive
 #else
 #  define QfsIGNORE_CASE Qt::CaseInsensitive
 #endif
-enum QfsFtype { QftPSEUDO = 0, QftTEXT = 1, QftDIR = 2 };
+enum QfsFtype { QftNIL=0, QftNOFILE=2,
+                          QftPSEUDO=3, QftREAL=4, QftTEXT=4, QftDIR=5 };
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 struct qfile_tag        /* mic.h defines 'typedef struct qfile_tag == qfile' */
 {

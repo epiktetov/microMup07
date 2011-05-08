@@ -81,11 +81,12 @@ a_(TM_VFORK,            mod_META+Mk_F12,     0) /*       же самым сод�
 k_(TM_HFORK,   0xc122d, mod_META+'-',        0) /* поделить окно пополам     */
 k_(TM_FENTR,   0xc125c, mod_META+'\\',       0) /* ввести имя и войти        */
 a_(TM_FENTR,            mod_CTRL+Mk_ESCAPE,  0) /*          в указанный файл */
-k_(TM_F2ENTR,  0xc12ff, 0,                   0)
-k_(TM_UWINDOW, 0xc1211, mod_META+Mk_UP,      0) /* к верхнему окну           */
-k_(TM_LWINDOW, 0xc1212, mod_META+Mk_LEFT,    0) /* к левому окну             */
-k_(TM_RWINDOW, 0xc1213, mod_META+Mk_RIGHT,   0) /* к правому окну            */
-k_(TM_DWINDOW, 0xc1214, mod_META+Mk_DOWN,    0) /* к нижнему окну            */
+k_(TM_F1ENTR,  0xc1261, 0,                   0) /* в том же окне:      Enter */
+k_(TM_F2ENTR,  0xc1262, 0,                   0) /* в новом окне: Shift+Enter */
+k_(TM_UWINDOW, 0xc1211, mod_META+Mk_UP,      0) /* перейти к верхнему окну   */
+k_(TM_LWINDOW, 0xc1212, mod_META+Mk_LEFT,    0) /* - к левому окну           */
+k_(TM_RWINDOW, 0xc1213, mod_META+Mk_RIGHT,   0) /* - к правому окну          */
+k_(TM_DWINDOW, 0xc1214, mod_META+Mk_DOWN,    0) /* - к нижнему окну          */
 k_(TM_SYNCPOS, 0xc121e, mod_META+Mk_ENTER,   0)
 /*
 Aliases for case when WinKey is disabled on the computer (Windows only) - since
@@ -390,7 +391,7 @@ For example:                                0ddd octal number such as 0176
   Esc 7 '*'       - type "*******" (insert or replace, depending on edit mode)
 
   Esc N Ctrl+Shift+Ins - insert character with given code
-  Esc N Ctrl+E         - move cursor to Nth line in text (without prefix Ctrl+E
+  Esc N Meta/Ctrl+E    - move cursor to Nth line in text (without prefix Ctrl+E
                                            centers current line in the windows)
 */
 k_(TK_ESC,    0xc0e5c, Mk_ESCAPE,                    0) /* Esc префикс     */
@@ -399,6 +400,7 @@ a_(TK_HOME,            Mk_F10,                       0)
 k_(LE_SPCHAR, 0xc3161, mod_CTRL+mod_SHIFT+Mk_INSERT, 0) /* символ с кодом  */
 a_(LE_SPCHAR,          mod_CTRL+mod_SHIFT+Mk_F11,    0)
 k_(TE_CENTR,  0xc314e, mod_CTRL+'E',             KxSEL) /* в середину окна */
+a_(TE_CENTR,           mod_META+'E',             KxSEL)
 /*
 MACRO. Shift+F7/F8/F9 - start recording macro
              F7/F8/F9 - finish recording / execute

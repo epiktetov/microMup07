@@ -37,6 +37,7 @@ CR LF (или только LF). Таким образом, появление с
 
 static deq deq0, *freedeqs = NIL, *gapdeq, *lockdeq;
 static BOOL  DqReserveExt = TRUE;
+static BOOL qFilSwap();
 static long  DqReqMem; /* <-- required memory for extgap(), used by qFilSwap */
 /*---------------------------------------------------------------------------*/
 void DqInit(char *membuf, long bufsize)     /* create "anti-deq" that covers */
@@ -280,75 +281,65 @@ BOOL DqSave (deq *d, qfile *f)
 #include "twm.h" 
 #include "tx.h"
 #include "ud.h"
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-BOOL qFilSwap (void)      /* Освободить память, возвращает TRUE если удалось */
-{
-  txt *t; for (t = texts; t != NIL; t = t->txnext)
-            if (t->txstat && t->txudeq != NIL) udcut(t);
-
-  if (DqFree() < DqReqMem) return tmswap(FALSE);
-  else                     return TRUE;
-}
-/* Приоритет выбрасывания файлов обратный LRU внутри группы (тексты с хотя бы
+/*
+ * Приоритет выбрасывания файлов обратный LRU внутри группы (тексты с хотя бы
  * одним окном никогда не выбрасываются -- в любой момент может потребоваться
- * переизобразить это окно на экране)
- * Для освобождения памяти (биты TS_NEW и TS_PSEUDO игнорируются):
- *  1) file|undo|dirlst  - выкинем файл, откатку, освободим дескриптор
- *  2) file|undo         - выкинем файл
+ * переизобразить это окно на экране):
+ *  0) pseudo|file[changed]      - throw-away text, выкинем без сожаления
+ *  1) file|undo|dirlst[changed] - выкинем файл, откатку, освободим дескриптор
+ *  2) file|undo         - выкинем только файл (если не поможет -> шаг 3)
  *  3) undo              - выкинем откатку, освободим дескриптор
  *  4) file|undo|changed - сохраним и выкинем файл
- * Для освобождения дескрипторов:
- *  1) file|undo|dirlst  - выкинем файл, откатку, освободим дескриптор
- *  2) undo              - выкинем откатку, освободим дескриптор
- *  3) file|undo         - выкинем файл, выкинем откатку, освободим дескриптор
  */
 #define S_SFILE  001 /* save file  = сохраним файл        */
 #define S_EFILE  002 /* erase file = выкинем файл         */
 #define S_EUNDO  004 /* erase undo = выкинем откатку      */
 #define S_EDESC  010 /* erase desc = освободим дескриптор */
 
-static small memswr[] = 
+static small mem_swap_rules[] =
 {
-  TS_BUSY|TS_FILE|TS_UNDO|TS_DIRLST,  S_EFILE|S_EUNDO|S_EDESC,
-  TS_BUSY|TS_FILE|TS_UNDO,            S_EFILE,
-  TS_BUSY|TS_UNDO,                    S_EUNDO|S_EDESC,
-  TS_BUSY|TS_FILE|TS_UNDO|TS_CHANGED, S_SFILE|S_EFILE, 0
+  TS_BUSY|TS_PSEUDO|TS_FILE|TS_CHANGED,         S_EFILE|S_EDESC,
+  TS_BUSY|TS_PSEUDO|TS_FILE,                    S_EFILE|S_EDESC,
+  TS_BUSY|TS_FILE|TS_UNDO|TS_DIRLST|TS_CHANGED, S_EFILE|S_EUNDO|S_EDESC,
+  TS_BUSY|TS_FILE|TS_UNDO|TS_DIRLST,            S_EFILE|S_EUNDO|S_EDESC,
+  TS_BUSY|TS_FILE|TS_UNDO,                      S_EFILE,
+  TS_BUSY|TS_UNDO,                              S_EUNDO|S_EDESC,
+  TS_BUSY|TS_FILE|TS_UNDO|TS_CHANGED,           S_SFILE|S_EFILE, 0
 };
-static small descswr[] = {
-  TS_BUSY|TS_FILE|TS_UNDO|TS_DIRLST,  S_EFILE|S_EUNDO|S_EDESC,
-  TS_BUSY|TS_UNDO,                    S_EUNDO|S_EDESC,
-  TS_BUSY|TS_FILE|TS_UNDO,            S_EFILE|S_EUNDO|S_EDESC, 0
-};
-BOOL tmswap (BOOL freedesc)
+static BOOL tmswap (void)
 {
-  small *pcode = freedesc ? descswr : memswr, lrum, mask;
+  small *pcode, mask, lrum, op;
   txt *t, *tm;
-  for (; (mask = *pcode++); pcode++) { /* Применим очередное правило... */
+  for (pcode = mem_swap_rules; (mask = *pcode++); pcode++) {
     for (;;) {
       for (t = texts, tm = NIL, lrum = 0; t; t = t->txnext) {
-        if ((t->txstat & ~(TS_NEW|TS_PSEUDO)) == mask && t->txlructr > lrum) {
+        if ((t->txstat & TS_DqSWAP) == mask && t->txlructr > lrum) {
           tm = t; lrum = t->txlructr;
       } }
-      if ((t = tm) == NIL) break; /* самого подходящего не нашлось */
-      lrum = *pcode;
-      if (lrum & S_SFILE) {
-        if (!tmsave(t, FALSE)) { t->txstat |= TS_ERR; continue; }
+      if (tm == NIL) break; /* самого подходящего не нашлось */
+      op = *pcode;
+      if (op & S_SFILE) {
+        if (!tmsave(tm, FALSE)) { tm->txstat |= TS_SAVERR; continue; }
       }
-      if (lrum & S_EFILE) {
-        DqEmpt(t->txustk); 
-        DqEmpt(t->txdstk); t->txy = 0; t->txstat &= ~TS_FILE;
+      if (op & S_EFILE) {
+        DqEmpt(tm->txustk);
+        DqEmpt(tm->txdstk); tm->txy = 0; tm->txstat &= ~TS_FILE;
       }
-      if (lrum & S_EUNDO) {
-        DqEmpt(t->txudeq);
-        t->txudcptr = t->txudlptr = 0; /* t->txstat &= ~TS_UNDO; */
-      }
-      if (lrum & S_EDESC) { 
-        TxDel(t); if (freedesc) return TRUE; 
-      }
+      if (op & S_EUNDO) udclear(tm);
+      if (op & S_EDESC) TxDel(tm);
       if (DqFree() >= DqReqMem) return TRUE;
   } }
 /* Не удалось. В памяти остались текущий файл, файл сохранения,
                                  откатка текущего файла, урезанная до лимита */
   return FALSE;
+}
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+static BOOL qFilSwap()    /* Освободить память, возвращает TRUE если удалось */
+{
+  txt *t; for (t = texts; t != NIL; t = t->txnext)
+            if (t->txstat && t->txudeq != NIL) udcut(t);
+
+  if (DqFree() < DqReqMem) return tmswap();
+  else                     return TRUE;
 }
 /*---------------------------------------------------------------------------*/

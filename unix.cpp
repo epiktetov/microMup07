@@ -7,8 +7,10 @@
 #include "qfs.h"
 #include "twm.h"
 #include "vip.h"
+#include "synt.h"
 #include "unix.h"
 extern "C" {
+#include "dq.h"
 #include "le.h"
 #include "te.h"
 #include "tx.h"
@@ -24,7 +26,7 @@ extern "C" {
 # include <sys/stat.h>
 # include <sys/wait.h>
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-static tchar tcmdbuffer[MAXLPAC]; txt *CmdTxt = NULL;
+static tchar tcmdbuffer[MAXLPAC];
 static int   tcmdbuflen = 0,
           tcmdpromptlen = 0;
 static int  tcmdbufFlag = 0;
@@ -32,8 +34,9 @@ static tchar *tcmdHistory[LE_HISTORY_SIZE] = { 0 };
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void x2enter (void)           /* command line enter (2) ввести команду shell */
 {
-  if (Twnd->wsibling && Twnd->wsibling->wtext != CmdTxt
-                     && Twnd->wtext           != CmdTxt) exc(E_SETY);
+  if (Twnd->wsibling && !(Twnd->wsibling->wtext->txstat & TS_PSEUDO)
+                     && !(Twnd->wtext->txstat           & TS_PSEUDO))
+    exc(E_SETY);
   QString prompt = QfsShortDirName(Ttxt->file);
   int new_prompt_len  = prompt.length()+2;
   if (new_prompt_len != tcmdpromptlen) {
@@ -60,35 +63,35 @@ void x2enter (void)           /* command line enter (2) ввести коман�
                         &tcmdbufFlag, TM_FEXEC, TM_F2EXEC, 0);
 }
 /*---------------------------------------------------------------------------*/
+txt *Stxt;  /* text and window for shellexec, the latter may be NULL if that */
+wnd *Swnd;  /* windows is not opened yet, e.g. when called from tmLoadXeq()  */
+
 static void appendText (char *text, char *tend)
 {
-#ifdef notdef_may_be_later
-  if (qTxBottom(Ttxt)) { teIL(); Lleng = 0; } // insert new empty line here,
-  else       Lleng = TxTRead(Ttxt, Lebuf);    // or get partially filled one
-  Lleng += aftotc(text, tend-text, Lebuf+Lleng);
-  if (Lleng > Twnd->wsw) {
-    int width = Twnd->wsw-1;
-    tchar tmp = Lebuf[width];     Lebuf[width] = TeSCH_CONTINUE;
-    TxTRep(Ttxt, Lebuf, width+1); Lebuf[width] = tmp;
-    TxDown(Ttxt);
-    blktmov(Lebuf+width, Lebuf, Lleng -= width); teIL();
-  }
-  TxTRep(Ttxt, Lebuf, Tx = Lleng); }
-#else
+//  if (qTxBottom(Ttxt)) { teIL(); Lleng = 0; } // insert new empty line here,
+//  else       Lleng = TxTRead(Ttxt, Lebuf);    // or get partially filled one
+//  Lleng += aftotc(text, tend-text, Lebuf+Lleng);
+//  if (Lleng > Twnd->wsw) {
+//    int width = Twnd->wsw-1;
+//    tchar tmp = Lebuf[width];     Lebuf[width] = TeSCH_CONTINUE;
+//    TxTRep(Ttxt, Lebuf, width+1); Lebuf[width] = tmp;
+//    TxDown(Ttxt);
+//    blktmov(Lebuf+width, Lebuf, Lleng -= width); teIL();
+//  }
+//  TxTRep(Ttxt, Lebuf, Tx = Lleng);
+//
   if (qTxBottom(Ttxt)) TxIL(Ttxt, text, Tx = tend-text);
   else {
     Lleng = TxTRead(Ttxt, Lebuf);
     Lleng += aftotc(text, tend-text, Lebuf+Lleng);
     TxTRep(Ttxt, Lebuf, Tx = Lleng);
 } }
-#endif
 static void appendCR() { TxDown(Ttxt); Tx = Ttxt->txlm; Ty++; }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static void shellexec (const char *cmd)
 {
   int fdsin[2], fdsout[2];
   int pid;
-
 #define close_both(_fdx) close(_fdx[0]); close(_fdx[1]);
 
   if (pipe(fdsin)    < 0)                                          return;
@@ -136,8 +139,8 @@ static void shellexec (const char *cmd)
           }
           write(fds_in, &ascii, 1);
       } }
-      vipOnFocus (Twnd); vipYield ();
-      vipFocusOff(Twnd); TxSetY(Ttxt, Ty);
+      if (Swnd) vipOnFocus (Swnd); vipYield ();
+      if (Swnd) vipFocusOff(Swnd); TxSetY(Ttxt, Ty);
     }
     while (break_count < 2);     if (fds_in != -1) close(fds_in);
                                                   close(fds_out);
@@ -157,16 +160,16 @@ static void shellexec (const char *cmd)
 static void unixShell_in_Ttxt (const char *cmd)
 {
   small oldTXED = Ttxt->txredit;
-                  Ttxt->txredit = TXED_NO; EnterOSmode(); shellexec(cmd);
-                  Ttxt->txredit = oldTXED;  ExitOSmode();
-                  Ttxt->txstat |= TS_CHANGED;
+        Ttxt->txredit = TXED_NO; EnterOSmode();             shellexec(cmd);
+        Ttxt->txredit = oldTXED;  ExitOSmode(); Ttxt->txstat |= TS_CHANGED;
 }
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+/*---------------------------------------------------------------------------*/
 void tmshell (int kcode)
 {
   tchar tp, *p = tcmdbuffer + tcmdpromptlen, *pend = tcmdbuffer + tcmdbuflen;
   char cmdbuffer[MAXLPAC],                     *pc = cmdbuffer;
-  wnd *wind = NULL;
+  txt *Ctxt;
+  wnd *wind;
   if (p == pend) return; // empty command line => should not do anything
   while (p < pend) {
     switch (tp = *p++) {
@@ -176,23 +179,34 @@ void tmshell (int kcode)
       *pc++ = (char)tp;
   } } *pc = 0;
   //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  if (CmdTxt) TxEmpt(CmdTxt); // After preparing command line, find text and
-  else CmdTxt = TxNew(FALSE); // windows where the command will be executed:
-  CmdTxt->txredit = TXED_YES;
-  CmdTxt->txstat |= TS_PSEUDO|TS_FILE;
-  if (Twnd->wsibling && Twnd->wsibling->wtext == CmdTxt) wind = Twnd->wsibling;
-  else if                               (Ttxt == CmdTxt) wind = Twnd;
-  else {
-    wind = vipSplitWindow(Twnd, kcode == TM_F2EXEC ? TM_VFORK : TM_HFORK);
-    if (wind) wattach(CmdTxt, wind);
-    else { vipBell(); return; }
+  if (Ttxt->txstat & TS_PSEUDO) { TxEmpt(Ctxt = Ttxt); wind = Twnd; }
+  else
+  if (Twnd->wsibling && (Twnd->wsibling->wtext->txstat & TS_PSEUDO)) {
+    wind = Twnd->wsibling;
+    Ctxt = Twnd->wsibling->wtext; TxEmpt(Ctxt);
   }
-  qfile *new_file = QfsNew(QfsELLIPSIS, Ttxt->file); // CmdTxt may be the
-  QfsClear(CmdTxt->file);   CmdTxt->file = new_file; // same as Ttxt here
+  else { for (Ctxt = texts; Ctxt; Ctxt = Ctxt->txnext)
+           if ((Ctxt->txstat & TS_PSEUDO) &&
+              !(Ctxt->txstat & (TS_WND|TS_PERM)) ) break;
+//       ^^
+// Look for unattached PSEUDO text, clear existing one or create new (no UNDO),
+// and also create new window for the text by splitting current one (and attach
+// it to the text - vipBell is just for safety, we already checked possibility)
+//
+    if  (Ctxt)  TxEmpt(Ctxt);
+    else Ctxt = TxNew(FALSE);
+    wind = vipSplitWindow(Twnd, kcode == TM_F2EXEC ? TM_VFORK : TM_HFORK);
+    if (wind) wattach(Ctxt, wind);
+    else    { vipBell();   return; }
+  }
+  Ctxt->txstat |= TS_PSEUDO|TS_FILE; Ctxt->txstat &= ~(TS_CHANGED|TS_RDONLY);
+  Ctxt->txredit = TXED_YES;
+  qfile *new_file = QfsNew(QfsELLIPSIS, Ttxt->file); // Ctxt may be the same as
+  QfsClear(Ctxt->file);       Ctxt->file = new_file; // Ttxt here (& that's Ok)
   wind->wcx = wind->wtx = 0;
   wind->wcy = wind->wty = 0; 
   if (Twnd == wind) Tx = Ty = 0;
-  else        vipActivate(wind); vipUpdateWinTitle(wind);
+  else        vipActivate(wind); vipUpdateWinTitle( Swnd = wind );
 //
 // Now insert the command (along with the prompt == current directory) into the
 // text and execute UNIX shell command... then check if any files were changed
@@ -201,7 +215,7 @@ void tmshell (int kcode)
   TxDown(Ttxt);
   unixShell_in_Ttxt(cmdbuffer); tmCheckFiles();
 }
-/*---------------------------------------------------------------------------*/
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 int tmGrep (int kcode)                                               /* grep */
 {
   QString grep_command = "grep ";                     tesParse();
@@ -220,6 +234,22 @@ int tmGrep (int kcode)                                               /* grep */
 
   tcmdbuflen = tcmd - tcmdbuffer;
   tmshell(kcode == TM_GREP ? TM_FEXEC : TM_F2EXEC); return 0;
+}
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+void tmLoadXeq (txt *t) /* load text by executing command from t->file->name */
+{
+  t->txstat |= TS_PSEUDO|TS_FILE; // txt might be created with UDNO => kill it
+  TxEmpt(t);                      //
+  if (t->txudeq) { DqDel(t->txudeq); t->txudeq  =     NULL;
+                                     t->txstat &= ~TS_UNDO; }
+  txt  *oldTtxt = Ttxt; Ttxt = t; //
+  small oldTx   = Tx;   Tx   = 0; // instead of making shellexec() independent
+  large oldTy   = Ty;   Ty   = 0; // of Ttxt just replace the text temporarily
+  Swnd = NULL;
+  QString cmd = t->file->name;
+          cmd.remove(0,1).chop(1); unixShell_in_Ttxt(cmd.cStr());
+  Tx = oldTx;
+  Ty = oldTy; Ttxt = oldTtxt;
 }
 /*---------------------------------------------------------------------------*/
 static int scan_lines_up (char c1st, char *line_buffer)       /* SyncPos(tm) */
@@ -313,135 +343,13 @@ int tmSyncPos (void)
       if (strcmp(filename, other_wnd->wtext->file->name.cStr()) != 0) 
         twDirPush(QString::fromAscii(filename), Ttxt);
     }
-    else if ((other_wnd = vipSplitWindow(Twnd, TM_VFORK)) == NULL
-             || ! twEdit(other_wnd, QString::fromAscii(filename))) return -1;
-  }
+    else if ((other_wnd = vipSplitWindow(Twnd, TM_VFORK)) != NULL) {
+       bool ok = twEdit(other_wnd, QString::fromAscii(filename), NULL, true);
+       if (!ok) return -1;
+  } }
   else if (other_wnd == NULL) return -1; /* should not come here */
 
   tesetxy(line_pos, file_pos-1); /* inside MIM line numbers start with 0 */
   return 0;
 }
-
-/*---------------------------------------------------------------------------*/
-
-#ifdef UNIX_notdef
-
-static char modfile_buf[MAXPATH+15];
-static char modfile_rep[MAXPATH+15];
-
-BOOL tm_modfile()    /* изменение имени и/или атрибутов файла */
-{
-   BOOL repeat;
-   char *p, *p1;
-   tchar *pt;
-   struct stat statbuf, *d;
-   small attr, new_attr, len, i, nmlen, mask, llen;
-
-   /* получить имя файла из строки; */
-   if ( ( p = fenter() ) == NIL ) return FALSE;
-   /* получить каноническое имя файла; */
-   if ( !FsParse( p, modfile_buf ) || Fsiswild ) return FALSE;
-   /* получить атрибуты файла; */
-   d = &statbuf;
-   if ( Fsddlen == 1 ) { /* корневой каталог */
-			if ( access( "/", 02 ) ) return FALSE;
-   } else {
-      p = modfile_buf + Fsddlen - 1;
-      *p = 0;
-      if ( access( modfile_buf, 02 ) ) return FALSE;
-      *p = '/';
-   }
-   if ( stat( modfile_buf, d ) ) return FALSE;
-   new_attr = (attr = d->st_mode);
-   nmlen = Fsnmlen;
-
-   repeat = TRUE;
-   while ( repeat ) {
-      repeat = FALSE;
-      /* провести диалог с пользователем; */
-      p = modfile_buf + Fsddlen + nmlen;
-      for ( i=nmlen; i <= 14 ; i++ ) *p++ = ' ';
-      *attrtoa( p, new_attr) = 0;
-      for ( p=modfile_buf, pt=Lebuf; *p; ) *pt++ = ctotc( *p++ );
-      len = (llen = p - modfile_buf);
-      Lenter( NIL, &llen, Fsddlen, std_terms, FALSE );
-      if ( KbCode == TK_BREAK ) return FALSE;
-
-      p1 = modfile_rep + llen;
-      for ( p=modfile_rep, pt=Lebuf; p < p1; ) {
-         *p++ = (*pt++) & 0xFF;
-      }
-      while ( p < modfile_rep + len ) *p++ = ' ';
-      *p = 0;
-
-      if ( *(modfile_rep+Fsddlen) == ' ' ) { /*  имя файла пропало */
-         /* удалить файл */
-         *(modfile_buf + Fsddlen + nmlen) = 0;
-         return FsDelete( modfile_buf );
-      } else { /* переименование и/или изменение атрибутов */
-         p = modfile_buf + Fsddlen;
-         for ( i=13; p[i] == ' '; i-- );
-         p[i+1] = 0;
-         p1 = modfile_rep + Fsddlen;
-         for ( i=13; p1[i] == ' '; i-- );
-         p1[i+1] = 0;
-         if ( !scmp( p, p1) ) {  /*  имя файла изменилось */
-            /* переименовать файл; */
-            if ( !FsRename( modfile_buf, modfile_rep ) ) return FALSE;
-            *scpy( p1, p ) = 0;
-            nmlen = slen( p );
-         }
-         /* расшифровка полученых атрибутов */
-         p = modfile_rep + Fsddlen + 14 + 1;
-         new_attr = 0;
-         if ( *p++ != *(modfile_buf + Fsddlen + 14 + 1) ) repeat = TRUE;
-
-         /* переустановка ид. пользователя  */
-         if ( *p == 's' ) new_attr |= 04000;
-         else if ( *p != '-' ) {
-            repeat = TRUE;
-            new_attr |= attr & 04000; 
-         }
-         p++;
-         if ( *p == 's' && *(p+7) == 'x' ) {
-            /* переустановка ид. группы */
-            new_attr |= 02010;
-         } else {
-            if ( *p == 'l' && *(p+7) == '-' ) {
-               /* учет блокировки доступа  */
-               new_attr |= 02000; 
-            } else {
-               if ( *p != '-' ) {
-                  repeat = TRUE;
-                  new_attr |= attr & 02000;
-                  *(p+7) = '?';
-               }
-            }
-         }
-         p++;
-         /* бит навязчивости */
-         if ( *p == 't' ) new_attr |= 01000;
-         else if ( *p != '-' ) {
-            repeat = TRUE;
-            new_attr |= attr & 01000; 
-         }
-         p++;
-	 for ( mask = 0400, p1 = "rwxrwxrwx"; mask; mask >>= 1, p++, p1++ ) {
-            if ( *p == *p1 ) new_attr |= mask;
-            else if ( *p != '-' ) {
-               repeat = TRUE;
-               new_attr |= attr & mask;
-            }
-         }
-         if ( !repeat && ( new_attr != (attr & 07777) ) ) {
-            /* ошибок нет - правим */
-            return ( chmod( modfile_buf, (int)new_attr ) == 0 );
-         }
-      }  /* конец работы с атрибутами */
-      if (repeat) vipBell();
-   }
-   return TRUE;
-}
-
-#endif
 /*---------------------------------------------------------------------------*/

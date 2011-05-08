@@ -49,8 +49,5 @@ void DqMoveEtoB (deq *from, deq *to);  /* move one record from.End -> to.Beg */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void DqCutB_byX (deq *d, long  dx);                     /* used only in ud.c */
 void DqCutE_toX (deq *d, long len);
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-BOOL qFilSwap();
-BOOL tmswap (BOOL freedesc);
 /*---------------------------------------------------------------------------*/
 #endif                                                      /* DQ_H_INCLUDED */

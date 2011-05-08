@@ -18,9 +18,9 @@ QString MiApp_defaultFont, MiApp_defFontAdjH;
 int     MiApp_defFontSize;
 int     MiApp_fontAdjOver, MiApp_fontAdjUnder, MiApp_defWidth, MiApp_defHeight;
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-inline bool txtReplaceable (txt *t)
-{
-  return (t->file && 
+inline bool isNoRealText (txt *t) // == text with no name, which is not changed
+{                                 // (as if µMup is started without parameters)
+  return (t->file &&              //
           t->file->name == QfsEMPTY_NAME && !(t->txstat & TS_CHANGED));
 }
 #ifdef Q_OS_MAC
@@ -28,9 +28,9 @@ bool MacEvents::eventFilter (QObject*, QEvent *ev)
 {
   if (ev->type() == QEvent::FileOpen) {
     QString filename = static_cast<QFileOpenEvent*>(ev)->file();
-    if (Ttxt && txtReplaceable(Ttxt))  tmLoadIn(Ttxt, filename);
-    else                               twStart (filename,    1); return true;
-  } else                                                         return false;
+    if (Ttxt && isNoRealText(Ttxt)) tmLoadIn(Ttxt, filename);
+    else                            twStart (filename,    1); return true;
+  } else                                                      return false;
 }
 # define mimFONTFACENAME "Menlo Regular"
 # define mimFONTSIZE  12
@@ -202,8 +202,12 @@ MiFrameOPEN_XXX(Dir,"directory", getExistingDirectory)
 QString MiFrame::saveAsDialog (txt *t)
 {
   if (t && t->file) {
-    QString suggest_name = t->file->full_name;
-    if (t->file->ft == QftPSEUDO) suggest_name.chop(1);
+    QString suggest_name;
+    switch (t->file->ft) {
+    case QftPSEUDO: suggest_name = t->file->path+"/?"; break;
+    case QftNOFILE: suggest_name = t->file->full_name; break; //++ TODO: check
+    default:        suggest_name = t->file->full_name;        // all platforms
+    }
     return QFileDialog::getSaveFileName(this, "Save as", suggest_name);
   } return QString();
 }
@@ -292,9 +296,9 @@ void MiFrame::DeleteScTwin (MiScTwin *sctw)
 void MiFrame::updateWinTitle(void)
 {
   QString title = QString::fromUtf8("µMup07 version " microVERSION);
-  if (main && main->vp && main->vp->wtext && !txtReplaceable(main->vp->wtext)
-                                          && main->vp->wtext->file)
-                        title = QfsShortName(main->vp->wtext->file);
+  if (main && main->vp && main->vp->wtext && !isNoRealText(main->vp->wtext)
+                                          &&         main->vp->wtext->file)
+                                title = QfsShortName(main->vp->wtext->file);
   if (scwin &&
       scwin->vp && scwin->vp->wtext && scwin->vp->wtext->file)
                       title.push_back(QString::fromUtf8(" • ") +

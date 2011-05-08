@@ -34,15 +34,16 @@ struct txt_tag
 #define TS_BUSY     001     /* - слот занят                                  */
 #define TS_FILE     002     /* - файл в памяти                               */
 #define TS_UNDO     004     /* - откатка файла в памяти                      */
-#define TS_NEW      010     /* - новый файл - записывать по FO_NEW           */
+#define TS_DIRLST   010     /* - список файлов - временный индекс            */
 #define TS_CHANGED  020     /* - файл изменялся                              */
 #define TS_WND      040     /* - есть хотя бы одно окно                      */
+#define TS_DqSWAP  0777     /* - биты используются для чистки в tmswap |     */
 #define TS_PERM    0100     /* - файл постоянно резидентен в памяти    |dq.c */
-#define TS_ERR     0200     /* - в процессе сохранения возникла ошибка |     */
+#define TS_SAVERR  0200     /* - в процессе сохранения возникла ошибка |     */
 #define TS_PSEUDO  0400     /* - corresponding file is not real file         */
 #define TS_RDONLY 01000     /* - force read-only (for ':help' viewing)       */
 #define TS_MCD    02000     /* - this file == micros.dir                     */
-#define TS_DIRLST 04000     /* - список файлов - временный индекс            */
+#define TS_NEW    04000     /* - новый файл - записывать по FO_NEW           */
   small cx, tcx;            /* Последняя позиция курсора в тексте            */
   large cy, tcy;            /*                    и окна на тексте           */
   struct txt_tag *txnext;
@@ -85,10 +86,10 @@ bool tmStart (QString param);                   /* <-- начать редакт
 bool twStart (QString filename, long ipos);
 void wattach (txt *text, wnd *vp);
 void wdetach (txt *text, wnd *vp);
-bool twEdit  (wnd *vp, QString filename, txt *referer = NULL);
-void twDirPush        (QString filename, txt *referer = NULL);
-void twDirPop (void);
-void twDirCopy(wnd *from, wnd *to), twExit();
+bool twEdit  (wnd *vp, QString filename, txt *referer = 0, bool isNew = false);
+void twDirPush        (QString filename, txt *referer = 0); //  ^
+void twDirPop (void);                                       // new window, use
+void twDirCopy(wnd *from, wnd *to), twExit();               // vipActivate(vp)
 //
 // Find an existing text descriptor for given file, or create new one (with or
 // without undo capability); referer text is used to resolve relative pathnames

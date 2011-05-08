@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07           Qt-based File System            | (c) Epi MG, 2007
+// МикроМир07           Qt-based File System            | (c) Epi MG, 2007,2011
 //------------------------------------------------------+----------------------
 #include <QRegExp>
 #include "mic.h"
@@ -7,18 +7,20 @@
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 qfile *QfsNew (QString filename, qfile *referer)
 {
+  QfsFtype new_ft = QftNIL;
   qfile *file;
-//+
-//fprintf(stderr, "Qfs(%s),referer=%s\n", filename.cStr(),
-//                    referer ? referer->full_name.cStr() : "NULL");
-//-
-  if (filename == QfsELLIPSIS || filename == QfsEMPTY_NAME) {
+  if (filename == QfsELLIPSIS || filename == QfsEMPTY_NAME) new_ft = QftNOFILE;
+  else if (filename.startsWith(QfsXEQ_PREFIX)) {            new_ft = QftPSEUDO;
+    if (!filename.endsWith(QString::fromUtf8("»")))
+         filename.append  (QString::fromUtf8("»"));
+  }
+  if (new_ft) {
     QString pseudo_path = referer ? referer->path : QDir::currentPath();
     file = new qfile_tag;
-    file->ft = QftPSEUDO;   file->name = filename;
-    file->size = 0;         file->path = pseudo_path;
+    file->size = 0;        file->ft = new_ft;
+    file->name = filename; file->path = pseudo_path;
     file->writable = true;
-    file->full_name = pseudo_path + "/" + file->name; return file;
+    file->full_name = pseudo_path+"/"+file->name; return file;
   }
   if (filename.startsWith('~') ) filename.replace(0,1, QDir::homePath());
   if (filename.indexOf('/') < 0) filename.push_front("./");
@@ -79,7 +81,9 @@ qfile *QfsDup (qfile *base)
   qdirfile *dfile; qfile *file;
   qtxtfile *tfile;
   switch (base->ft) {
-  case QftPSEUDO: file = new qfile_tag; break;
+  case QftNOFILE:
+  case QftPSEUDO:
+  default:  file = new qfile_tag; break;
   case QftTEXT:
     file = tfile = new qtxtfile; tfile->Qf.setFileName(base->full_name);
     break;

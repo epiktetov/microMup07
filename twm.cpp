@@ -84,15 +84,16 @@ static void twRedraw (txt *t)    /* redraw all attached windows after rename */
                                                 vipRedrawWindow  (w); }
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-bool twEdit (wnd *wind, QString filename, txt *referer)
+bool twEdit (wnd *wind, QString filename, txt *referer, bool isNew)
 {
   txt *tfound = tmDesc(filename, true, referer);
   if (!tfound || !tmLoad(tfound))  return false;
   Ttxt = tfound;
   Tx = Ttxt->cx; wattach(Ttxt, wind);
   Ty = Ttxt->cy;
-  vipUpdateWinTitle(wind);
-  vipRedrawWindow  (wind); return true;
+  if (isNew) { Twnd = NULL; vipActivate(wind); }
+                      vipUpdateWinTitle(wind);
+                      vipRedrawWindow  (wind); return true;
 }
 /*---------------------------------------------------------------------------*/
 void twDirPop (void)
@@ -139,15 +140,8 @@ void twDirCopy (wnd *from, wnd *to)
   to->dirsp = toDS;
 }
 /*--------------------------------------------------------- Text manager ----*/
-static void checkfile (txt *t)
+static void discardfile (txt *t)
 {
-  bool ok = (t->file->ft == QftPSEUDO) || QfsIsUpToDate(t->file);
-  t->txredit = t->file->writable ? TXED_YES : TXED_NO;   if (ok) return;
-/*
- * Not ok - have newer file on disk... but if our older version has any unsaved
- * modifications, warn and preserve it.
- */
-  if (t->txstat & TS_CHANGED) { vipBell(); return; } // TODO: ask question!
   if (t->txstat & TS_FILE) {
     DqEmpt(t->txustk); t->txy = 0;
     DqEmpt(t->txdstk); t->txstat &= ~TS_FILE;
@@ -155,12 +149,22 @@ static void checkfile (txt *t)
   if (t->txstat & TS_UNDO) { DqEmpt(t->txudeq); 
                                     t->txudcptr = t->txudlptr = 0; }
 }
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void tmCheckFiles()
+static void checkfile (txt *t) // - - - - - - - - - - - - - - - - - - - - - - -
+{
+  bool ok = (t->file->ft < QftREAL) || QfsIsUpToDate(t->file);
+  t->txredit = t->file->writable ? TXED_YES : TXED_NO; if (ok) return;
+/*
+ * Not ok - have newer file on disk... but if our older version has any unsaved
+ * modifications, warn and preserve it (otherwise discard the file contents):
+ */
+  if (t->txstat & TS_CHANGED) vipBell(); // TODO: ask question!
+  else                   discardfile(t);
+}
+void tmCheckFiles (void) // - - - - - - - - - - - - - - - - - - - - - - - - - -
 { 
-  for (txt *t = texts; t; t = t->txnext) 
+  for (txt *t = texts; t; t = t->txnext) {
     if ((t->txstat & TS_BUSY) && !(t->txstat & TS_PSEUDO)) checkfile(t);
-
+  }
   for (wnd *w = windows; w; w = w->wdnext) //! make sure that contents for all
     if (w->wtext) tmLoad(w->wtext);        // windows exist in memory - reload
 }                                          // texts for all active windows
@@ -168,8 +172,9 @@ void tmCheckFiles()
 txt *tmDesc (QString filename, bool needUndo, txt *referer)
 {
   small force_txstat = 0;
-  if (filename.compare(":clip") == 0) filename = QString(SAVFILNAM);
-  if (filename.compare(":help") == 0) {
+  int N;
+       if (filename.compare(":clip") == 0) filename = QString(SAVFILNAM);
+  else if (filename.compare(":help") == 0) {
     filename = QCoreApplication::arguments().at(0);
 #ifdef Q_OS_MAC
     filename.replace(QRegExp("/MacOS/[^/]+$"), "/Resources/micro.keys");
@@ -177,6 +182,11 @@ txt *tmDesc (QString filename, bool needUndo, txt *referer)
     filename.replace(QRegExp("[^/]+$"), "micro.keys");
 #endif
     force_txstat = TS_RDONLY;
+  }
+  else if ((N = filename.indexOf("@@")) > 0) {
+    QString name = filename.left(N),  rev = filename.mid(N+2).trimmed();
+    filename = QString::fromUtf8("«git show %2:%1»").arg(name).arg(rev);
+    force_txstat = TS_RDONLY; // cannot change the history... not that easy
   }
   qfile *fd = QfsNew(filename, referer ? referer->file : NULL);
   filename = fd->full_name;
@@ -187,7 +197,7 @@ txt *tmDesc (QString filename, bool needUndo, txt *referer)
       QfsClear(fd);
       checkfile(t); return t; // found existing text
   } }
-  while ((t = TxNew(needUndo ? TRUE : FALSE)) == NIL) tmswap(TRUE);
+  t = TxNew(needUndo ? TRUE : FALSE); // not found => create new one
   t->file = fd;         t->txstat |= force_txstat;
   if (fd->ft == QftDIR) t->txstat |= TS_DIRLST;
   else /*just-in-case*/ t->txredit =  TXED_YES; return t;
@@ -196,19 +206,13 @@ txt *tmDesc (QString filename, bool needUndo, txt *referer)
 #ifdef UNIX
 # include <errno.h>
 # define TwmBACKUP_EXT "~"
+# define QStingFERROR QString("[%1] %2 in %3").arg(errno).arg(strerror(errno))
 #else
 # define TwmBACKUP_EXT ".bkup"
+# define QStingFERROR QString("Error in %1")
 #endif
-bool teferr (txt *t)
-{
-#ifdef UNIX
-  QString msg = QString("[%1] %2 in %3").arg(errno).arg(strerror(errno))
-#else
-  QString msg = QString("Error in %1")
-#endif
-                                               .arg(t->file->full_name);
-  vipError(msg); return false;
-}
+bool teferr (txt *t) { QString msg = QStingFERROR.arg(t->file->full_name);
+                       vipError(msg);                        return false; }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static void tmDirLST (txt *t)
 {
@@ -236,7 +240,8 @@ static void tmDirLST (txt *t)
          (wchar_t *)(it->fileName().utf16())        );
     TxTIL(t, Lebuf, qstr2tcs(line, Lebuf)); TxDown(t);
   } 
-  t->cx = t->txlm = DIRLST_FNPOS;
+  if (t->txudeq)      udclear(t); //<- reset undo start to this point (initial
+  t->cx = t->txlm = DIRLST_FNPOS; //   blank state is not very not interesting)
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static void check_MCD (txt *t)
@@ -251,12 +256,14 @@ static void check_MCD (txt *t)
 bool tmDoLoad (txt *t)  /*- - - - - - - - - - - - - - - - - - - - - - - - - -*/
 {
   int oc = 0;
-  switch (t->file->ft) {
-  case QftPSEUDO:     return true; // PSEUDO file always considered "loaded"
-  case QftDIR: tmDirLST(t); break;
+  switch (t->file->ft) {       // NOFILE file always considered "loaded" (since
+  case QftNOFILE:              // there is no place to reload them from anyway)
+  case QftNIL:    return true; //-
+  case QftPSEUDO: tmLoadXeq(t); break; // - load by executing command: unix.cpp
+  case QftDIR:    tmDirLST( t); break; // - load directory listing (see above)
   case QftTEXT:
-      oc = QfsOpen(t->file, FO_READ); // DqLoad: -1:fail,0:empty,1:trunc,2:ok
-      if (oc < 0) return false;       //
+      oc = QfsOpen(t->file, FO_READ);  // DqLoad: -1:fail,0:empty,1:trunc,2:ok
+      if (oc < 0) return false;        //
       if (oc > 0) oc = DqLoad(t->txdstk, t->file, t->file->size);
       QfsClose(t->file);
       if (oc < 0) return false; // zero result (empty file) is also acceptable
@@ -281,11 +288,23 @@ bool tmLoad (txt *t)  /*- - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   }
   return teferr(t);
 }
-void tmLoadIn (txt *t, QString  filename) /*- - - - - - - - - - - - - - - - -*/
+#ifdef Q_OS_MAC /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+void tmLoadIn (txt *t, QString  filename) /* only for MacEvents::eventFilter */
 {
   QfsClear(t->file); t->file = QfsNew (filename, NULL);
   tmLoad(t);         if (Twnd) vipUpdateWinTitle(Twnd);
 }
+#endif
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+bool tmReLoad (txt *t)   // Forced reload -- check the status of real file (and
+{                        // discard outdated contents if necessary), but always
+  switch (t->file->ft) { // re-create directory listings and PSEUDO files anew:
+  case QftNOFILE:        //
+  default:                                           return false;
+  case QftTEXT:   checkfile  (Ttxt); tmLoad  (Ttxt); return  true;
+  case QftPSEUDO: discardfile(Ttxt); tmLoad  (Ttxt); return  true;
+  case QftDIR:         TxEmpt(Ttxt); tmDoLoad(Ttxt); return  true;
+} }
 /*---------------------------------------------------------------------------*/
 BOOL tmsave (txt *t, BOOL needBackup)
 {
@@ -310,8 +329,8 @@ BOOL tmsave (txt *t, BOOL needBackup)
                        else          return teferr(t); t->txstat &= ~TS_NEW;
   }
   else if (! (t->txstat & TS_NEW)) QfsDelete(t->file);
-  t->txstat  &= ~TS_CHANGED;
-  t->txudfile = t->txudcptr; return true;
+  t->txudfile = t->txudcptr;
+  t->txstat  &= ~(TS_CHANGED|TS_SAVERR);  return true;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 bool tmSaveAs (txt *t, QString  fn)
@@ -351,11 +370,15 @@ bool twSave (txt *t, wnd *vp, bool needBackup)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tmSaveAll (void)                    /* сохранить ВСЕ изменения на диске */
 {
-  for (txt *t = texts; t; t = t->txnext)
-    if (t->txstat & TS_CHANGED) { if (t->txwndptr) 
-                                       twSave(t, t->txwndptr, false);
-                                  else tmsave(t,              FALSE); }
-}
+  for (txt *t = texts; t; t = t->txnext) {
+//+
+// fprintf(stderr, "%04o%s\n", t->txstat,
+//                             t->file ? t->file->full_name.cStr() : "nil");
+//-
+    if (t->txstat & TS_CHANGED) {
+      if (t->txwndptr) twSave(t, t->txwndptr, false); // <- saves QftNOFILE too
+      else             tmsave(t,              FALSE); //    (will ask for name)
+} } }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 bool twSafeClose (txt *t, wnd *vp)
 {
@@ -375,13 +398,19 @@ void tmFentr (void)                   /* file name ENTeR -- ввести имя 
 {
   if (! filebuflen) filebuflen = aftotc(FPROMPT, -1, filebuf);
   LenterARG(filebuf, &filebuflen, LFPROMPT, fileHistory,
-                     &filebufFlag, TM_F2ENTR, TM_F2ENTR, 0);
+                     &filebufFlag, TM_F1ENTR, TM_F2ENTR, 0);
 }
-void tmDoFentr (void) 
+void tmDoFentr (void) { if (filebuflen > LFPROMPT)
+                          twDirPush(tcs2qstr(filebuf   +LFPROMPT,
+                                             filebuflen-LFPROMPT)); }
+void tmDoFentr2 (void)
 { 
-  if (filebuflen > LFPROMPT) twDirPush(tcs2qstr(filebuf   +LFPROMPT,
-                                                filebuflen-LFPROMPT)); 
-}                                                                       
+  if (filebuflen > LFPROMPT) {
+    wnd *wind = vipSplitWindow(Twnd, TM_VFORK);
+    vipFocusOff(Twnd);
+    if (wind) twEdit(wind, tcs2qstr(filebuf   +LFPROMPT,
+                                    filebuflen-LFPROMPT), NULL, true);
+} }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tmFnewByTtxt (void)                 /* войти в новый файл (имя из Ttxt) */
 {
@@ -399,9 +428,13 @@ void tmFnewByTtxt (void)                 /* войти в новый файл (�
   else if (Ttxt->txstat & TS_DIRLST) { lm = DIRLST_FNPOS; rm = Lleng; }
   else if (Tx > Lleng) return;
   else {
-    lm = rm = Tx;
-    while (lm > 0     && !strchr(" \'\"<", (char)Lebuf[lm-1])) lm--;
-    while (rm < Lleng && !strchr(" \'\">", (char)Lebuf[rm]  )) rm++;
+                 for (lm = Tx; lm >= 0    && (uchar)Lebuf[lm]   != 0xAB;) lm--;
+    if (lm >= 0) for (rm = Tx; rm < Lleng && (uchar)Lebuf[rm-1] != 0xBB;) rm++;
+    else {
+      lm = rm = Tx;
+      while (lm > 0     && !strchr(" \'\"(<", (char)Lebuf[lm-1])) lm--;
+      while (rm < Lleng && !strchr(" \'\">)", (char)Lebuf[rm]  )) rm++;
+    }
     /*
      * TODO: find the include file using some search path
      */
@@ -452,7 +485,8 @@ int TmCommand (int kcode)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   case TM_FNEW:   tmFnewByTtxt(); break; /* войти в новый файл (имя из Ttxt) */
   case TM_FENTR:  tmFentr  ();    break; /* ввести имя файла...              */
-  case TM_F2ENTR: tmDoFentr();    break; /* ...войти в этот файл             */
+  case TM_F1ENTR: tmDoFentr ();   break; /* ...войти в этот файл (тут же)    */
+  case TM_F2ENTR: tmDoFentr2();   break; /* ...войти в файл (в новом окне)   */
 #ifdef UNIX
   case TM_SHELL: x2enter(); break;       /* ввести и выполнить команду shell */
   case TM_FEXEC:
@@ -484,10 +518,9 @@ int TmCommand (int kcode)
     }
     else return E_SFAIL;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-  case TM_RELOAD:
-    if (Ttxt->file->ft == QftDIR) { TxEmpt(Ttxt); tmDirLST(Ttxt); }
-    else                       { checkfile(Ttxt); tmLoad  (Ttxt); }
-    twRedraw(Ttxt); break;
+  case TM_RELOAD: if (tmReLoad(Ttxt)) twRedraw(Ttxt); /* ^R = forced re-load */
+                  else                return E_SFAIL;
+    break;
 #ifdef UNIX
   case TM_GREP:
   case TM_GREP2:   return (tmGrep(kcode) < 0) ? E_SFAIL : E_OK;

@@ -353,7 +353,8 @@ static int vipCmdScroll (wnd *vp, int kcode, int dx, int dy)
   if (dx < 0 && vp->wtx+dx < 0) dx = -vp->wtx; vp->wtx += dx;
   if (dy < 0 && vp->wty+dy < 0) dy = -vp->wty; vp->wty += dy;
        if (dx) vipRedrawWindow(vp);
-  else if (dy) vipRoll(vp, 0, vp->wsh, -dy);     return E_OK;
+  else if (dy) vipRoll(vp, 0, vp->wsh, -dy);
+  else {       vipBell();     return E_SETY; }   return E_OK;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 int vipOnTwxCmd (wnd *vp, int kcode)
@@ -427,7 +428,10 @@ void vipOnKeyCode (wnd *vp, int ev, int ca)
     tesetxy (Tx, vp->wty+vp->wsh-1); // to avoid scrolling to the empty screen
     vp->sctw->repeatCmd(TW_SCROLDN); // in case when started with cursor on top
   }
-  else if (ev == TW_CUP) vp->sctw->repeatCmd(TW_SCROLUP);
+  else if (ev == TW_CUP) {                        // ^up: if at the top screen,
+    if (vp->wty) vp->sctw->repeatCmd(TW_SCROLUP); // jump to the text beginning
+    else         vipOnMimCmd(vp, TE_TBEG, KxBLK); // otherwise begin continuous
+  }                                               // scroll (stop at vp->wty=0)
   else {
     int N;
     if (enteringMacro) { N = enteringMacro - TK_EM0;

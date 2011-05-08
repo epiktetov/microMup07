@@ -5,7 +5,7 @@
 #define UD_H_INCLUDED 
 
 void tundoload  (txt *t);
-void tundounload(txt *t); void udcut(txt *t);
+void tundounload(txt *t); void udcut(txt *t), udclear(txt *t);
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #define UT_IL    1 /* тип записи: строка всталена */
 #define UT_DL    2 /*             строка удалена  */
