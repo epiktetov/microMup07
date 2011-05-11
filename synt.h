@@ -4,7 +4,7 @@
 #ifndef SYNT_H_INCLUDED
 #define SYNT_H_INCLUDED
 #ifdef __cplusplus
-small SyntKnownLang(txt *t); // returns known language code (or 0 if not known)
+small SyntKnownLang(QString filename); // returns lang code (or 0 if not known)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 // Colorize the line from given text (the line assumed to be located in tcbuf),
 // may change txt->thisSynts (in which case it empties the entire txt->cldstk):

@@ -172,8 +172,9 @@ void letabchr()
   int dx = TABsize - (Lx % TABsize);
   llmove(Lx, Lxre, dx, TABchars); letab();
 }
-void lehchar2() { leLLCE(LeSCH_REPL_BEG); } /* Ctrl+. '>' */
-void lehchar1() { leLLCE(LeSCH_REPL_END); } /* Ctrl+/ '/' */
+void lehchar2() { leLLCE(LeSCH_REPL_BEG); } /* Ctrl+.('>') ʈ>ʀ */
+void lehchar1() { leLLCE(LeSCH_REPL_END); } /* Ctrl+/('/') ʈ/ʀ */
+void lehchar0() { leLLCE(TmSCH_THIS_OBJ); } /* Ctrl+,('<')   */
 /*---------------------------------------------------------------------------*/
 BOOL leNword (small *cwbeg, /* Найти (unless ptr=0): начало текущего слова   */
               small *cwend, /*                       конец текущего слова    */
@@ -265,6 +266,14 @@ void leccup()  { leconvert(cvTO_UPPER);   }
 void leccdwn() { leconvert(cvTO_LOWER);   }
 void leccdec() { leconvert(cvTO_DECIMAL); }
 void lecchex() { leconvert(cvTO_RADIX);   }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+static void leconvert_word (int type)
+{
+  if (!BlockMark) { scblkon(TRUE); lepword(); Tx = Lx; }
+  leconvert(type);
+}
+void lecwdec() { leconvert_word(cvTO_DECIMAL); }
+void lecwhex() { leconvert_word(cvTO_RADIX);   }
 void lecbold()
 {
   int x0,x1; if (! Block1size(&x0,&x1)) x1 = (x0 = Lx) + 1;
@@ -449,8 +458,9 @@ comdesc lecmds[] =
   { LE_BS,     lebs,            CA_CHANGE|CA_NBEG }, /* удалить до курсора   */
   { LE_SPCHAR, lespchar, CA_EXT|CA_CHANGE|CA_NEND|CA_RPT },
   { LE_TABCHR, letabchr, CA_EXT|CA_CHANGE|CA_NEND }, /* insert TAB           */
-  { LE_HCHAR1, lehchar1, CA_EXT|CA_CHANGE|CA_NEND }, /* insert sky '/'       */
-  { LE_HCHAR2, lehchar2, CA_EXT|CA_CHANGE|CA_NEND }, /* insert sky '>'       */
+  { LE_HCHAR0, lehchar0, CA_EXT|CA_CHANGE|CA_NEND }, /* ins: TmSCH_THIS_OBJ  */
+  { LE_HCHAR1, lehchar1, CA_EXT|CA_CHANGE|CA_NEND }, /* ins: LeSCH_REPL_END  */
+  { LE_HCHAR2, lehchar2, CA_EXT|CA_CHANGE|CA_NEND }, /* ins: LeSCH_REPL_BEG  */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   { LE_NWORD,  lenword,                   CA_NEND }, /* следующее слово      */
   { LE_PWORD,  lepword,                   CA_NBEG }, /* предыдущее слово     */
@@ -462,7 +472,9 @@ comdesc lecmds[] =
   { LE_CCUP,   leccup,          CA_CHANGE|CA_NEND }, /* -> прописная         */
   { LE_CCDWN,  leccdwn,         CA_CHANGE|CA_NEND }, /* -> строчная          */
   { LE_CCDEC,  leccdec,         CA_CHANGE|CA_NEND }, /* -> decimal           */
+  { LE_CWDEC,  lecwdec,         CA_CHANGE         }, /* word -> decimal      */
   { LE_CCHEX,  lecchex,         CA_CHANGE|CA_NEND }, /* -> hex               */
+  { LE_CWHEX,  lecwhex,         CA_CHANGE         }, /* word -> hex               */
   { LE_CBOLD,  lecbold,         CA_CHANGE|CA_NEND }, /* сделать жирным       */
   { LE_MOVRIGHT, lemovright,    CA_CHANGE|CA_NEND }, /* сдвинуть вправо      */
   { LE_MOVLEFT,  lemovleft,     CA_CHANGE|CA_NBEG }, /* сдвинуть влево       */

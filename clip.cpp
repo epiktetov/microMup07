@@ -66,10 +66,6 @@ static void cptinit (bool needContent)
     else   LCtxt->txstat |= TS_NEW;
            LCtxt->txstat |= (TS_FILE|TS_PERM);
 } }
-void cpsave()
-{
-  if (LCtxt && (LCtxt->txstat & TS_CHANGED)) tmsave(LCtxt, FALSE);
-}
 QString clipStatus()  /*- - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 {
   return QString::fromUtf8(cpopen ? "»" : cb_new_data ? "«" : "·");
@@ -110,7 +106,12 @@ static void CSclose ()
   if (cclen) { TxBottom(LCtxt);
     TxTIL(LCtxt, ccbuf, cclen); cclen = 0; LCtxt->txstat |= TS_CHANGED;
 } }
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/          
+void cpsave() // flush everything we saved so far into disk file (used at exit
+{             // and for Calculator feature - feeding .micro7.clip to the 'bc')
+  CSclose();  //
+  if (LCtxt && (LCtxt->txstat & TS_CHANGED)) tmsave(LCtxt, FALSE);
+}
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static void tecutlin() /* Защита от случайного нажатия на F3 вместо F4: если */
 {                      /* последнее запоминаемое было символы, откзатать (но */
   if (cpopen) {        /*                            только 1 раз, выполнить */
@@ -285,7 +286,7 @@ void teicharblk()
 #define C_CLEAR  2 /* Запомнить с очисткой                                   */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static void gblockcut (int op)
-{ 
+{
   int y, trm = my_min(Ttxt->txrm, MAXTXRM);  make_blkXYsize();
   if (blkXsize == 0) exc(E_NOOP);
   for (y = blkYmin; y <= blkYmax; y++) {

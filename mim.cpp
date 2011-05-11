@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
   menuBarHeight = Qs.value("private/menuBarHeight", -1).toInt();
 #endif
   for (int i = 1; i < argc; i++) {
-    QString param = QString(argv[i]);
+    QString param = QString::fromUtf8(argv[i]);
          if (param.compare("-dos",IGNORE_CASE) == 0) dosEOL           =  TRUE;
     else if (param.compare("-kb", IGNORE_CASE) == 0) MiApp_debugKB    =  true;
     else if (param.compare("-dg", IGNORE_CASE) == 0) MiApp_useDIAGRAD =  true;
@@ -105,6 +105,7 @@ int main(int argc, char *argv[])
 #ifdef Q_OS_WIN                // Qt operates with correct forward slashes, but
       param.replace('\\','/'); // argv here comes from Windows, have to replace
 #endif
+      if (param.startsWith("'")) param.replace(0,1,QfsXEQ_PREFIX);
       if (tmStart(param)) return app.exec();
       else                return 1;
   } }

@@ -4,9 +4,6 @@
 #include <Qt>
 #include "mic.h"
 #include "ccd.h"
-//+
-#include <stdio.h>
-//-
 #ifdef Q_OS_MAC
 #  define Mk_UP    (Qt::Key_Up    | Qt::KeypadModifier)
 #  define Mk_DOWN  (Qt::Key_Down  | Qt::KeypadModifier)
@@ -71,9 +68,6 @@ static micom *translate_by_tbl (int key)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static micom *key_translate (int key_mask)
 {
-//+
-//fprintf(stderr, "trans(%x,mode=%x)", key_mask, kbMode);
-//-
   micom *res;
   if (kbMode == TK_ESC) {
     if (Mk_IsCHAR(key_mask)) {
@@ -105,10 +99,6 @@ static micom *key_translate (int key_mask)
 micom *key2mimCmd (int key_mask)   /* returns NULL if not a microMir command */
 {
   micom *mk = key_translate(key_mask);
-//+
-//if (mk) fprintf(stderr, "ev=%x\n", mk->ev);
-//else    fprintf(stderr, "ev=NULL\n");
-//-
   if (mk) {
     switch (mk->ev) {
     case TK_ESC:  KbCount = KbRadix = 0;

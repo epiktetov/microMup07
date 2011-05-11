@@ -2,11 +2,14 @@
 // МикроМир07     UNIX-specific stuff and tmSyncPos     | (c) Epi MG, 2007-2011
 //------------------------------------------------------+--------------------*/
 #include <QString>        /* Old tm.c (c) Attic 1989-91, (c) EpiMG 1997-2003 */
+#include <QRegExp>
+#include <QProcessEnvironment>
 #include "mic.h"
 #include "ccd.h"
 #include "qfs.h"
 #include "twm.h"
 #include "vip.h"
+#include "clip.h"
 #include "synt.h"
 #include "unix.h"
 extern "C" {
@@ -46,8 +49,8 @@ void x2enter (void)           /* command line enter (2) ввести коман�
     tcmdbuflen += new_prompt_len - tcmdpromptlen;
     tcmdpromptlen = new_prompt_len;
   }
-  qstr2tcs(prompt,          tcmdbuffer,      AT_PROMPT);
-  aftotc(AF_LIGHT "->", -1, tcmdbuffer+tcmdpromptlen-2);
+  qstr2tcs(prompt,           tcmdbuffer,      AT_PROMPT);
+  aftotc(AF_PROMPT "->", -1, tcmdbuffer+tcmdpromptlen-2);
 /*
  * If invoked from command window, copy the current line (excluding old prompt)
  * as initial value for new command:
@@ -63,10 +66,7 @@ void x2enter (void)           /* command line enter (2) ввести коман�
                         &tcmdbufFlag, TM_FEXEC, TM_F2EXEC, 0);
 }
 /*---------------------------------------------------------------------------*/
-txt *Stxt;  /* text and window for shellexec, the latter may be NULL if that */
-wnd *Swnd;  /* windows is not opened yet, e.g. when called from tmLoadXeq()  */
-
-static void appendText (char *text, char *tend)
+static void appendText(txt *Stxt, small& Sx, char *text, char *tend)
 {
 //  if (qTxBottom(Ttxt)) { teIL(); Lleng = 0; } // insert new empty line here,
 //  else       Lleng = TxTRead(Ttxt, Lebuf);    // or get partially filled one
@@ -80,15 +80,19 @@ static void appendText (char *text, char *tend)
 //  }
 //  TxTRep(Ttxt, Lebuf, Tx = Lleng);
 //
-  if (qTxBottom(Ttxt)) TxIL(Ttxt, text, Tx = tend-text);
+  if (qTxBottom(Stxt)) TxIL(Stxt, text, Sx = tend-text);
   else {
-    Lleng = TxTRead(Ttxt, Lebuf);
+    Lleng = TxTRead(Stxt, Lebuf);
     Lleng += aftotc(text, tend-text, Lebuf+Lleng);
-    TxTRep(Ttxt, Lebuf, Tx = Lleng);
+    TxTRep(Stxt, Lebuf, Sx = Lleng);
 } }
-static void appendCR() { TxDown(Ttxt); Tx = Ttxt->txlm; Ty++; }
+static void appendCR(txt *Stxt, small& Sx, large& Sy)
+{
+  TxDown(Stxt); Sx = Stxt->txlm; Sy++;
+}
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-static void shellexec (const char *cmd)
+static void shellexec (txt *Stxt, small& Sx,
+                                  large& Sy, const char *cmd, wnd *Swnd = NULL)
 {
   int fdsin[2], fdsout[2];
   int pid;
@@ -105,6 +109,10 @@ static void shellexec (const char *cmd)
     close(fdsout[1]);
     flags = fcntl(fds_out, F_GETFL, 0); flags |= O_NONBLOCK;
             fcntl(fds_out, F_SETFL, flags);
+
+    small oldTXED = Stxt->txredit;           // mark text as "read only"..
+                    Stxt->txredit = TXED_NO; // mostly to force red cursor
+    EnterOSmode();
     do {
       struct timeval timeout; int k;
       int selres;
@@ -117,14 +125,17 @@ static void shellexec (const char *cmd)
       if (selres > 0) {
         int max_len = MAXLPAC-Tx-1;
         int len = read(fds_out, pst = line_buffer, max_len);
-        if (len <= 0) break;               TxSetY(Ttxt, Ty);
-        for (p = pst; len--; p++)
+        if (len <= 0) break;               TxSetY(Stxt, Sy);
+        for (p = pst; len--; p++) {
           switch (*p) {
           case '\r':
-          case '\n': appendText(pst, p); appendCR(); pst = p+1; break;
-          case '\b': if (p > pst) p--;                          break;
-          }
-        if (p != pst) appendText(pst, p);
+          case '\n':
+            appendText(Stxt,Sx,     pst,   p);
+            appendCR  (Stxt,Sx,Sy); pst = p+1; break;
+          case '\b':
+            if (p > pst) p--;
+        } }
+        if (p != pst) appendText(Stxt,Sx, pst, p);
       }
       while ((k = kbhin()) != 0) { // Wait for user input
         unsigned char ascii = k;
@@ -133,36 +144,35 @@ static void shellexec (const char *cmd)
         case    4: close(fds_in); fds_in = -1; break_count++; break; /* ^D */
         default:
           if (fds_in < 0)  continue;
-          if (k == '\n') appendCR();
+          if (k == '\n') appendCR(Stxt,Sx,Sy);
           else {
-            p = (char*)&ascii; appendText(p, p+1);
+            p = (char*)&ascii; appendText(Stxt,Sx, p, p+1);
           }
           write(fds_in, &ascii, 1);
       } }
       if (Swnd) vipOnFocus (Swnd); vipYield ();
-      if (Swnd) vipFocusOff(Swnd); TxSetY(Ttxt, Ty);
+      if (Swnd) vipFocusOff(Swnd); TxSetY(Stxt, Sy);
     }
     while (break_count < 2);     if (fds_in != -1) close(fds_in);
                                                   close(fds_out);
     if (!waitpid(pid, &child_status, WNOHANG)) {
-      kill(pid, SIGKILL);
-      wait(&child_status); /* if child does not want to die, try harder */
-  } }
+      kill(pid, SIGKILL);  //
+      wait(&child_status); // if child does not want to die, try harder...
+    }
+    ExitOSmode(); Stxt->txstat |= TS_CHANGED;
+                  Stxt->txredit =    oldTXED;
+  }
   else { /* ------------------------ child process ------------------------- */
 
-    QfsChDir(Ttxt->file);  close(fdsin[1]);   dup2(fdsin[0],  0);  /* stdin  */
+    QfsChDir(Stxt->file);  close(fdsin[1]);   dup2(fdsin[0],  0);  /* stdin  */
                                               dup2(fdsout[1], 1);  /* stdout */
                            close(fdsout[0]);  dup2(fdsout[1], 2);  /* stderr */
 
-    execl("/bin/sh", "sh", "-c", cmd, NULL);  exit(1);
+    QString shell = QProcessEnvironment::systemEnvironment().
+                                               value("SHELL", "/bin/sh");
+    execl(shell.cStr(),
+          shell.cStr(), "-c", cmd, NULL); exit(1);
 } }
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-static void unixShell_in_Ttxt (const char *cmd)
-{
-  small oldTXED = Ttxt->txredit;
-        Ttxt->txredit = TXED_NO; EnterOSmode();             shellexec(cmd);
-        Ttxt->txredit = oldTXED;  ExitOSmode(); Ttxt->txstat |= TS_CHANGED;
-}
 /*---------------------------------------------------------------------------*/
 void tmshell (int kcode)
 {
@@ -173,6 +183,7 @@ void tmshell (int kcode)
   if (p == pend) return; // empty command line => should not do anything
   while (p < pend) {
     switch (tp = *p++) {
+    case TmSCH_THIS_OBJ:
     case LeSCH_REPL_BEG: pc = scpy(Ttxt->file->name.cStr(), pc); break;
     case LeSCH_REPL_END: pc = scpy(Ttxt->file->path.cStr(), pc); break;
     default:
@@ -186,7 +197,8 @@ void tmshell (int kcode)
     Ctxt = Twnd->wsibling->wtext; TxEmpt(Ctxt);
   }
   else { for (Ctxt = texts; Ctxt; Ctxt = Ctxt->txnext)
-           if ((Ctxt->txstat & TS_PSEUDO) &&
+           if ((Ctxt->file && Ctxt->file->ft == QftNOFILE) &&
+               (Ctxt->txstat & TS_PSEUDO) &&
               !(Ctxt->txstat & (TS_WND|TS_PERM)) ) break;
 //       ^^
 // Look for unattached PSEUDO text, clear existing one or create new (no UNDO),
@@ -206,14 +218,14 @@ void tmshell (int kcode)
   wind->wcx = wind->wtx = 0;
   wind->wcy = wind->wty = 0; 
   if (Twnd == wind) Tx = Ty = 0;
-  else        vipActivate(wind); vipUpdateWinTitle( Swnd = wind );
+  else        vipActivate(wind); vipUpdateWinTitle(wind);
 //
 // Now insert the command (along with the prompt == current directory) into the
 // text and execute UNIX shell command... then check if any files were changed
 //
-  TxTIL (Ttxt, tcmdbuffer, tcmdbuflen);   Ty++;
+  TxTIL (Ttxt, tcmdbuffer, tcmdbuflen); Ty++;
   TxDown(Ttxt);
-  unixShell_in_Ttxt(cmdbuffer); tmCheckFiles();
+  shellexec(Ttxt, Tx, Ty, cmdbuffer, Twnd); tmCheckFiles();
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 int tmGrep (int kcode)                                               /* grep */
@@ -242,14 +254,32 @@ void tmLoadXeq (txt *t) /* load text by executing command from t->file->name */
   TxEmpt(t);                      //
   if (t->txudeq) { DqDel(t->txudeq); t->txudeq  =     NULL;
                                      t->txstat &= ~TS_UNDO; }
-  txt  *oldTtxt = Ttxt; Ttxt = t; //
-  small oldTx   = Tx;   Tx   = 0; // instead of making shellexec() independent
-  large oldTy   = Ty;   Ty   = 0; // of Ttxt just replace the text temporarily
-  Swnd = NULL;
-  QString cmd = t->file->name;
-          cmd.remove(0,1).chop(1); unixShell_in_Ttxt(cmd.cStr());
-  Tx = oldTx;
-  Ty = oldTy; Ttxt = oldTtxt;
+  small Sx;
+  large Sy; QString cmd =  t->file->name; // should copy the value first, since
+            cmd.remove(0,1).remove(-1,1); // remove() changes the argument str!
+  shellexec(t, Sx, Sy, cmd.cStr());
+}
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+void tmCalcBC (void)      /* Calculator -- using POSIX (or GNU) 'bc' utility */
+{
+  bool multiBlock = (BlockMark && BlockTy != Ty);
+  if (!tleread()) exc(E_MOVDOWN);
+  if (!BlockMark) {
+    for (Lx = Tx; Lx >= 0 && (uchar)Lebuf[Lx] != 0xAB;) Lx--;
+    if (Lx < 0) { Lx = Tx;  lepword();   BlockTx = Lx;     }
+    else                                 BlockTx = Lx+1;
+    if (Tx-BlockTx < 2) exc(E_NOBLOCK);
+    else { BlockTy = Ty; BlockMark = TRUE; }
+  }
+  cpclose(); tecsblock(); // save the block into (empty) cut/paste buffer, and
+  cpsave();               // flush that buffer to file (use it as input to bc)
+  if (multiBlock) Tx++;
+  small save_Tx = Tx;
+  large save_Ty = Ty;
+  EnterLEmode(); ledeol(); leLLCE(LeSCH_REPL_BEG);  Lchange = TRUE;
+  ExitLEmode();
+  shellexec (Ttxt, Tx,  Ty, "bc -l " SAVFILNAM "</dev/null", Twnd);
+  tesetxy(save_Tx, save_Ty);
 }
 /*---------------------------------------------------------------------------*/
 static int scan_lines_up (char c1st, char *line_buffer)       /* SyncPos(tm) */
@@ -259,97 +289,116 @@ static int scan_lines_up (char c1st, char *line_buffer)       /* SyncPos(tm) */
     TxUp(Ttxt);
     if ((len = TxRead(Ttxt, line_buffer)) <= 0) return -1;
     steps++;
-    line_buffer[len] = 0;
-  }
-  while (line_buffer[0] == c1st); return steps-1;
-}
+    line_buffer[len] = 0;                         // scans line up from current
+  }                                               // position (copying them to
+  while (line_buffer[0] == c1st); return steps-1; // the supplied buffer) while
+}                                                 // first char matches c1st
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-int tmSyncPos (void)
+int tmSyncPos (void) /* SyncPos(tm) -- NOTE: only works with ASCII filenames */
 {
-  char line_buffer[MAXLPAC], c, *p, *pline, filename[MAXPATH];
-  small len;               large file_pos, line_pos =  0, foo;
+  char c, line_buffer[MAXLPAC]; large file_pos = 0, line_pos = 0, foo;
   wnd *other_wnd = NULL;
-
+  small len,  steps = 0;                       // gcc "unix.cpp:277: error:..."
+  QString filename;                            // grep "unix.cpp:273:int tm..."
+  QRegExp gnuFileLine("([+.0-z]+):(\\d+):.*"); //-
+  QRegExp unifiedDiff("@@ [^@]+\\+(\\d+),[^@]+ @@.*");
+  QRegExp lineKeyword("\"?([+.0-z]+)\"?, line (\\d+)(?:.(\\d+))?");
+//        ^
+// [some-prefix] ["]{file}["], line {line}[.{pos}][:] {some-text}
+//
+//   "nm.h", line 155: Error: large is not defined (Sun WorkShop Compilers)
+//   cc: "nm.h", line 155: error 1000: Unexpected symbol: "large" (HP ANSI C)
+//   Error 419: "nm.h", line 155 # 'large' is used as a type... (HP ANSI C++)
+//   "nm.h", line 155.51: 1506-046 (S) Syntax error (VisualAge C++ for AIX)
+//   cc: Error: nm.h, line 155: Ill-formed parameter type list.. (Digital C++)
+//
         TxSetY(Ttxt,          Ty); if (qTxBottom(Ttxt)) return -1;
   len = TxRead(Ttxt, line_buffer); if (len <= 0)        return -1;
   line_buffer[len] = 0;
-  filename[0]      = 0;
-/*                                     ! NOTE: only works with ASCII filenames
- * Currently supported formats:        +---------------------------------------
- *
- * {line-other}a{line1}[,{line2}]    {line-other1}[,{line-other2}]d{line}
- * > ...                             < ...
- * > {some-text}                     < {some-text}
- *
- * {line-other1}[,{line-other2}]c{line1}[,{line2}]                -- diff
- * < ...
- * ---
- * > ...
- * > {some-text}
- *
- * {file}:{line}: {some-text}                                     -- GNU cc
- *
- * [some-prefix] ["]{file}["], line {line}[.{pos}][:] {some-text} -- others
- *
- *   "nm.h", line 155: Error: large is not defined (Sun WorkShop Compilers)
- *   cc: "nm.h", line 155: error 1000: Unexpected symbol: "large" (HP ANSI C)
- *   Error 419: "nm.h", line 155 # 'large' is used as a type... (HP ANSI C++)
- *   "nm.h", line 155.51: 1506-046 (S) Syntax error (VisualAge C++ for AIX)
- *   cc: Error: nm.h, line 155: Ill-formed parameter type list.. (Digital C++)
- */
-  if ((c = line_buffer[0]) == '<' || c == '>') {
-/*
- * diff works only if file is already opened in "other" window:
- */
-    if ((other_wnd = Twnd->wsibling) == NULL) return -1;
-    else {
-      int offset = scan_lines_up(c, line_buffer);
-      if (offset < 0) return -1;
-
-      if (memcmp(line_buffer, "---", 3) == 0
+//
+// Git "pretty log" handling -- actually, we only care whether each line starts
+// with (probably, abbreviated) revision SHA-1 (both «git log --pretty=oneline»
+// and µMup-specific 'gitlog' qualify, as well as «git blame» output); filename
+// of the original file is taken from the last word of Ttxt name
+//
+  if (Ttxt->txstat & TS_GITPL)
+    filename =  Ttxt->file->name.section(' ', -1).remove(-1,1) + "::"
+          + QString(line_buffer).section(' ',0,0);
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// {line-other}a{line1}[,{line2}]         {line-other1}[,{line-other2}]d{line}
+// > ...                                  < ...
+// > {some-text}                          < {some-text}
+//
+// {line-other1}[,{line-other2}]c{line1}[,{line2}]
+// < ...
+// ---                                            « ʁTraditional diff formatʀ »
+// > ...
+// > {some-text}                  (parsed using traditional methods, of course)
+//
+  else if ((c = line_buffer[0]) == '<' || c == '>') {
+    if ((other_wnd = Twnd->wsibling) == NULL) return -1; // only works if file
+    else {                                               // is already opened
+      int offset = scan_lines_up(c, line_buffer);        // in "other" window
+      if (offset < 0) return -1;                         // (nowhere to obtain
+      if (memcmp(line_buffer, "---", 3) == 0             // the name otherwise)
           && (scan_lines_up('-', line_buffer) < 0 ||
               scan_lines_up('<', line_buffer) < 0)) return -1;
 
-                     p = dtol(line_buffer, &foo);
+      char          *p = dtol(line_buffer, &foo);
       if (*p == ',') p = dtol(p+1,         &foo);
                      p = dtol(p+1,    &file_pos); file_pos += offset;
     }
-    vipActivate(other_wnd);
-    vipFocus   (other_wnd);
-  } 
-  else if ((pline = strstr(line_buffer+1, ", line ")) != NULL) {
-
-         p =       dtol(pline+7, &file_pos);
-    if (*p == '.') dtol(p+1,     &line_pos);
-
-    if (pline[-1] == '\"') pline--;
-    for (p = pline-1; 
-         p > line_buffer && *p != ' ' && *p != '\"'; p--) ; p++;
-
-    *sncpy(p, filename, pline-p) = 0; /* copy filename and terminate by 0 */
+    goto diff_sync_to_other_wnd; // obviously, "traditional methods" are
+  }                              // not authentic without goto statement
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// @@ -{line-other},{k} +{line},{n} @@ [comment]      « ʁUnified diff formatʀ »
+//  {context}
+//  ...                 Like for traditional diff, the file being compared must
+// -{deleted-line}      be opened already in "other" windows & that file should
+// +{added-line}     <- correspond to "newer" version, and tmSyncPos is invoked
+//  ...                 with cursor on hunk header or one of the added lines
+//
+  else if (line_buffer[0] == '@' || line_buffer[0] == '+') {
+    if ((other_wnd = Twnd->wsibling) == NULL) return -1;
+    else {
+      bool found = (line_buffer[0] == '@');
+      while (!found && !qTxTop(Ttxt)) {         TxUp(Ttxt);
+        line_buffer[ len = TxRead(Ttxt, line_buffer) ] = 0;
+        switch (line_buffer[0]) {
+          case '-':            continue;
+          case '@': found = true; break;
+          default:       steps++; break;
+    } } }
+    if (unifiedDiff.exactMatch(line_buffer)) {
+      file_pos = unifiedDiff.cap(1).toLong() + steps;
+diff_sync_to_other_wnd:
+      vipActivate(other_wnd);
+      vipFocus   (other_wnd); tesetxy(Tx, file_pos-1); return  0;
+    }                                                  return -1;
   }
-  else if ((p = strchr(line_buffer, ':')) != NULL) {
-    *p++ = 0;
-    strcpy(filename, line_buffer); dtol(p, &file_pos);
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  else if (gnuFileLine.exactMatch(line_buffer)) {
+    filename = gnuFileLine.cap(1);
+    file_pos = gnuFileLine.cap(2).toLong();
+  }
+  else if (lineKeyword.indexIn(line_buffer) >= 0) {
+    filename = lineKeyword.cap(1);
+    file_pos = lineKeyword.cap(2).toLong();
+    line_pos = lineKeyword.cap(3).toLong();
   }
   else return -1; /* unknown format */
-/*
- * If filename is present, open it in the other window (if not opened already)
- */
-  if (*filename) {
-    if ((other_wnd = Twnd->wsibling) != NULL) {
-      vipActivate(other_wnd);
-      vipFocus   (other_wnd);
-      if (strcmp(filename, other_wnd->wtext->file->name.cStr()) != 0) 
-        twDirPush(QString::fromAscii(filename), Ttxt);
-    }
-    else if ((other_wnd = vipSplitWindow(Twnd, TM_VFORK)) != NULL) {
-       bool ok = twEdit(other_wnd, QString::fromAscii(filename), NULL, true);
-       if (!ok) return -1;
-  } }
-  else if (other_wnd == NULL) return -1; /* should not come here */
-
-  tesetxy(line_pos, file_pos-1); /* inside MIM line numbers start with 0 */
-  return 0;
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// Filename found, open that file in the other window (if not opened already)
+//
+  if ((other_wnd = Twnd->wsibling) != NULL) {
+    vipActivate(other_wnd);
+    vipFocus   (other_wnd);
+    if (filename != other_wnd->wtext->file->name) twDirPush(filename, Ttxt);
+  }
+  else if ((other_wnd = vipSplitWindow(Twnd, TM_VFORK)) != NULL) {
+    vipFocusOff(Twnd);
+    if (!twEdit(other_wnd, filename, NULL, true)) return -1;
+  }
+  tesetxy(line_pos, file_pos-1); return 0;
 }
 /*---------------------------------------------------------------------------*/

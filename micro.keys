@@ -234,6 +234,7 @@ Shift+(Meta/Ctrl)+G == Shift+End - search backward (up)
 k_(TE_SENTR,   0xc1700, mod_HOME+Mk_END,  0) /* ввод подстроки поиска        */
 a_(TE_SENTR,            mod_META+'F',     0) /* (Enter или End - поиск вниз, */
 a_(TE_SENTR,            mod_CTRL+'F',     0) /*        +Shift - поиск вверх) */
+k_(LE_HCHAR0,  0xc172c, mod_CTRL+',',     0) /*                              */
 k_(LE_HCHAR1,  0xc172f, mod_CTRL+'/',     0) /* начало списка файлов (grep)  */
 k_(LE_HCHAR2,  0xc172e, mod_CTRL+'.',     0) /* начало подстроки замены      */
 k_(LA_STDMODE, 0xc1706, mod_CTRL+'6',     0) /*               | стандартный  */
@@ -390,6 +391,8 @@ For example:                                0ddd octal number such as 0176
   Esc 3 Shift+Del - delete 3 lines
   Esc 7 '*'       - type "*******" (insert or replace, depending on edit mode)
 
+  Esc N Alt+Meta+'<'   - convert word / selection to decimal from radix-N (hex)
+  Esc N Alt+Meta+'>'   - convert word / selection to radix-N (where N = 2..36)
   Esc N Ctrl+Shift+Ins - insert character with given code
   Esc N Meta/Ctrl+E    - move cursor to Nth line in text (without prefix Ctrl+E
                                            centers current line in the windows)
@@ -397,12 +400,18 @@ For example:                                0ddd octal number such as 0176
 k_(TK_ESC,    0xc0e5c, Mk_ESCAPE,                    0) /* Esc префикс     */
 k_(TK_HOME,   0xc0f10, Mk_HOME,                      0) /* Home префикс    */
 a_(TK_HOME,            Mk_F10,                       0)
+k_(LE_CWDEC,  0xc3109, mod_ALT+mod_META+',',     KxSEL)
+k_(LE_CWHEX,  0xc310f, mod_ALT+mod_META+'.',     KxSEL)
 k_(LE_SPCHAR, 0xc3161, mod_CTRL+mod_SHIFT+Mk_INSERT, 0) /* символ с кодом  */
 a_(LE_SPCHAR,          mod_CTRL+mod_SHIFT+Mk_F11,    0)
 k_(TE_CENTR,  0xc314e, mod_CTRL+'E',             KxSEL) /* в середину окна */
 a_(TE_CENTR,           mod_META+'E',             KxSEL)
 /*
-MACRO. Shift+F7/F8/F9 - start recording macro
+   Ctrl+Shift+'=' - Calculator (MacOS X/Linux only), courtesy of /usr/bin/bc
+*/
+k_(TM_CALC, 0xc3142, mod_CTRL+mod_SHIFT+'+', KxSEL)
+/*
+MACRO: Shift+F7/F8/F9 - start recording macro
              F7/F8/F9 - finish recording / execute
 */
 k_(TK_SM0, 0xc3200, 0,               KxSEL)
@@ -423,7 +432,7 @@ MISCELLANEOUS.
   Ctrl+L - display line number in the info window (default)
   Ctrl+Q - ask for shell command and execute it (MacOS X/Linux only)
    in shell command:
-        light blue '>' (Ctrl+'.') is replaced with the name of current file,
+        light blue '•' (Ctrl+'<') is replaced with the name of current file,
         light blue '/' (Ctrl+'/') replaced with full path to current file
 */
 k_(TK_NONE,   0xc3300, 0,            0) /* None command                     */

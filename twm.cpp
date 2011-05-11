@@ -35,7 +35,7 @@ bool tmStart (QString param)
   if (ptn.exactMatch(param)) {
     QString filename = ptn.cap(1);
     QString init_pos = ptn.cap(2);
-    long ipos = init_pos.toLong ();
+    long ipos = init_pos.toLong();
     if (!filename.isEmpty() && ipos > 0) return twStart(filename, ipos);
   }                                      return twStart(param,       1);
 }
@@ -116,8 +116,8 @@ void twDirPush (QString filename, txt *referer)
 // Do not save pseudo-text used for shell command execution in the stack (since
 // such text is unique and does not have proper name anyway), also check space
 //
-  if ( ((Ttxt->txstat & TS_PSEUDO) && !(Ttxt->txstat & TS_DIRLST))
-                        || Twnd->dirsp == Twnd->stack + MAXDIRSTK ) vipBell();
+  if (Ttxt->file->ft == QftNOFILE ||
+         Twnd->dirsp == Twnd->stack + MAXDIRSTK) vipBell();
   else {
     Twnd->dirsp->dswtx = Twnd->wtx; Twnd->dirsp->dsx = Tx;
     Twnd->dirsp->dswty = Twnd->wty; Twnd->dirsp->dsy = Ty;
@@ -168,11 +168,23 @@ void tmCheckFiles (void) // - - - - - - - - - - - - - - - - - - - - - - - - - -
   for (wnd *w = windows; w; w = w->wdnext) //! make sure that contents for all
     if (w->wtext) tmLoad(w->wtext);        // windows exist in memory - reload
 }                                          // texts for all active windows
+/*---------------------------------------------------------------------------*/
+struct cmdmap { const char *key, *cmd; int txstat; };
+cmdmap vcs_commands[] =
+{
+  { "git",    "«git show %2:%1»",                           TS_RDONLY },
+  { "",       "«git show %2:%1»",                           TS_RDONLY },
+  { "hg",     "«hg cat -r %2 %1»",                          TS_RDONLY },
+  { "blame",  "«git blame %2 %1»",                          TS_GITPL  },
+  { "gitlog", "«git log --pretty='%h (%aN %ad) %s' %2 %1»", TS_GITPL  },
+  { 0,0,0 }
+};
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 txt *tmDesc (QString filename, bool needUndo, txt *referer)
 {
+  QRegExp ptn("(.+):(git|gitlog|blame||hg):(.*)");
   small force_txstat = 0;
-  int N;
+  small force_clang  = 0;
        if (filename.compare(":clip") == 0) filename = QString(SAVFILNAM);
   else if (filename.compare(":help") == 0) {
     filename = QCoreApplication::arguments().at(0);
@@ -183,13 +195,17 @@ txt *tmDesc (QString filename, bool needUndo, txt *referer)
 #endif
     force_txstat = TS_RDONLY;
   }
-  else if ((N = filename.indexOf("@@")) > 0) {
-    QString name = filename.left(N),  rev = filename.mid(N+2).trimmed();
-    filename = QString::fromUtf8("«git show %2:%1»").arg(name).arg(rev);
-    force_txstat = TS_RDONLY; // cannot change the history... not that easy
-  }
+  else if (ptn.exactMatch(filename)) {
+    for (cmdmap *p = vcs_commands; p->key; p++)
+      if (ptn.cap(2) == p->key) {
+        filename = QString::fromUtf8(p->cmd).arg(ptn.cap(1)).arg(ptn.cap(3));
+        force_txstat = p->txstat;
+        force_clang  = SyntKnownLang(ptn.cap(1)); break;
+  }   }
   qfile *fd = QfsNew(filename, referer ? referer->file : NULL);
   filename = fd->full_name;
+       if (fd->ft == QftDIR) force_txstat |= TS_DIRLST;
+  else if (fd->ft == QftTEXT) force_clang  = SyntKnownLang(fd->name);
   txt *t;
   for (t = texts; t; t = t->txnext) {
     if ((t->txstat & TS_BUSY) && t->file &&
@@ -198,9 +214,9 @@ txt *tmDesc (QString filename, bool needUndo, txt *referer)
       checkfile(t); return t; // found existing text
   } }
   t = TxNew(needUndo ? TRUE : FALSE); // not found => create new one
-  t->file = fd;         t->txstat |= force_txstat;
-  if (fd->ft == QftDIR) t->txstat |= TS_DIRLST;
-  else /*just-in-case*/ t->txredit =  TXED_YES; return t;
+  t->file = fd;
+  TxEnableSynt(t,force_clang);
+  t->txstat  |=  force_txstat; return t;
 }
 /*---------------------------------------------------------------------------*/
 #ifdef UNIX
@@ -274,8 +290,7 @@ bool tmDoLoad (txt *t)  /*- - - - - - - - - - - - - - - - - - - - - - - - - -*/
   t->txstat |=  TS_FILE;
   if (t->txudeq != NIL) { t->txstat  |= TS_UNDO;
                           t->txudfile = t->txudcptr; } 
-  small lang =  SyntKnownLang(t);
-  if (lang) TxEnableSynt(t,lang); return true;
+  return true;
 }
 bool tmLoad (txt *t)  /*- - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 {
@@ -291,9 +306,10 @@ bool tmLoad (txt *t)  /*- - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #ifdef Q_OS_MAC /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tmLoadIn (txt *t, QString  filename) /* only for MacEvents::eventFilter */
 {
-  QfsClear(t->file); t->file = QfsNew (filename, NULL);
-  tmLoad(t);         if (Twnd) vipUpdateWinTitle(Twnd);
-}
+  QfsClear(t->file); t->file = QfsNew(filename, NULL);
+  tmLoad(t);
+  if (Twnd) { vipUpdateWinTitle(Twnd);
+}             vipRedrawWindow  (Twnd); }
 #endif
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 bool tmReLoad (txt *t)   // Forced reload -- check the status of real file (and
@@ -387,7 +403,7 @@ bool twSafeClose (txt *t, wnd *vp)
   Twnd = vp; twExit(); return true; /* NOTE: directory stack is NOT checked */
 }
 /*---------------------------------------------------------------------------*/
-#define  FPROMPT AF_LIGHT "File:"
+#define  FPROMPT AF_PROMPT "File:"
 #define LFPROMPT 5
 static tchar filebuf[MAXLPAC];
 static int   filebuflen = 0;
@@ -407,7 +423,6 @@ void tmDoFentr2 (void)
 { 
   if (filebuflen > LFPROMPT) {
     wnd *wind = vipSplitWindow(Twnd, TM_VFORK);
-    vipFocusOff(Twnd);
     if (wind) twEdit(wind, tcs2qstr(filebuf   +LFPROMPT,
                                     filebuflen-LFPROMPT), NULL, true);
 } }
@@ -495,7 +510,7 @@ int TmCommand (int kcode)
     tmshell(kcode);
     break;
 #endif
-  case TM_INFILE: infilnam(); break; /* enter filename field in micros.dir   */
+  case TM_INFILE: infilnam(); break; /* go to filename field in micros.dir   */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   case TM_HFORK:                     /* горизонтальный fork и к нижнему окну */
   case TM_VFORK:                     /* create new window и к правому окну   */
@@ -522,6 +537,7 @@ int TmCommand (int kcode)
                   else                return E_SFAIL;
     break;
 #ifdef UNIX
+  case TM_CALC: tmCalcBC(); break;
   case TM_GREP:
   case TM_GREP2:   return (tmGrep(kcode) < 0) ? E_SFAIL : E_OK;
   case TM_SYNCPOS: return (tmSyncPos()   < 0) ? E_SFAIL : E_OK;

@@ -51,8 +51,7 @@ txt *TxNew (BOOL qundo)                        /* Создание / удале�
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void TxEnableSynt (txt *t, small clang)       /* add deqs for syntax checker */
 {
-  if (clang && t->clustk == NIL && t->cldstk == NIL) {
-    t->clang = clang;
+  if (( t->clang = clang ) && t->clustk == NIL && t->cldstk == NIL) {
     t->clustk = DqNew(DT_SYNT, 0, MAXLPAC);
     t->cldstk = DqNew(DT_SYNT, MAXLPAC, 0);
 } }

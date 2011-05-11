@@ -1,4 +1,5 @@
 Makefile
+mim
 moc_*.cpp
 obj/
 *.app/

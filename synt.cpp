@@ -13,13 +13,11 @@ extern "C" {
 #include "synt.h"
 #include <QRegExp>
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-small SyntKnownLang(txt *t)
+small SyntKnownLang (QString filename)
 {
-  if (t->file && QfsFile(t->file)) {
-    QRegExp CppFile(".+\\.(c|cpp|cxx|h|hpp|hxx)", Qt::CaseInsensitive);
-    if (CppFile.exactMatch(t->file->name)) return 'C';
-  }
-  return 0;
+  QRegExp CppFile(".+\\.(c|cpp|cxx|h|hpp|hxx)", Qt::CaseInsensitive);
+  if (CppFile.exactMatch(filename)) return 'C';
+  else                              return 0;
 }
 //-----------------------------------------------------------------------------
 #define CPP_TOTAL_KEYWORDS  68

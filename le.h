@@ -15,7 +15,6 @@ void  llmove  (small xl, small xr, small dx, tchar *ns);
 extern tchar  Lebuf[];    /* Буфер строки                                    */
 extern tchar  lfbuf[];    /* альтернативный буфер                            */
 extern small  Lleng;      /* Длина строки без хвостовых пробелов             */
-extern small  Lleng;      /* Длина строки без хвостовых пробелов             */
 extern small  Lxlm, Lxrm; /* левая/правая граница для перемещения            */
 extern small  Lxle, Lxre; /* левая/правая граница для редактирования         */
 extern large  Ly;         /* Y строки в тексте (для окна)                    */
@@ -29,8 +28,8 @@ BOOL leNword(small *cwbeg,  /* Найти (unless ptr=0): начало теку�
              small *nwbeg); /* (return "на слове?")  начало следующего слова */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void leIC(), ledword(),       /* некоторые команды (используются в clip.cpp) */
-     leDC();
-void leLLCE (tchar lchar);                     /* low-level character entry */
+     leDC(), lepword();
+void leLLCE (tchar lchar), ledeol();            /* low-level character entry */
 /*---------------------------------------------------------------------------*/
 void LenterARG(tchar *buf, int *bufLen, /* buffer for argument & its length  */
                            int promLen, /* len of prompt (in buffer already) */

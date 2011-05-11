@@ -225,9 +225,9 @@ static int spatlen = 0;                           /* search pattern length   */
 static int tesFlag = 0;
 static tchar *tesHistory[LE_HISTORY_SIZE] = { 0 };
 #define LSPROMPT 12
-#define  SPROMPT "‹" AF_SUPER "st·ic" AF_NONE "›Find:"
-#define SfPROMPT                      AF_LIGHT "Find:"
-#define SgPROMPT                      AF_LIGHT "Grep:"
+#define  SPROMPT "‹" AF_SUPER "st·ic" AF_NONE  "›Find:"
+#define SfPROMPT                      AF_PROMPT "Find:"
+#define SgPROMPT                      AF_PROMPT "Grep:"
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 tchar    *spa = NIL, *rpa = NIL,      /* current search and replace patterns */
                      *soptfiles;      /* search options (for grep only)      */

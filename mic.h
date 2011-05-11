@@ -3,7 +3,7 @@
 //------------------------------------------------------+--------------------*/
 #ifndef MIC_H_INCLUDED  /* Old "nm.h" (c) Attic 1989-90, (c) EpiMG 1998-2001 */
 #define MIC_H_INCLUDED
-#define microVERSION "4.5.6" // released Fri May 6 23:40 PDT 2011
+#define microVERSION "4.5.10" // released Tue May 10 17:40 PDT 2011
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -55,12 +55,13 @@ typedef long tchar;                           /* Unicode символ с атр�
 #define AT_BADCHAR 0x20000000 /* incorrect Unicode char (moved +0x60/+0x350) */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #define AF_NONE    "\xCA\x80" /*   file representation for some attributes   */
-#define AF_LIGHT   "\xCA\x82" /*   (used to set nice prompt for LenterARG)   */
+#define AF_PROMPT  "\xCA\x82" /*   (used to set nice prompt for LenterARG)   */
 #define AF_SUPER   "\xCA\x88"
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #define CpSCH_NEW_LINE  '\f'          /* Beginning of new line in CP buffer  */
 #define LeSCH_REPL_BEG  AT_SUPER+'>'  /* Replace substring begin             */
 #define LeSCH_REPL_END  AT_SUPER+'/'  /* Replace substring end / files start */
+#define TmSCH_THIS_OBJ     0x00082022 /* Reference to this file: • (tmshell) */
 #define TeSCH_CONTINUE  AT_SUPER+0xBB /* Line continuation mark (TE_FORMAT)  */
 /*---------------------------------------------------------------------------*/
 extern int TABsize; /* Настраиваемые параметры - табуляция, 4 или 8 символов */

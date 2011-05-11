@@ -10,29 +10,21 @@ macx {
 win32:RC_FILE = qtmim.rc
 !win32:DEFINES += UNIX
 
-# Input
-DEPENDPATH += .
-INCLUDEPATH += .
-
-HEADERS += mic.h mim.h   ccd.h micro.keys qfs.h   twm.h   clip.h   synt.h
-SOURCES +=  rt.c mim.cpp ccd.cpp          qfs.cpp twm.cpp clip.cpp synt.cpp
+HEADERS += micro.keys mic.h mim.h   ccd.h   qfs.h   twm.h   clip.h   synt.h
+SOURCES +=                  mim.cpp ccd.cpp qfs.cpp twm.cpp clip.cpp synt.cpp
 !win32 {
   HEADERS += unix.h
   SOURCES += unix.cpp
 }
 HEADERS += vip.h   te.h le.h tx.h dq.h ud.h
-SOURCES += vip.cpp te.c le.c tx.c dq.c ud.c
+SOURCES += vip.cpp te.c le.c tx.c dq.c ud.c rt.c
+DEPENDPATH += .
+INCLUDEPATH += .
 OBJECTS_DIR = obj
 
 # Customization
 macx {
-  MimRESOURCES = µMup07.app/Contents/Resources
-  rsrc.target = $$MimRESOURCES/micros.icns $$MimRESOURCES/micro.keys
-  rsrc.depends =               micros.icns                micro.keys
-  rsrc.commands = @mkdir -p $$MimRESOURCES; cp $$rsrc.depends $$MimRESOURCES
-  POST_TARGETDEPS += $$rsrc.target
-  QMAKE_EXTRA_TARGETS += rsrc
-
+  MimEXECUTABLE = µMup07.app/Contents/MacOS/µMup07
   MimRESOURCES = µMup07.app/Contents/Resources
   icns.target = $$MimRESOURCES/micros.icns
   keys.target = $$MimRESOURCES/micro.keys
@@ -40,16 +32,16 @@ macx {
   keys.depends = micro.keys
   icns.commands = @mkdir -p $$MimRESOURCES; cp $$icns.depends $$icns.target
   keys.commands = @mkdir -p $$MimRESOURCES; cp $$keys.depends $$keys.target
-  POST_TARGETDEPS += $$icns.target $$keys.target
-  QMAKE_EXTRA_TARGETS += icns keys
+  symlink.target = mim
+  symlink.commands = ln -sf $$MimEXECUTABLE $$symlink.target
+  QMAKE_EXTRA_TARGETS += icns keys symlink
+  POST_TARGETDEPS += $$icns.target $$keys.target $$symlink.target
 }
 MimFILES  = micros.dir qtmim.pro qtmim.desktop qtmim.rc mim.Info.plist
-MimFILES += micons.psd qtmim.ico qtmim.png keywords.txt LICENSE
+MimFILES += micons.psd qtmim.ico qtmim.png keywords.txt abc LICENSE
 zip.target  = zip
 zip.depends = Qtmim.zip
-
 zipfile.target = Qtmim.zip
 zipfile.depends = $$MimFILES $$HEADERS $$SOURCES
 zipfile.commands = rm -f $$zipfile.target; zip $$zipfile.target $$zipfile.depends
-
 QMAKE_EXTRA_TARGETS += zip zipfile

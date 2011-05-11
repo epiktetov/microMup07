@@ -42,8 +42,9 @@ struct txt_tag
 #define TS_SAVERR  0200     /* - в процессе сохранения возникла ошибка |     */
 #define TS_PSEUDO  0400     /* - corresponding file is not real file         */
 #define TS_RDONLY 01000     /* - force read-only (for ':help' viewing)       */
-#define TS_MCD    02000     /* - this file == micros.dir                     */
-#define TS_NEW    04000     /* - новый файл - записывать по FO_NEW           */
+#define TS_NEW    02000     /* - новый файл - записывать по FO_NEW           */
+#define TS_MCD    04000     /* - this file == micros.dir                     */
+#define TS_GITPL 010000     /* - this file == git pretty log or blame result */
   small cx, tcx;            /* Последняя позиция курсора в тексте            */
   large cy, tcy;            /*                    и окна на тексте           */
   struct txt_tag *txnext;
