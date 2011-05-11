@@ -9,6 +9,7 @@
 #include "twm.h"
 #include "vip.h"
 #include "clip.h"
+extern "C" { extern const char microVERSION[]; }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 BOOL dosEOL = false;                              /* Настраиваемые параметры */
 int TABsize = 4;
@@ -140,7 +141,8 @@ MiFrame::MiFrame (MiFrame *base) : tSize(0,0), oldSize(0,0), wrapped(false),
   size_menu = menuBar()->addMenu("size");
   size_act = size_menu->addAction("fallback-size");
   connect(size_act, SIGNAL(triggered()), this, SLOT(fallbackSize()));
-  QMenu *dummy_version_menu = menuBar()->addMenu("ver."microVERSION);
+  QString short_version = QString("ver.%1").arg(microVERSION);
+  QMenu *dummy_version_menu = menuBar()->addMenu(short_version);
          dummy_version_menu->setDisabled(true);
 
   sash = new QSplitter(Qt::Vertical, this);
@@ -296,7 +298,7 @@ void MiFrame::DeleteScTwin (MiScTwin *sctw)
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiFrame::updateWinTitle(void)
 {
-  QString title = QString::fromUtf8("µMup07 version " microVERSION);
+  QString title = QString::fromUtf8("µMup07 version %1").arg(microVERSION);
   if (main && main->vp && main->vp->wtext && !isNoRealText(main->vp->wtext)
                                           &&         main->vp->wtext->file)
                                 title = QfsShortName(main->vp->wtext->file);

@@ -254,9 +254,9 @@ void tmLoadXeq (txt *t) /* load text by executing command from t->file->name */
   TxEmpt(t);                      //
   if (t->txudeq) { DqDel(t->txudeq); t->txudeq  =     NULL;
                                      t->txstat &= ~TS_UNDO; }
-  small Sx;
-  large Sy; QString cmd =  t->file->name; // should copy the value first, since
-            cmd.remove(0,1).remove(-1,1); // remove() changes the argument str!
+  small Sx = 0;
+  large Sy = 0; QString cmd =  t->file->name; // <- copy the value first, since
+                cmd.remove(0,1).remove(-1,1); //  remove() changes the argument
   shellexec(t, Sx, Sy, cmd.cStr());
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

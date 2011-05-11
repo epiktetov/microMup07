@@ -1,10 +1,11 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07   runtime (memory and string operations)  | (c) Epi MG, 2007
+// МикроМир07   runtime (memory and string operations)  | (c) Epi MG, 2007,2011
 //------------------------------------------------------+--------------------*/
 #include "mic.h" /* Old me.c - Память (c) Attic 1989-90, (c) EpiMG 1998-2003 */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "version.h"
 
 char *GetMain (long n)
 {

@@ -3,6 +3,7 @@
 Самый главный header файл, to be included the first everywhere |mic.h
 Main Header + Scrollable Text Window (ScTwin) class / C++ only |mim.h
 Main Frame  + Application Data + ScTwin                        |mim.cpp
+                                               (auto-generated)|version.h
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -|- - - - - - - -
 Command Codes Definition, атрибуты команд (includes micro.keys)|ccd.h
                                                                |ccd.cpp

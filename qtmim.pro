@@ -22,7 +22,11 @@ DEPENDPATH += .
 INCLUDEPATH += .
 OBJECTS_DIR = obj
 
-# Customization
+version.target = version.h
+version.depends = .git $$HEADERS $$SOURCES
+version.commands = echo \"const char microVERSION[]=\\\"\"\"`git describe --tags --dirty`\"\"\\\";\" >version.h;git status
+QMAKE_EXTRA_TARGETS += version
+PRE_TARGETDEPS += version.h
 macx {
   MimEXECUTABLE = µMup07.app/Contents/MacOS/µMup07
   MimRESOURCES = µMup07.app/Contents/Resources

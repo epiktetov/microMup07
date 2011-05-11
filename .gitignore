@@ -3,3 +3,4 @@ mim
 moc_*.cpp
 obj/
 *.app/
+version.h
