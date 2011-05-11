@@ -1,6 +1,9 @@
-Makefile
-mim
+Makefile*
+version.h
 moc_*.cpp
 obj/
+object_script.mim.*
+mim
 *.app/
-version.h
+bundle/
+release/

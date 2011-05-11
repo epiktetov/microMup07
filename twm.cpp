@@ -7,9 +7,7 @@
 #include "ccd.h"
 #include "qfs.h"
 #include "twm.h"
-#ifdef UNIX
-# include "unix.h"
-#endif
+#include "unix.h"
 #include "vip.h"
 #include "clip.h"
 #include "synt.h"
