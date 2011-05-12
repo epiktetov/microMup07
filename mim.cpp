@@ -64,8 +64,11 @@ QColor colorDarkBlue  (  0,  0,150); // dark blue cursor / prompt text
 QColor colorLightBlue (  0,100,255); // special characters
 QColor colorLightPink (200,200,172); // "temporary" block, not very pink really
 QColor colorLightCyan (172,200,255); // "permanent" block
-QColor colorSolidGreen(204,255,155); // "good" mark (used for matched brackets)
-QColor colorSolidRed  (255,155,155); // "bad" mark, indicates some error
+QColor colorLightGreen(204,255,155); // "good" mark (used for matched brackets)
+QColor colorLightRed  (255,155,155); // "bad" mark, indicates some error
+QColor colorSolidRed  (255,  0,  0); // solid red
+QColor colorSolidGreen(  0,166,  0); // - green | for numbered marks (used for
+QColor colorSolidBlue (  0, 85,215); // - blue  |          gradient background)
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 inline QString myPackAdj2string (int X, int Y)
 {
@@ -581,30 +584,34 @@ void MiScTwin::repaintPosBar (QPainter& dc)
   double pre = vp->wty,
          win = vp->wsh,  post = tx->maxTy - win - pre; if (post < 0) post = 0;
   double total = pre+win+post;
-//+
-//  fprintf(stderr, "VpPB:%.1f(%.1f)%.1f=%.1f", pre, win, post, total);
-//-
   if (win < total / 60) { win = total/60; total = pre+win+post; }
-//+
-//  fprintf(stderr, "[adj:%.1f/%.1f]", win, total);
-//-
   int wH = Th2qtH(vp->wsh);
   int vppb0 = int(wH * pre / total + 0.5);
   int vppbh = int(wH * win / total + 0.5);
-//+
-//  fprintf(stderr, ";vppb0=%d,H=%d\n", vppb0, vppbh);
-//-
   QBrush brush(colorDarkWheat, Qt::SolidPattern);
   dc.setBrush(brush);       QPen pen(brush, 1.0);
   dc.setPen(pen);
   QRect vppBar(mimTxtLEFT + Tw2qtW(vp->wsw) + mimBORDER,
                                       vppb0 + mimBORDER, mimVpPOSBAR-1, vppbh);
   dc.drawRect(vppBar);
-}
+  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  static QColor *colors[] = { &colorBlack, &colorSolidRed,  &colorDarkWheat,
+                                           &colorSolidBlue, &colorSolidGreen };
+  int N;
+  for (int i = 1; i < TXT_MARKS; i++) {
+    if (tx->txmarky[i] < 0) continue;
+    if (tx->txmarky[i] < vp->wty) N = int(wH*double(tx->txmarky[i])/total+0.5);
+    else if (tx->txmarky[i] >= vp->wty + vp->wsh)
+        N = Th2qtH(vp->wsh)-int(wH*double(tx->maxTy-tx->txmarky[i])/total+0.5);
+    else continue;
+    brush.setColor(*colors[i]); pen.setBrush(brush);
+    dc.setBrush(brush);
+    dc.setPen(pen);
+    dc.drawRect(vppBar.left()-1, N + mimBORDER, mimVpPOSBAR+1, mimVpPOSBAR+1);
+} }
 void MiScTwin::RepaintVpPB (void) //- - - - - - - - - - - - - - - - - - - - - -
 {
-  update(Tx2qtX(vp->wsw) + mimBORDER, mimTxtTOP,
-                         mimVpPOSBAR, Th2qtH(vp->wsh));
+  update(Tx2qtX(vp->wsw)+1, mimTxtTOP, mimVpPOSBAR+2, Th2qtH(vp->wsh));
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiScTwin::Erase (QPainter& dc, QRect& rect)
@@ -631,7 +638,8 @@ void MiScTwin::Erase (QPainter& dc, int tx, int ty, int len)
 // AT_SUPER        ʈsky blueʀ chars - special characters -- forces Insert mode
 // AT_UNDERL       reserved for underline
 //
-// AT_MARKFLG (alone) numbered marker flag (DarkWheat gradient) == AT_INVERT
+// AT_MARKFLG (alone) marker flag 2 (DarkWheat gradient)
+// AT_MARKFLG+BG_CLR: flags 1,3,4 (solid red/blue/green gradient)
 // AT_BG_CLR:         background color (by itself, used for selection blocks):
 //   AT_BG_RED        - red, temporary block / "can't edit" cursor / error mark
 //   AT_BG_GRN        - green, "can edit, text unchanged" cursor / matched mark
@@ -653,19 +661,25 @@ void MiScTwin::Text (QPainter& dc, int x, int y, int attr, QString text)
   if (attr & AT_BOLD) dc.setFont(mf->getBoldFont());
   else                dc.setFont(mf->getTextFont());
 
-  if (attr & (AT_INVERT|AT_BG_CLR)) {
+  if (attr & (AT_INVERT|AT_MARKFLG|AT_BG_CLR)) {
     const QColor *bg_color = &colorWhite, *fg_color = &colorBlack;
-    if (attr & AT_BRIGHT) {
-           if ((attr & AT_BG_CLR) == AT_BG_RED) bg_color = &colorSolidRed;
-      else if ((attr & AT_BG_CLR) == AT_BG_GRN) bg_color = &colorSolidGreen;
-      else                                      bg_color = &colorLightCyan;
-    }
-    else if (attr & AT_INVERT) {
+    if (attr & AT_INVERT) {
            if ((attr & AT_BG_CLR) == AT_BG_RED) bg_color = &colorDarkRed;
       else if ((attr & AT_BG_CLR) == AT_BG_GRN) bg_color = &colorDarkGreen;
       else if ((attr & AT_BG_CLR) == AT_BG_BLU) bg_color = &colorDarkBlue;
-      else                 { attr |= AT_SUPER;  bg_color = &colorDarkWheat; }
+      else                                      bg_color = &colorBlack;
       fg_color = &colorWhite;
+    }
+    else if (attr & AT_MARKFLG) {
+           if ((attr & AT_BG_CLR) == AT_BG_RED) bg_color = &colorSolidRed;
+      else if ((attr & AT_BG_CLR) == AT_BG_GRN) bg_color = &colorSolidGreen;
+      else if ((attr & AT_BG_CLR) == AT_BG_BLU) bg_color = &colorSolidBlue;
+      else                                      bg_color = &colorDarkWheat;
+      fg_color = &colorWhite; attr |= AT_SUPER;
+    }
+    else if (attr & AT_BRIGHT) {
+           if ((attr & AT_BG_CLR) == AT_BG_RED) bg_color = &colorLightRed;
+      else if ((attr & AT_BG_CLR) == AT_BG_GRN) bg_color = &colorLightGreen;
     }
     else if ((attr & AT_BG_CLR) == AT_BG_RED) bg_color = &colorLightPink;
     else if ((attr & AT_BG_CLR) == AT_BG_GRN) bg_color = &colorDarkWheat;

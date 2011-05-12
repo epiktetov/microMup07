@@ -309,6 +309,11 @@ small TxFRead (txt *t, tchar *tp)
   int len =  TxTRead(t, tp);
   blktspac(tp+len, MAXLPAC-len); return len;
 }
+/*---------------------------------------------------------------------------*/
+tchar txFlags[TXT_MARKS] = { 0, AT_MARKFLG + AT_BG_RED + 0xB9,     /* red  ¹ */
+                                AT_MARKFLG             + 0xB2,     /* brown² */
+                                AT_MARKFLG + AT_BG_BLU + 0xB3,     /* blue ³ */
+                                AT_MARKFLG + AT_BG_GRN + 0x2074 }; /* green⁴ */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 tchar *TxInfo (wnd *w, large y, int *pl)      /* used for repaint in vip.cpp */
 {                                             /* to get current char mim.cpp */
@@ -320,11 +325,12 @@ tchar *TxInfo (wnd *w, large y, int *pl)      /* used for repaint in vip.cpp */
     if (t->maxTy < y) t->maxTy = y;
     if (y > 0 && len < MAXLPAC-3) {
       int i;
-      for (i=1; i<TXT_MARKS; i++)             /* add 2-chars mark at the end */
-        if (t->txmarky[i] == y) {     len++;  /* of test line (after space)  */
-          tcbuf[len++] = (i+'0')|AT_MARKFLG;
-          tcbuf[len++] =    ' ' |AT_MARKFLG; break;
-  } }   }
+      for (i=1; i<TXT_MARKS; i++) {
+        if (t->txmarky[i] == y) {
+          if (len < w->wsw-1) tcbuf[len++] = ' ';
+                              tcbuf[len++] =      txFlags[i];
+                              tcbuf[len++] = ' '|(txFlags[i] & AT_ALL); break;
+  } } } }
   if (len < tcbuflen) blktspac(tcbuf+len, tcbuflen - len);
   *pl = tcbuflen = len;                      return tcbuf;
 }

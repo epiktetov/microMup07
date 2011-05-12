@@ -125,14 +125,12 @@ k_(LE_TABCHR, 0xc133a, mod_CTRL+mod_SHIFT+Mk_TAB,  0) /* вставить сим
 a_(LE_TABCHR,         mod_CTRL+mod_SHIFT+Mk_BkTAB, 0) /* (Mk_BkTAB ~ Mk_TAB) */
 k_(TE_SMARK1, 0xc1351, mod_CTRL+mod_SHIFT+'!', KxBLK)
 k_(TE_SMARK2, 0xc1352, mod_CTRL+mod_SHIFT+'@', KxBLK)
-k_(TE_SMARK3, 0xc1353, mod_CTRL+mod_SHIFT+'#', KxBLK)
-k_(TE_SMARK4, 0xc1354, mod_CTRL+mod_SHIFT+'$', KxBLK) /* (shift+N уже     */
-k_(TE_SMARK5, 0xc1355, mod_CTRL+mod_SHIFT+'%', KxBLK) /*   преобразовано) */
+k_(TE_SMARK3, 0xc1353, mod_CTRL+mod_SHIFT+'#', KxBLK) /* (shift+N уже     */
+k_(TE_SMARK4, 0xc1354, mod_CTRL+mod_SHIFT+'$', KxBLK) /*   преобразовано) */
 k_(TE_CMARK1, 0xc1361, mod_CTRL+'1',           KxBLK) /*------------------*/
 k_(TE_CMARK2, 0xc1362, mod_CTRL+'2',           KxBLK) /* NOTE: codes must */
 k_(TE_CMARK3, 0xc1363, mod_CTRL+'3',           KxBLK) /*  be TE_S/CMARK+N */
 k_(TE_CMARK4, 0xc1364, mod_CTRL+'4',           KxBLK)
-k_(TE_CMARK5, 0xc1365, mod_CTRL+'5',           KxBLK)
 k_(TE_CR,     0xc130e,           Mk_ENTER,         0) /* начало след.строки  */
 k_(TE_RCR,    0xc132e, mod_SHIFT+Mk_ENTER,         0) /* - с выравниванием   */
 /*

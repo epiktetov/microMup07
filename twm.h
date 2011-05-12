@@ -8,7 +8,7 @@
 #define MCD_LEFT     63     /* первый (основной) разделитель в micros.dir    */
 #define MCD_RIGHT    68     /* второй разделитель в micros.dir (optional)    */
 #define DIRLST_FNPOS 40     /* position of the filename in the TS_DIRLST txt */
-#define TXT_MARKS     6     /* макс.количество запомненных маркеров в тексте */
+#define TXT_MARKS     5     /* макс.количество запомненных маркеров в тексте */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 struct txt_tag 
 {

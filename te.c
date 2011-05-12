@@ -348,10 +348,10 @@ comdesc tecmds[] =
   { TE_CENTR,  tecentr,  CA_RPT         }, /* текущую строку в середину окна */
   { TE_SMARK1, tesmarkN, CA_RPT },
   { TE_CMARK1, tecmarkN, CA_RPT },
-  { TE_SMARK2, tesmarkN, CA_RPT }, { TE_SMARK4, tesmarkN, CA_RPT },
-  { TE_CMARK2, tecmarkN, CA_RPT }, { TE_CMARK4, tecmarkN, CA_RPT },
-  { TE_SMARK3, tesmarkN, CA_RPT }, { TE_SMARK5, tesmarkN, CA_RPT },
-  { TE_CMARK3, tecmarkN, CA_RPT }, { TE_CMARK5, tecmarkN, CA_RPT },
+  { TE_SMARK2, tesmarkN, CA_RPT },
+  { TE_CMARK2, tecmarkN, CA_RPT },
+  { TE_SMARK3, tesmarkN, CA_RPT }, { TE_SMARK4, tesmarkN, CA_RPT },
+  { TE_CMARK3, tecmarkN, CA_RPT }, { TE_CMARK4, tecmarkN, CA_RPT },
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   { TE_CR,     teCR,                       CA_NEND        }, /*       Enter  */
   { TE_RCR,    teRCR,                      CA_NEND        }, /* Shift+Enter  */

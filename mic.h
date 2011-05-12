@@ -28,7 +28,7 @@ typedef int   BOOL;
 #define NIL      ((void*)0) /* указатель (same as standard NULL but shorter) */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 typedef long tchar;                           /* Unicode символ с атрибутами */
-#define AT_ALL     0x3FFF0000
+#define AT_ALL     0x7FFF0000
 #define AT_CHAR    0x0000FFFF /* собственно Unicode символ (use only 16-bit) */
 #define AT_BOLD    0x00010000 /* Bold                               == KxTS  */
 #define AT_PROMPT  0x00020000 /* prompts text (def. dark blue text) == KxBLK */
@@ -36,22 +36,22 @@ typedef long tchar;                           /* Unicode символ с атр�
 #define AT_SUPER   0x00080000 /* sky blue (special chars) forces Insert mode */
 #define AT_UNDERL  0x00100000 /* reserved for underline                      */
 #define AT_IN_FILE 0x001F0000 /* <---- mask of attributes saved in file ---- */
-#define AT_MARKFLG 0x00200000 /* numbered marker flag (brown gradient) =next */
 #define AT_INVERT  0x00200000 /* when added to AT_BG_CLR => indicates cursor */
 #define AT_BG_CLR  0x00c00000 /* background color:                           */
 #define AT_BG_RED  0x00400000 /*  = red (cannot edit / "temporary" block)    */
 #define AT_BG_GRN  0x00800000 /*  = green (can edit, text unchanged)         */
 #define AT_BG_BLU  0x00c00000 /*  = blue (text changed / regular block mark) */
-#define AT_BRIGHT  0x01000000 /* bright background (for error/matched marks) */
-#define AT_ERROR   0x01400000 /* - error mark                                */
-#define AT_MARKOK  0x01800000 /* - regular (ok) mark                         */
-#define AT_TAB     0x02000000 /* special attribute to preserve TABs in files */
+#define AT_MARKFLG 0x01000000 /* numbered marker flag (solid color gradient) */
+#define AT_BRIGHT  0x02000000 /* bright background (for error/matched marks) */
+#define AT_ERROR   0x02400000 /* - error mark                                */
+#define AT_MARKOK  0x02800000 /* - regular (ok) mark                         */
 #define AT_QUOTE   0x04000000 /* "smart" quotes, shown as ‘x’ and “string”   */
 #define AT_QOPEN   0x04000000 /* - open             (kept in text as typed,  */
 #define AT_QCLOSE  0x05000000 /* - close             no changes made without */
 #define AT_KEYWORD 0x08000000 /* keywords                  user's permission)*/
 #define AT_COMMENT 0x10000000 /* comments                                    */
-#define AT_BADCHAR 0x20000000 /* incorrect Unicode char (moved +0x60/+0x350) */
+#define AT_TAB     0x20000000 /* special attribute to preserve TABs in files */
+#define AT_BADCHAR 0x40000000 /* incorrect Unicode char (moved +0x60/+0x350) */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #define AF_NONE    "\xCA\x80" /*   file representation for some attributes   */
 #define AF_PROMPT  "\xCA\x82" /*   (used to set nice prompt for LenterARG)   */
