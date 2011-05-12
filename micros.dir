@@ -47,3 +47,8 @@ runtime (memory management and string manipulation functions)  |rt.c
 ---------------------------------------------------------------|---------------
 Keywords for various languages (currently only C/C++)          |keywords.txt
                                                                |test.txt
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -|- - - - - - - -
+ʂincdirs»ʀ(macx)/Library/Frameworks/QtCore.framework/Versions/4/Headers
+ʂincdirs»ʀ(macx)/Library/Frameworks/QtGui.framework/Versions/4/Headers
+ʂincdirs»ʀ(unix)/usr/include/qt4/QtCore
+ʂincdirs»ʀ(unix)/usr/include/qt4/QtGui,/usr/include/qt4

@@ -49,6 +49,7 @@ bool QfsRename(qfile *file, QString new_name);
 #define FO_WRITE 1 /* Write only         */
 #define FO_NEW   2 /* New file for write */
 
+bool QfsExists(QString fullName);
 bool QfsIsUpToDate (qfile *file);   
 void QfsUpdateInfo (qfile *file);
 void QfsChDir      (qfile *file);     /* change current dir to file location */

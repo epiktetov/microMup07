@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
   menuBarHeight = Qs.value("private/menuBarHeight", -1).toInt();
 #endif
   for (int i = 1; i < argc; i++) {
-    QString param = QString::fromUtf8(argv[i]);
+    QString param = Utf8(argv[i]);
          if (param.compare("-dos",IGNORE_CASE) == 0) dosEOL           =  TRUE;
     else if (param.compare("-kb", IGNORE_CASE) == 0) MiApp_debugKB    =  true;
     else if (param.compare("-ti", IGNORE_CASE) == 0) MiApp_timeDELAYS =  true;
@@ -129,7 +129,7 @@ MiFrame::MiFrame (MiFrame *base) : tSize(0,0), oldSize(0,0), wrapped(false),
                                    mbox(0),         main(0), scwin(0)
 {
 #ifndef Q_OS_MAC
-  QMenu *dummy_menu = menuBar()->addMenu(QString::fromUtf8("µMup07"));
+  QMenu *dummy_menu = menuBar()->addMenu(Utf8("µMup07"));
          dummy_menu->setDisabled(true);
 #endif
   QMenu *file_menu = menuBar()->addMenu("File");
@@ -249,12 +249,11 @@ bool MiFrame::safeClose (MiScTwin *sctw)  // NOTE: sctw pointer in the MiFrame
   txt *t = sctw->vp->wtext;
   if (twSafeClose(t, sctw->vp)) return true;
   if (mbox) delete mbox;
-  mbox = new QMessageBox(QString::fromUtf8("µMup07 warning"),
-               t->file->name+" has been modified.\n"
-                "Do you want to save your changes?", QMessageBox::Warning,
-             QMessageBox::Save|QMessageBox::Default, QMessageBox::Discard,
-            QMessageBox::Cancel|QMessageBox::Escape, this,     Qt::Sheet);
-
+  mbox = new QMessageBox(Utf8("µMup07 warning"),
+          t->file->name+" has been modified.\n"
+           "Do you want to save your changes?", QMessageBox::Warning,
+        QMessageBox::Save|QMessageBox::Default, QMessageBox::Discard,
+       QMessageBox::Cancel|QMessageBox::Escape, this,     Qt::Sheet);
   connect(mbox, SIGNAL(finished(int)), this, SLOT(finishClose(int)));
   mbox->show();
   return false; // not safe to close yet (user notified, waiting for reaction)
@@ -304,7 +303,7 @@ void MiFrame::DeleteScTwin (MiScTwin *sctw)
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiFrame::updateWinTitle(void)
 {
-  QString title = QString::fromUtf8("µMup07 version %1").arg(microVERSION);
+  QString title = Utf8("µMup07 version %1 (" QtPLATF ")").arg(microVERSION);
   if (main && main->vp && main->vp->wtext && !isNoRealText(main->vp->wtext)
                                           &&         main->vp->wtext->file)
                                 title = QfsShortName(main->vp->wtext->file);

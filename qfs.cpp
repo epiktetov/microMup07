@@ -171,7 +171,8 @@ void QfsUpdateInfo(qfile *file) /*- - - - - - - - - - - - - - - - - - - - - -*/
                                  file->updated = Qi.lastModified();
                                  file->writable = QfsIsWritable(Qi);
 }
-void QfsChDir (qfile *file) { QDir::setCurrent(file->path); }
+void QfsChDir (qfile  *file) { QDir::setCurrent(file->path);           }
+bool QfsExists(QString name) { QFileInfo Qi(name); return Qi.exists(); }
 /*---------------------------------------------------------------------------*/
 QString QfsShorten (QString name_to_shorten)
 {

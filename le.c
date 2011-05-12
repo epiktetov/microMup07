@@ -49,13 +49,21 @@ void leltab() { int x = (Lx - 1)/TABsize*TABsize; Lx = (x > Lxlm) ? x : Lxlm; }
 /*---------------------------------------------------------------------------*/
 void tleload (void)                                /* load LE line from text */
 {
-  Ltxt = Ttxt; Lx = Tx; Lxlm = Lxle = Ttxt->txlm;
-  Lwnd = Twnd; Ly = Ty; Lxrm = Lxre = Ttxt->txrm; 
-  Lleng = TxFRead(Ttxt, Lebuf);
+  Ltxt = Ttxt; Lx = Tx; Lleng = TxFRead(Ttxt, Lebuf);
+  Lwnd = Twnd; Ly = Ty;
+  Lclang = Ttxt->clang;
   Lredit = qTxBottom(Ttxt) ? FALSE : (Ttxt->txredit == TXED_YES);
   Lchange = FALSE;
-  tundoload(Ttxt); Lclang = Ttxt->clang;
+  tundoload(Ttxt); tlesniff(Ttxt);
 }
+void tlesniff(txt *tx)
+{
+  Lxlm = Lxle = tx->txlm;
+  Lxrm = Lxre = tx->txrm;
+  if (Lebuf[Lxlm] & AT_PROMPT) { // no PROMPT editing (but unset right margin)
+    Lxrm = Lxre = MAXTXRM;       //
+    while (Lxle < Lxre && Lxle < Lleng && (Lebuf[Lxle] & AT_PROMPT)) Lxle++;
+} }
 void EnterLEmode (void) { TxSetY(Ttxt, Ty); tleload(); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tleunload (void)                              /* unload LE line to text */
@@ -540,11 +548,12 @@ int LeCommand (comdesc *cp)
   for (rpt = (cp->attr & CA_RPT) ? 1 : KbCount; rpt; rpt--) {
     if (cp->attr & (CA_NEND|CA_NBEG)) {
       x = Lx;
-      if ((cp->attr & CA_NBEG) && x <= Lxlm) return E_MOVBEG;
-      if ((cp->attr & CA_NEND) && x >= Lxrm) return E_MOVEND;
+      if ((cp->attr & CA_NBEG) && Lx <= Lxlm) return E_MOVBEG;
+      if ((cp->attr & CA_NEND) && Lx >= Lxrm) return E_MOVEND;
       if (cp->attr & CA_CHANGE) {
-        if (cp->attr & CA_NBEG) x--; if (x >= Lxre) return E_EDTEND;
-                                     if (x <  Lxle) return E_EDTBEG;
+        x = (cp->attr & CA_NBEG) ? Lx-1 : Lx; // for NBEG check pos to the left
+        if (x >= Lxre)              return E_EDTEND;
+        if (x <  Lxle) { Lx = Lxle; return E_EDTBEG; }
     } }
     nextexc = excptr; 
               excptr = & leenv; if ((x = setjmp(leenv)) == 0) (*cp->cfunc)();

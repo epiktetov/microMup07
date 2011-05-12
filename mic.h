@@ -47,7 +47,7 @@ typedef long tchar;                           /* Unicode символ с атр�
 #define AT_MARKOK  0x02800000 /* - regular (ok) mark                         */
 #define AT_QUOTE   0x04000000 /* "smart" quotes, shown as ‘x’ and “string”   */
 #define AT_QOPEN   0x04000000 /* - open             (kept in text as typed,  */
-#define AT_QCLOSE  0x05000000 /* - close             no changes made without */
+#define AT_QCLOSE  0x06000000 /* - close             no changes made without */
 #define AT_KEYWORD 0x08000000 /* keywords                  user's permission)*/
 #define AT_COMMENT 0x10000000 /* comments                                    */
 #define AT_TAB     0x20000000 /* special attribute to preserve TABs in files */
@@ -165,8 +165,9 @@ extern jmp_buf *excptr;
 #endif                                                         // of t-string
 #endif /* __cplusplus */
 /*---------------------------------------------------------------------------*/
-#define cStr() toLocal8Bit().data() /* to pass wxString value to legacy code */
-#define uStr()      toUtf8().data() /* the same, but convert value to UTF-8  */
+#define cStr()  toLocal8Bit().data() /* to pass QString value to legacy code */
+#define uStr()       toUtf8().data() /* the same, but convert value to UTF-8 */
+#define Utf8(x) QString::fromUtf8(x) /* just a shorthand to save some space  */
 
 #define my_max(a, b) ((a)>(b) ? (a) : (b))
 #define my_min(a, b) ((a)<(b) ? (a) : (b))

@@ -85,10 +85,11 @@ void teRCR()
 static small mcdpat (tchar *buf, small i)           /* micros.dir paste line */
 {
   if ((Ttxt->txstat & TS_MCD) && i < MCD_LEFT) {
-    tchar *p;
-    for (p = buf+i; i < MCD_LEFT; i++) *p++ = (tchar)' ';
-                                  i++; *p++ = LDS_MCD;
-  } 
+    if (qTxBottom(Ttxt) && i == 0)
+                         return aftotc(AF_PROMPT "incdirs»" AF_NONE, -1, buf);
+    else {
+      blktspac(buf+i, MCD_LEFT-i); buf[MCD_LEFT] = LDS_MCD; return MCD_LEFT+1;
+  } }
   return i; // returns length of filled up lfbuf
 }
 void teIL() { TxTIL(Ttxt, lfbuf, mcdpat(lfbuf,0)); }

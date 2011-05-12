@@ -334,5 +334,5 @@ tchar *TxInfo (wnd *w, large y, int *pl)      /* used for repaint in vip.cpp */
   if (len < tcbuflen) blktspac(tcbuf+len, tcbuflen - len);
   *pl = tcbuflen = len;                      return tcbuf;
 }
-void TxRecalcMaxTy(txt *t) { TxSetY(t, 2147483647); t->maxTy = t->txy; }
+void TxRecalcMaxTy (txt *t) { TxBottom(t); t->maxTy = t->txy; }
 /*---------------------------------------------------------------------------*/

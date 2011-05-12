@@ -22,6 +22,7 @@ extern small  Lx;         /* X курсора в строке (а не в окн
 extern BOOL   Lredit;     /* Можно менять строку                             */
 extern BOOL   Lchange;    /* Строка изменялась                               */
 extern txt   *Ltxt;       /* Текст, в который сливается откатка              */
+void tlesniff(txt *tx);   /* sets Lxlm, Lxrm, Lxle, Lxre from text and Lebuf */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 BOOL leNword(small *cwbeg,  /* Найти (unless ptr=0): начало текущего слова   */
              small *cwend,  /*                       конец текущего слова    */

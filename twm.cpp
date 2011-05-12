@@ -196,7 +196,7 @@ txt *tmDesc (QString filename, bool needUndo, txt *referer)
   else if (ptn.exactMatch(filename)) {
     for (cmdmap *p = vcs_commands; p->key; p++)
       if (ptn.cap(2) == p->key) {
-        filename = QString::fromUtf8(p->cmd).arg(ptn.cap(1)).arg(ptn.cap(3));
+        filename = Utf8(p->cmd).arg(ptn.cap(1)).arg(ptn.cap(3));
         force_txstat = p->txstat;
         force_clang  = SyntKnownLang(ptn.cap(1)); break;
   }   }
@@ -240,7 +240,8 @@ static void tmDirLST (txt *t)
                                      it != filist.constEnd(); ++it) {
     QString line;
     QFile::Permissions attr = it->permissions();
-    line.sprintf("%c%c%c%c%c%c%c%c%c%c%12d %s %ls",
+    ushort ftattr = it->isDir() ? 0x281 : 0x280;
+    line.sprintf("%lc%c%c%c%c%c%c%c%c%c%c%lc%12d %s %lc%ls", ftattr,
          it->isDir()              ? 'd' : '-',
          attr & QFile::ReadOwner  ? 'r' : '-',
          attr & QFile::WriteOwner ? 'w' : '-',
@@ -250,16 +251,16 @@ static void tmDirLST (txt *t)
          attr & QFile::ExeGroup   ? 'x' : '-',
          attr & QFile::ReadOther  ? 'r' : '-',
          attr & QFile::WriteOther ? 'w' : '-',
-         attr & QFile::ExeOther   ? 'x' : '-', 
+         attr & QFile::ExeOther   ? 'x' : '-',  0x280,
          int(it->size()),  QfsModDateText(*it).cStr(),
-         (wchar_t *)(it->fileName().utf16())        );
+         ftattr, (wchar_t *)(it->fileName().utf16()));
     TxTIL(t, Lebuf, qstr2tcs(line, Lebuf)); TxDown(t);
   } 
   if (t->txudeq)      udclear(t); //<- reset undo start to this point (initial
   t->cx = t->txlm = DIRLST_FNPOS; //   blank state is not very not interesting)
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-static void check_MCD (txt *t)
+static void check_MCD (txt *t) // TODO: check file contents instead
 {
   if (t->file->name.compare(QfsROOTFILE, QfsIGNORE_CASE) == 0) {
     t->txstat |= TS_MCD; t->txlm = 0;
@@ -426,13 +427,46 @@ void tmDoFentr2 (void)
     if (wind) twEdit(wind, tcs2qstr(filebuf   +LFPROMPT,
                                     filebuflen-LFPROMPT), NULL, true);
 } }
+/*---------------------------------------------------------------------------*/
+static void tmExtractIncs (txt *mcd, QStringList& incList)
+{
+  QRegExp re("(?:\\((macx|unix|win32)\\))?\\s*([^(].+)");
+  TxBottom(mcd);
+  while (!qTxTop(mcd)) {  TxUp(mcd); // scan upward all 'inc:' lines
+        Lleng = TxTRead(mcd, Lebuf); //
+    if (Lleng < 1 || Lebuf[0] != (AT_PROMPT|'i')) return;
+    tlesniff(mcd);
+    QString line = tcs2qstr(Lebuf+Lxle, Lleng-Lxle);
+    if (re.exactMatch(line) && (re.cap(1).isEmpty() || re.cap(1) == QtPLATF))
+      incList.prepend(re.cap(2));
+} }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+static void tmFnewSearchIncs (QString foundName)
+{
+  QStringList::const_iterator  it; if (foundName.isEmpty()) return;
+  QStringList incList, searchList;
+  for (txt *t = texts; t; t = t->txnext)
+    if (t->txstat & TS_MCD) tmExtractIncs(t, incList);
+
+#ifndef Q_OS_WIN
+  incList.append(QString("/usr/local/include,/usr/include"));
+#endif
+  for (it = incList.constBegin(); it != incList.constEnd(); it++)
+    searchList.append(it->split(QRegExp(",\\s*")));
+
+  for (it = searchList.constBegin(); it != searchList.constEnd(); it++) {
+    QString filename = (*it) + "/" + foundName;
+    if (QfsExists(filename)) { twDirPush(filename); return; }
+  }
+  twDirPush(foundName);
+}
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tmFnewByTtxt (void)                 /* войти в новый файл (имя из Ttxt) */
 {
   if (!tleread()) return;
-  int lm, rm;
-       if (Block1size(&lm, &rm)); // sets lm/rm, nothing more to do
-  else if (Ttxt->txstat & TS_MCD) { 
+  int lm, rm;                      // sets lm/rm, nothing more to do
+       if (Block1size(&lm, &rm)) ; //-
+  else if ((Ttxt->txstat & TS_MCD) && !(Lebuf[0] & AT_PROMPT)) {
 #define USE_MCD_MARGIN(LEFTorRIGHT) \
   if (Lleng > LEFTorRIGHT &&        \
   (char)Lebuf[LEFTorRIGHT] == LDS_MCD) { lm = LEFTorRIGHT+1; rm = Lleng; }
@@ -447,13 +481,10 @@ void tmFnewByTtxt (void)                 /* войти в новый файл (�
     if (lm >= 0) for (rm = Tx; rm < Lleng && (uchar)Lebuf[rm-1] != 0xBB;) rm++;
     else {
       lm = rm = Tx;
-      while (lm > 0     && !strchr(" \'\"(<", (char)Lebuf[lm-1])) lm--;
-      while (rm < Lleng && !strchr(" \'\">)", (char)Lebuf[rm]  )) rm++;
-    }
-    /*
-     * TODO: find the include file using some search path
-     */
-  }
+      while (lm > 0     && !strchr(" \'\",(<\xBB)", (char)Lebuf[lm-1])) lm--;
+      while (rm < Lleng && !strchr(" \'\",>)",      (char)Lebuf[rm]  )) rm++;
+      tmFnewSearchIncs(tcs2qstr(Lebuf+lm, rm-lm));                    return;
+  } }
   if (lm < rm) twDirPush(tcs2qstr(Lebuf+lm, rm-lm), Ttxt);
 }
 /*---------------------------------------------------------------------------*/

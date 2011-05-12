@@ -1,14 +1,21 @@
 TEMPLATE = app
+unix:QtPLATF = unix# must be the first (as 'unix' condition's true on macx too)
 macx {
   CONFIG += x86
   TARGET = µMup07
   ICON = microMir.icns
+  QtPLATF = macx
   QMAKE_INFO_PLIST = mim.Info.plist
   QMAKE_PKGINFO_TYPEINFO = "~epi"
 }
 !macx:TARGET = mim
-win32:RC_FILE = qtmim.rc
+win32 {
+  CONFIG += release
+  RC_FILE = qtmim.rc
+  QtPLATF = win32
+}
 !win32:DEFINES += UNIX
+QMAKE_CXXFLAGS += -DQtPLATF=\'\"$$QtPLATF\"\'
 
 HEADERS += micro.keys mic.h mim.h   ccd.h   qfs.h   twm.h   clip.h   synt.h
 SOURCES +=                  mim.cpp ccd.cpp qfs.cpp twm.cpp clip.cpp synt.cpp
