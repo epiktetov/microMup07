@@ -13,8 +13,10 @@ extern "C" { extern const char microVERSION[]; }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 BOOL dosEOL = false;                              /* Настраиваемые параметры */
 int TABsize = 4;
-static bool MiApp_debugKB = false;
+static bool MiApp_debugKB    = false;
+static bool MiApp_timeDELAYS = false;
        bool MiApp_useDIAGRAD = true;
+quint64 last_MiCmd_time;
 QString MiApp_defaultFont, MiApp_defFontAdjH;
 int     MiApp_defFontSize;
 int     MiApp_fontAdjOver, MiApp_fontAdjUnder, MiApp_defWidth, MiApp_defHeight;
@@ -100,6 +102,7 @@ int main(int argc, char *argv[])
     QString param = QString::fromUtf8(argv[i]);
          if (param.compare("-dos",IGNORE_CASE) == 0) dosEOL           =  TRUE;
     else if (param.compare("-kb", IGNORE_CASE) == 0) MiApp_debugKB    =  true;
+    else if (param.compare("-ti", IGNORE_CASE) == 0) MiApp_timeDELAYS =  true;
     else if (param.compare("-dg", IGNORE_CASE) == 0) MiApp_useDIAGRAD =  true;
     else if (param.compare("-lg", IGNORE_CASE) == 0) MiApp_useDIAGRAD = false;
     else {
@@ -416,9 +419,11 @@ void MiInfoWin::paintEvent (QPaintEvent *)
     info.sprintf("U+%X",(uint)(tc & AT_CHAR)); // cleared with spaces after EOL
     dc.drawText(sctw->Tx2qtX(0), Y, info);
   }
-  else if (BlockXYsize(&dx ,&dy)) {
-    info.sprintf("%dx%d", dx, dy); dc.drawText(sctw->Tx2qtX(0), Y, info);
-  }
+  else if (BlockXYsize(&dx ,&dy)) { info.sprintf ("%dx%d",      dx,   dy);
+                                    dc.drawText(sctw->Tx2qtX(0), Y, info); }
+  else if (MiApp_timeDELAYS &&
+     (dx = (int)(pgtime()-last_MiCmd_time)) > 1) { info.sprintf("%4dms", dx);
+                                       dc.drawText(sctw->Tx2qtX(0), Y, info); }
   else {
     info.sprintf("%6d", int((sctw->vp == Twnd) ? Ty : sctw->vp->wcy)+1);
     dc.drawText(sctw->Tx2qtX(0),                     Y, info.mid(0, 3));
@@ -493,9 +498,9 @@ void MiConfigDlg::selectFont() // - - - - - - - - - - - - - - - - - - - - - - -
 MiScTwin::MiScTwin(MiFrame *frame, const QColor *prim,
                                    const QColor *bg_color, wnd *win)
  : gradColor(*prim),
- bgColor(*bg_color), gotFocus(0),   scrollbarWidth(0), vp(win), mf(frame),
- info  (this, prim), gradPixSize(0), gradPixHeight(0),   gradPixmap(NULL),
- cmd2repeat(0), timerID(0)
+ bgColor(*bg_color), gotFocus(0),  vp(win), mf(frame),
+ info  (this, prim), gradPixSize(0), gradPixHeight(0),
+                     gradPixmap(NULL),  cmd2repeat(0), timerID(0)
 {
   vp->sctw = this; setAttribute(Qt::WA_NoSystemBackground);
                    setAttribute(Qt::WA_OpaquePaintEvent);   UpdateMetrics();
@@ -506,8 +511,8 @@ MiScTwin::~MiScTwin() { vipCleanupWindow(vp);
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiScTwin::vpResize (int width, int height)
 {
-  int dW = width  - Tsw2qtWb(vp->wsw) - scrollbarWidth,
-      dH = height - Tsh2qtHb(vp->wsh); 
+  int dW = width  - Tsw2qtWb(vp->wsw),
+      dH = height - Tsh2qtHb(vp->wsh);
 //
 // Nothing to do if the window size is correct already, otherwise change text 
 // size first, then re-calculate new pixel size based on that:
@@ -533,10 +538,7 @@ void MiScTwin::UpdateMetrics()          // NOTE: assuming fixed-width font with
   fontHeight += MiApp_fontAdjUnder;                  info.vpResize();
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-// Using fancy diagonal gradient (useDIAGRAD) on Mac and Win, but not under GTK
-// since scrolling (which has to be done redrawing everything) is way too slow
-//
-void MiScTwin::UpdateGradient()
+void MiScTwin::UpdateGradient()   // fancy diagonal gradient -- because we can!
 {
   int gradPixWidth, winSize = width() + (MiApp_useDIAGRAD ? height() : 0);
   if (winSize == gradPixSize &&
@@ -555,11 +557,11 @@ void MiScTwin::UpdateGradient()
   dc.setBrush(QBrush(grad)); dc.drawRect(gradRect);
 } 
 //-----------------------------------------------------------------------------
-void MiScTwin::paintEvent (QPaintEvent *ev)
+void MiScTwin::paintEvent (QPaintEvent *ev) // main PaintEvent (called from Qt)
 {
-  QPainter dc(this);                           QVector<QRect> rlist;
-  QRegion paintArea = ev->region();            QVector<QRect>::iterator it;
-  QRegion textArea(mimBORDER, mimBORDER, Tw2qtW(vp->wsw), Th2qtH(vp->wsh));
+  QPainter dc(this);                            QVector<QRect> rlist;
+  QRegion paintArea = ev->region();             QVector<QRect>::iterator it;
+  QRegion textArea(mimTxtLEFT, mimTxtTOP, Tw2qtW(vp->wsw), Th2qtH(vp->wsh));
 
   QRegion border   = paintArea.subtracted (textArea);
   for (rlist = border.rects(), it  = rlist.begin(); it != rlist.end(); ++it)
@@ -569,6 +571,40 @@ void MiScTwin::paintEvent (QPaintEvent *ev)
   for (rlist = text2upd.rects(), it  = rlist.begin(); it != rlist.end(); ++it)
     vipRepaint(vp, dc, this, Qx2txX(it->left()), Qx2txX(it->right()),
                              Qy2txY(it->top()),  Qy2txY(it->bottom()));
+  if (!border.isEmpty())
+       repaintPosBar(dc);
+}
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void MiScTwin::repaintPosBar (QPainter& dc)
+{
+  txt *tx = vp->wtext; if (!tx) return;
+  double pre = vp->wty,
+         win = vp->wsh,  post = tx->maxTy - win - pre; if (post < 0) post = 0;
+  double total = pre+win+post;
+//+
+//  fprintf(stderr, "VpPB:%.1f(%.1f)%.1f=%.1f", pre, win, post, total);
+//-
+  if (win < total / 60) { win = total/60; total = pre+win+post; }
+//+
+//  fprintf(stderr, "[adj:%.1f/%.1f]", win, total);
+//-
+  int wH = Th2qtH(vp->wsh);
+  int vppb0 = int(wH * pre / total + 0.5);
+  int vppbh = int(wH * win / total + 0.5);
+//+
+//  fprintf(stderr, ";vppb0=%d,H=%d\n", vppb0, vppbh);
+//-
+  QBrush brush(colorDarkWheat, Qt::SolidPattern);
+  dc.setBrush(brush);       QPen pen(brush, 1.0);
+  dc.setPen(pen);
+  QRect vppBar(mimTxtLEFT + Tw2qtW(vp->wsw) + mimBORDER,
+                                      vppb0 + mimBORDER, mimVpPOSBAR-1, vppbh);
+  dc.drawRect(vppBar);
+}
+void MiScTwin::RepaintVpPB (void) //- - - - - - - - - - - - - - - - - - - - - -
+{
+  update(Tx2qtX(vp->wsw) + mimBORDER, mimTxtTOP,
+                         mimVpPOSBAR, Th2qtH(vp->wsh));
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiScTwin::Erase (QPainter& dc, QRect& rect)

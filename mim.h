@@ -20,6 +20,11 @@ extern int  MiApp_defWidth, MiApp_defHeight;
 #define defWinHEIGHT 50 // - - height (lines)
 #define altWinHEIGHT 42 // alternate default height
 #define mimBORDER     2 // border around text area (in pixels)
+#define mimVpPOSBAR   2 // width of "position" bar (in pixels)
+#define mimTxtTOP      mimBORDER
+#define mimTxtBOTTOM   mimBORDER
+#define mimTxtLEFT     mimBORDER
+#define mimTxtRIGHT (2*mimBORDER+mimVpPOSBAR)
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 class MiFrame : public QMainWindow
 {
@@ -88,7 +93,6 @@ public: MiScTwin(MiFrame *frame, const QColor *prim,
 private:
   QColor gradColor, bgColor;
   quint64 gotFocus;
-  int scrollbarWidth; // calculated dynamically on window creation
 public:
   wnd     *vp; // ViewPort (interface between Qt/C++ and legacy C code)
   MiFrame *mf;
@@ -107,21 +111,22 @@ public:
   int Qw2txW(int  W) const { return W / fontWidth;   }
   int Qh2txH(int  H) const { return H / fontHeight;  }
 
-  int Tx2qtX(int tx) const { return mimBORDER + Tw2qtW(tx); }
-  int Ty2qtY(int ty) const { return mimBORDER + Th2qtH(ty); }
-  int Qx2txX(int  X) const { return Qw2txW(X - mimBORDER);  }
-  int Qy2txY(int  Y) const { return Qh2txH(Y - mimBORDER);  }
+  int Tx2qtX(int tx) const { return mimTxtLEFT + Tw2qtW(tx); }
+  int Ty2qtY(int ty) const { return mimTxtTOP  + Th2qtH(ty); }
+  int Qx2txX(int  X) const { return Qw2txW (X - mimTxtLEFT); }
+  int Qy2txY(int  Y) const { return Qh2txH (Y - mimTxtTOP ); }
 
-  int Tsw2qtWb(int tx) const { return 2*mimBORDER + Tw2qtW(tx); }
-  int Tsh2qtHb(int ty) const { return 2*mimBORDER + Th2qtH(ty); }
+  int Tsw2qtWb(int tx) const { return mimTxtLEFT + mimTxtRIGHT + Tw2qtW(tx); }
+  int Tsh2qtHb(int ty) const { return mimTxtTOP + mimTxtBOTTOM + Th2qtH(ty); }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   void paintEvent(QPaintEvent *ev);
+  void repaintPosBar(QPainter& dc);
   void Erase(QPainter& dc, QRect& rect);             // Qt coords, whole widget
   void Erase(QPainter& dc, int tx, int ty, int len); // text coords / area only
-
+  void RepaintVpPB();
   void Text (QPainter& dc, int tx, int ty, int tattr, QString text);
   void Text (QPainter& dc, int tx, int ty, tchar *tp, int len);
-  void Repaint    (int tx, int ty, int width, int height, bool NOW = false);
+  void Repaint(int     tx, int ty, int width, int height, bool NOW = false);
   void Scroll (int src_tx, int ty, int width, int height, int dy);
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   void keyPressEvent(QKeyEvent *ev);    void repeatCmd(int kcode);
@@ -133,6 +138,7 @@ protected:
   int cmd2repeat, timerID;
 };
 //-----------------------------------------------------------------------------
+extern quint64 last_MiCmd_time;
 #define pgt_1SEC 1000
 quint64 pgtime(void);   /* returns current time with "pretty good" precision */
 /*---------------------------------------------------------------------------*/

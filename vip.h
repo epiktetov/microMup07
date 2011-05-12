@@ -37,13 +37,12 @@ extern wnd *windows;  /* <-- used in tm.c to loop through all active windows */
  */
 void vipRepaint(wnd *vp, QPainter& dc, MiScTwin *sctw, int x0, int x1,
                                                        int y0, int y1);
+void TxRecalcMaxTy(txt *t);
 extern QRect BlockMarkRect;
 extern int Scrolling; // 0 = no, negative = scrolling up, positive = down
 #endif
 /* namoMir was initially developed for very slow devices, special optimization
- * was deployed in TxIL/TxDL/TxRep to redraw only portion that really changed;
- * surprisingly, still have to rely on this in МикроМир07 on wxGTK, since text
- * drawing is way too slow
+ * was deployed in TxIL/TxDL/TxRep to redraw only portion that really changed:
  */
 extern void wndop (small op, txt *t); /* Показать изменение текста:     */
 #define TW_EM  0                      /* - text empty                   */

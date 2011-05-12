@@ -48,8 +48,9 @@ struct txt_tag
   small cx, tcx;            /* Последняя позиция курсора в тексте            */
   large cy, tcy;            /*                    и окна на тексте           */
   struct txt_tag *txnext;
-  int thisSynts[MAXSYNTBUF];
-  int prevSynts[MAXSYNTBUF];
+  int thisSynts[MAXSYNTBUF];  /* Syntax info for after-line-on-top-of-txdstk */
+  int prevSynts[MAXSYNTBUF];  /* Previos syntax info = between txustk/txdstk */
+  large maxTy;                /* max Ty (total number of lines in the text)  */
 };
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 struct dirstk_tag

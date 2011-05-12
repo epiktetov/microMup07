@@ -46,7 +46,7 @@ txt *TxNew (BOOL qundo)                        /* Создание / удале�
   t->clang       = 0; t->txy = 0;
   t->cx = t->tcx = 0; memset(t->thisSynts, 0xDE, sizeof(int) * MAXSYNTBUF);
   t->cy = t->tcy = 0; memset(t->prevSynts,    0, sizeof(int) * MAXSYNTBUF);
-  return t;
+  t->maxTy       = 0;                                             return t;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void TxEnableSynt (txt *t, small clang)       /* add deqs for syntax checker */
@@ -62,7 +62,7 @@ void TxMarks0(txt *t) { int i;
 void TxDel (txt *t)
 {
   t->txstat = 0; DqDel(t->txustk); t->txustk = NIL; QfsClear(t->file);
-                 DqDel(t->txdstk); t->txdstk = NIL;          t->file = NIL;
+  t->maxTy  = 0; DqDel(t->txdstk); t->txdstk = NIL;          t->file = NIL;
   if (t->txudeq) DqDel(t->txudeq); t->txudeq = NIL;
   if (t->clustk) DqDel(t->clustk); t->clustk = NIL;
   if (t->cldstk) DqDel(t->cldstk); t->cldstk = NIL; t->clang = 0;
@@ -121,7 +121,7 @@ void TxDL(txt *t)
     small len = DqGetB(t->txdstk, txbuf);   tundo1add(t, UT_DL, txbuf, len);
     int i;
     for (i=0; i<TXT_MARKS; i++) if (t->txmarky[i] > t->txy) t->txmarky[i]--; 
-    wndop(TW_DL, t);
+    t->maxTy--;                                             wndop(TW_DL, t);
 } }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void TxDEL_beg(txt *t)
@@ -132,7 +132,7 @@ void TxDEL_beg(txt *t)
   while (!qDqEmpt(t->txustk)) {
     small len = DqGetE(t->txustk, txbuf);
     t->txy--;
-    tundo1add(t, UT_DL, txbuf, len); num_deleted++;
+    tundo1add(t, UT_DL, txbuf, len); num_deleted++; t->maxTy--;
   }
   for (i=0; i<TXT_MARKS; i++) {
     if (t->txmarky[i] > num_deleted) t->txmarky[i] -= num_deleted;
@@ -141,6 +141,7 @@ void TxDEL_beg(txt *t)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void TxDEL_end(txt *t)
 {
+  t->maxTy = t->txy;
   int i;
   while (!qDqEmpt(t->txdstk)) {
     small len = DqGetB(t->txdstk, txbuf);
@@ -154,7 +155,7 @@ void TxEmpt (txt *t)
 {                    if (t->txudeq) DqEmpt(t->txudeq);
   DqEmpt(t->txdstk); if (t->clustk) DqEmpt(t->clustk);
   DqEmpt(t->txustk); if (t->cldstk) DqEmpt(t->cldstk);
-  t->txy = 0;
+  t->maxTy = t->txy = 0;
   t->txudcptr = t->txudlptr = 0; t->cx = t->tcx = 0;     TxMarks0(t);
   t->txudfile = -1;              t->cy = t->tcy = 0; wndop(TW_EM, t);
 }
@@ -266,8 +267,9 @@ vanilla_char:
 /*---------------------------------------------------------------------------*/
 void TxIL(txt *t, char *text, small len)
 {
-  DqAddB   (t->txdstk, text, len); int i;
+  DqAddB   (t->txdstk, text, len); t->maxTy++;
   tundo1add(t,  UT_IL, text, len); 
+  int i;
   for (i=0; i<TXT_MARKS; i++)
     if (t->txmarky[i] >= t->txy) t->txmarky[i]++;  wndop(TW_IL, t);
 }
@@ -315,6 +317,7 @@ tchar *TxInfo (wnd *w, large y, int *pl)      /* used for repaint in vip.cpp */
   if (t && TxSetY(t, y)) {
     if (w == Lwnd && y == Ly) blktmov(Lebuf, tcbuf, len = Lleng);
     else                                 len = TxTRead(t, tcbuf);
+    if (t->maxTy < y) t->maxTy = y;
     if (y > 0 && len < MAXLPAC-3) {
       int i;
       for (i=1; i<TXT_MARKS; i++)             /* add 2-chars mark at the end */
@@ -325,4 +328,5 @@ tchar *TxInfo (wnd *w, large y, int *pl)      /* used for repaint in vip.cpp */
   if (len < tcbuflen) blktspac(tcbuf+len, tcbuflen - len);
   *pl = tcbuflen = len;                      return tcbuf;
 }
+void TxRecalcMaxTy(txt *t) { TxSetY(t, 2147483647); t->maxTy = t->txy; }
 /*---------------------------------------------------------------------------*/

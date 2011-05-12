@@ -214,8 +214,9 @@ txt *tmDesc (QString filename, bool needUndo, txt *referer)
   t = TxNew(needUndo ? TRUE : FALSE); // not found => create new one
   t->file = fd;
   TxEnableSynt(t,force_clang);
-  t->txstat  |=  force_txstat; return t;
-}
+  t->txstat  |=  force_txstat; t->txredit = TXED_YES;
+  return t;                    // ^
+}                              // make QftNOFILE editable (no tmLoad follows)
 /*---------------------------------------------------------------------------*/
 #ifdef UNIX
 # include <errno.h>
@@ -269,6 +270,12 @@ static void check_MCD (txt *t)
 }
 bool tmDoLoad (txt *t)  /*- - - - - - - - - - - - - - - - - - - - - - - - - -*/
 {
+//  fprintf(stderr, "tmLoad(%s)\n", t->file ? t->file->name.cStr() : "Null");
+//  for (txt *tx = texts; tx; tx = tx->txnext) {
+//    fprintf(stderr, " %04o%s\n", tx->txstat,
+//                                 tx->file ? tx->file->name.cStr() : "Null");
+//  }
+//+
   int oc = 0;
   switch (t->file->ft) {       // NOFILE file always considered "loaded" (since
   case QftNOFILE:              // there is no place to reload them from anyway)
@@ -284,11 +291,10 @@ bool tmDoLoad (txt *t)  /*- - - - - - - - - - - - - - - - - - - - - - - - - -*/
   }
   bool editable = !(t->txstat & TS_RDONLY) && t->file->writable && (oc != 1);
   t->txredit = editable ? TXED_YES : TXED_NO;
-  t->txstat &= ~TS_CHANGED;     check_MCD(t);
+  t->txstat &= ~TS_CHANGED;     check_MCD(t); TxRecalcMaxTy(t);
   t->txstat |=  TS_FILE;
   if (t->txudeq != NIL) { t->txstat  |= TS_UNDO;
-                          t->txudfile = t->txudcptr; } 
-  return true;
+                          t->txudfile = t->txudcptr; } return true;
 }
 bool tmLoad (txt *t)  /*- - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 {
@@ -385,10 +391,6 @@ bool twSave (txt *t, wnd *vp, bool needBackup)
 void tmSaveAll (void)                    /* сохранить ВСЕ изменения на диске */
 {
   for (txt *t = texts; t; t = t->txnext) {
-//+
-// fprintf(stderr, "%04o%s\n", t->txstat,
-//                             t->file ? t->file->full_name.cStr() : "nil");
-//-
     if (t->txstat & TS_CHANGED) {
       if (t->txwndptr) twSave(t, t->txwndptr, false); // <- saves QftNOFILE too
       else             tmsave(t,              FALSE); //    (will ask for name)

@@ -169,10 +169,11 @@ void vipRepaint(wnd *vp, QPainter& dc, MiScTwin *sctw, int x0, int x1,
 //
 void vipRedraw (wnd *vp, int tx, int ty, int width, int height)
 {
-  vp->sctw->Repaint(tx, ty, width, height);
+  vp->sctw->Repaint(tx, ty, width, height); // repaint the text area...
+  vp->sctw->RepaintVpPB();                  // ...and VP position bar aws well
 }
+void vipRedrawWindow(wnd *vp)         { vipRedraw(vp, 0,0, vp->wsw, vp->wsh); }
 void vipRedrawLine  (wnd *vp, int ty) { vp->sctw->Repaint(0, ty, vp->wsw, 1); }
-void vipRedrawWindow(wnd *vp) { vp->sctw->Repaint(0, 0, vp->wsw, vp->wsh);    }
 /*---------------------------------------------------------------------------*/
 void wpos (wnd *vp, int x, int y)        /* repaint cursor at given position */
 {
@@ -207,9 +208,9 @@ void scblkoff()
 /*---------------------------------------------------------------------------*/
 void vipRoll (wnd *vp, int wymin, int wymax, int dy) /* rolls region up/down */
 {
-  int rollH = wymax - wymin - my_abs(dy);
-  if (MiApp_useDIAGRAD || rollH < 3) vp->sctw->Repaint(0, wymin,
-                                                 vp->wsw, wymax-wymin);
+  int rollH = wymax-wymin-my_abs(dy); vp->sctw->RepaintVpPB();
+  if (MiApp_useDIAGRAD || rollH < 3)  vp->sctw->Repaint(0, wymin,
+                                                  vp->wsw, wymax-wymin);
   else { // ^ scrolling is only possible
          // with horizontal gradient (not diagonal one), avoid scrolling small
          // regions (because of interference with MiInfoWin, see mim.cpp file)
@@ -399,7 +400,8 @@ static int vipExecuteMacro (wnd *vp, int N)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 int vipOnMimCmd (wnd *vp, int ev, int ca) // temp block converted to permanent
 {                                         // by F5 and cleared by keys without
-  if (BlockMark) {                        // KxBLK/TMP/SEL bits (TODO: fix bit)
+  last_MiCmd_time = pgtime();             // KxBLK/TMP/SEL bits (TODO: fix bit)
+  if (BlockMark) {
     if (BlockTemp) { 
       if (ev == TX_MCBLOCK) { BlockTemp = FALSE;
                               BlockMark_repaint(Twnd); return E_OK;

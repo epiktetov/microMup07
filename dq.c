@@ -36,9 +36,8 @@ CR LF (или только LF). Таким образом, появление с
 #include "dq.h"
 
 static deq deq0, *freedeqs = NIL, *gapdeq, *lockdeq;
-static BOOL  DqReserveExt = TRUE;
-static BOOL qFilSwap();
-static long  DqReqMem; /* <-- required memory for extgap(), used by qFilSwap */
+static BOOL DqReserveExt  = TRUE;
+static long tmswap(long req_mem); /* выкидывает заменимое, return: available */
 /*---------------------------------------------------------------------------*/
 void DqInit(char *membuf, long bufsize)     /* create "anti-deq" that covers */
 {                                           /* memory that other deqs cannot */
@@ -126,13 +125,12 @@ void extgap (deq *d, long len, BOOL move_previous)
 // DqPrintDeqs(":");
 //-
   if (d1st->deext > len) len = d1st->deext;
-  if (d2nd->dbext > len) len = d2nd->dbext; DqReqMem = len;
-  if (DqFree() < len) {
-    if (!qFilSwap()) {      /* Если нет места: просим диспетчера потесниться */
-      DqReserveExt = FALSE; /* (выкидываем заменимое) fail -> ingnore extent */
-      if (DqFree() < len) {
-        vipError( "Нет памяти (out ot memory)"); exc(E_NOMEM);
-  } } }
+  if (d2nd->dbext > len) len = d2nd->dbext;
+  if (DqFree() < len && tmswap(len) < len) { /* Если нет места: swap smthng */
+    DqReserveExt = FALSE;                    /* still fail => ignore extent */
+    if (DqFree() < len) {
+      vipError( "Нет памяти (out ot memory)"); exc(E_NOMEM);
+  } }
   for (delta = deq0.dextra, d = deq0.dnext; d != d2nd; d = d->dnext) {
     if (delta > 0) {
       lblkmov(d->dbeg, d->dbeg - delta, DqLen(d)); d->dbeg -= delta;
@@ -259,7 +257,7 @@ int DqLoad (deq *d, qfile *f, large size)
 {
   long actual_size;  int rc = 2; DqEmpt(d);
   long mem_available = DqFree();
-  if (mem_available < size) {
+  if (mem_available < size && (mem_available = tmswap(size)) < size) {
     vipFileTooBigError(f, size); if (DT_IsBIN(d->dtyp)) return -1;
     size = mem_available - MAXLUP - MAXLPAC;               rc = 1;
   }
@@ -287,14 +285,16 @@ BOOL DqSave (deq *d, qfile *f)
  * переизобразить это окно на экране):
  *  0) pseudo|file[changed]      - throw-away text, выкинем без сожаления
  *  1) file|undo|dirlst[changed] - выкинем файл, откатку, освободим дескриптор
- *  2) file|undo         - выкинем только файл (если не поможет -> шаг 3)
- *  3) undo              - выкинем откатку, освободим дескриптор
- *  4) file|undo|changed - сохраним и выкинем файл
+ *  2) file|undo         - выкинем только файл (если не поможет -> шаг 4)
+ *  3) *                 - обрежем откатку (у ВСЕХ файлов) до положенной квоты
+ *  4) undo              - выкинем откатку, освободим дескриптор
+ *  5) file|undo|changed - сохраним и выкинем файл
  */
 #define S_SFILE  001 /* save file  = сохраним файл        */
 #define S_EFILE  002 /* erase file = выкинем файл         */
 #define S_EUNDO  004 /* erase undo = выкинем откатку      */
 #define S_EDESC  010 /* erase desc = освободим дескриптор */
+#define S_UDCUT  020 /* cut undo (up to UDLQUOTA == 8192) */
 
 static small mem_swap_rules[] =
 {
@@ -303,43 +303,45 @@ static small mem_swap_rules[] =
   TS_BUSY|TS_FILE|TS_UNDO|TS_DIRLST|TS_CHANGED, S_EFILE|S_EUNDO|S_EDESC,
   TS_BUSY|TS_FILE|TS_UNDO|TS_DIRLST,            S_EFILE|S_EUNDO|S_EDESC,
   TS_BUSY|TS_FILE|TS_UNDO,                      S_EFILE,
+  TS_DqSWAP,                                    S_UDCUT,
   TS_BUSY|TS_UNDO,                              S_EUNDO|S_EDESC,
   TS_BUSY|TS_FILE|TS_UNDO|TS_CHANGED,           S_SFILE|S_EFILE, 0
 };
-static BOOL tmswap (void)
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+long tmswap (long required)
 {
-  small *pcode, mask, lrum, op;
+  small *pcode, mask, lrum, op; long available;
   txt *t, *tm;
   for (pcode = mem_swap_rules; (mask = *pcode++); pcode++) {
-    for (;;) {
+    if ((op = *pcode) & S_UDCUT) {
+      for (t = texts; t; t = t->txnext)
+        if (t->txstat && t->txudeq != NIL) udcut(t);
+    //
+      if ((available = DqFree()) < required) continue;
+      else                           return available;
+    }
+    else for (;;) {
       for (t = texts, tm = NIL, lrum = 0; t; t = t->txnext) {
         if ((t->txstat & TS_DqSWAP) == mask && t->txlructr > lrum) {
           tm = t; lrum = t->txlructr;
       } }
-      if (tm == NIL) break; /* самого подходящего не нашлось */
-      op = *pcode;
+      if (tm == NIL) break;  /* самого подходящего не нашлось */
+   /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
       if (op & S_SFILE) {
         if (!tmsave(tm, FALSE)) { tm->txstat |= TS_SAVERR; continue; }
       }
       if (op & S_EFILE) {
+        if (tm->clustk) DqEmpt(tm->clustk);
+        if (tm->cldstk) DqEmpt(tm->cldstk);
         DqEmpt(tm->txustk);
         DqEmpt(tm->txdstk); tm->txy = 0; tm->txstat &= ~TS_FILE;
       }
       if (op & S_EUNDO) udclear(tm);
       if (op & S_EDESC) TxDel(tm);
-      if (DqFree() >= DqReqMem) return TRUE;
+      if ((available = DqFree()) >= required) return available;
   } }
 /* Не удалось. В памяти остались текущий файл, файл сохранения,
                                  откатка текущего файла, урезанная до лимита */
-  return FALSE;
-}
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-static BOOL qFilSwap()    /* Освободить память, возвращает TRUE если удалось */
-{
-  txt *t; for (t = texts; t != NIL; t = t->txnext)
-            if (t->txstat && t->txudeq != NIL) udcut(t);
-
-  if (DqFree() < DqReqMem) return tmswap();
-  else                     return TRUE;
+  return DqFree();
 }
 /*---------------------------------------------------------------------------*/
