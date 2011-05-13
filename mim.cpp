@@ -406,7 +406,8 @@ MiInfoWin::MiInfoWin (MiScTwin *parent, const QColor *bgnd) : QWidget(parent),
   setPalette(palette);       setAutoFillBackground(true);
   setFont(sctw->mf->getTextFont());
 }
-void MiInfoWin::vpResize() { resize(sctw->Tsw2qtWb(8), sctw->Tsh2qtHb(1)); }
+void MiInfoWin::vpResize() { resize(2 * mimBORDER + sctw->Tw2qtW(9),
+                                    2 * mimBORDER + sctw->Th2qtH(1)); }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiInfoWin::paintEvent (QPaintEvent *)
 {
@@ -427,11 +428,18 @@ void MiInfoWin::paintEvent (QPaintEvent *)
      (dx = (int)(pgtime()-last_MiCmd_time)) > 1) { info.sprintf("%4dms", dx);
                                        dc.drawText(sctw->Tx2qtX(0), Y, info); }
   else {
-    info.sprintf("%6d", int((sctw->vp == Twnd) ? Ty : sctw->vp->wcy)+1);
-    dc.drawText(sctw->Tx2qtX(0),                     Y, info.mid(0, 3));
-    dc.drawText(sctw->Tx2qtX(3) + sctw->fontWidth/2, Y, info.mid(3, 3));
+    info.sprintf("%7d", int((sctw->vp == Twnd) ? Ty : sctw->vp->wcy)+1);
+    if (sctw->vp->wtext && sctw->vp->wtext->lastSynts) {
+      int *Synts = sctw->vp->wtext->lastSynts,
+        numSynts = (Synts[0] & (~AT_COMMENT));
+      for (int i = 0; i < numSynts && i < 3; i++) {
+        if (info[i] > ' ') info[i+1] = QChar(0x2026);
+                           info[i]   = QChar(Synts[i+1] & 0xFF);
+    } }
+    dc.drawText(sctw->Tx2qtX(0),                     Y, info.mid(0, 4));
+    dc.drawText(sctw->Tx2qtX(4) + sctw->fontWidth/2, Y, info.mid(4, 3));
   }
-  dc.drawText(sctw->Tx2qtX(7), Y, clipStatus());
+  dc.drawText(sctw->Tx2qtX(8), Y, clipStatus());
 }
 void MiInfoWin::updateInfo (MiInfoType mit) { if (mit) infoType = mit;
                                                             repaint(); }
@@ -633,7 +641,7 @@ void MiScTwin::Erase (QPainter& dc, int tx, int ty, int len)
 //
 // AT_BOLD (indep) set ʁbold fontʀ - permanent (saved in file) no special meaning
 // AT_PROMPT       ʂdark blueʀ text - used for prompts, indicates wildcard search
-// AT_REGEX        ʄdark redʀ chars - incorrect UTF-8 chars, marks regex search
+// AT_REGEX        ʄdark redʀ chars - marks regex search
 // AT_SUPER        ʈsky blueʀ chars - special characters -- forces Insert mode
 // AT_UNDERL       reserved for underline
 //
@@ -652,7 +660,7 @@ void MiScTwin::Erase (QPainter& dc, int tx, int ty, int len)
 // AT_QCLOSE   - closing quote ’”
 // AT_KEYWORD  dark brown text, used to highlight known keywords
 // AT_COMMENT  dark grey text, indicates comments (depend on the language)
-// AT_BADCHAR  bright red text for bad UTF-8 characters
+// AT_BADCHAR  solid red text for bad UTF-8 characters
 //
 void MiScTwin::Text (QPainter& dc, int x, int y, int attr, QString text)
 {

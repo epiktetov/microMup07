@@ -51,6 +51,7 @@ struct txt_tag
   int thisSynts[MAXSYNTBUF];  /* Syntax info for after-line-on-top-of-txdstk */
   int prevSynts[MAXSYNTBUF];  /* Previos syntax info = between txustk/txdstk */
   large maxTy;                /* max Ty (total number of lines in the text)  */
+  int lastSynts[MAXSYNTBUF];  /* Last syntax info (from after the last line) */
 };
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 struct dirstk_tag

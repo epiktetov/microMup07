@@ -27,7 +27,5 @@ void TxTIL (txt *t, tchar *line, small len),               TxDEL_end(txt *t);
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 extern char   afbuf[]; extern small tab_size;
 extern char   txbuf[]; extern txt     *texts;
-
-#define MSG_EOF "^^ end of "
 /*---------------------------------------------------------------------------*/
 #endif                                                      /* TX_H_INCLUDED */

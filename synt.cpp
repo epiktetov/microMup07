@@ -9,6 +9,7 @@
 extern "C" {
 #include "le.h"
 #include "dq.h"
+#include "tx.h"
 }
 #include "synt.h"
 #include <QRegExp>
@@ -110,6 +111,16 @@ static bool Cpp_is_begin_comment_c (const char *str, int len)
 }
 static char Cpp_end_comment[] = "*/";
 //-----------------------------------------------------------------------------
+// void printSynt(int *Synt)
+// {
+//   int len = Synt[0] & (~AT_COMMENT);
+//   if (len > MAXSYNTBUF) fprintf(stderr, "0x%X", Synt[0]);
+//   else {
+//     fprintf(stderr, "[%s%d]", (Synt[0] & AT_COMMENT) ? "#" : "", len);
+//     for (int i = 1; i <= len; i++)
+//       fprintf(stderr, ",%d%c", (Synt[i] >> 8), (char)(Synt[i] & 0xFF));
+// } }
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 char Types[96] = "..`#...`()...#.#" //   ! " # $ % & ' ( ) * + , - . /
                  "0000000000......" // 0 1 2 3 4 5 6 7 8 9 : ; < = > ?
                  ".xxxxxxxxxxxxxxx" // @ A B C D E F G H I J K L M N O
@@ -134,17 +145,37 @@ char matchingBrak (char brak) { return (brak < '/') ? (brak^1) : (brak^6); }
 // Colorize the line from given text (the line assumed to be located in tcbuf),
 // may change txt->thisSynts (in which case it empties the entire txt->cldstk):
 //
-void SyntColorize (txt *text, tchar *tcp, int len)
+void SyntColorize (txt *text, tchar *tcp, int& len)
 {
-  int newSynts[MAXSYNTBUF], numNews = 1; newSynts[0] = 0;
-  char brakt [MAXTXRM]; int brx = 0;
-  int  brakp [MAXTXRM]; int brnclo = text->prevSynts[0] & (~AT_COMMENT);
+  int newSynts[MAXSYNTBUF], numNews = 1;    newSynts[0] = 0;
+  char brakt [MAXTXRM]; int brnclo = text->prevSynts[0] & (~AT_COMMENT);
+  int  brakp [MAXTXRM]; int brx = 0;
   int  braclo[MAXTXRM]; int brtclo = 0;
-  int i, word0 = 0, word1 = 0;
+  int i, word0 = 0, word1 = 0, badSynt = 0;
   bool in_le_mode = (Lwnd && Ly == text->txy);
   char mode = '.';
   if (text->prevSynts[0] & AT_COMMENT) mode = 'c';
   else while (word1 < len && tcharIsBlank(tcp[word1])) word1++;
+//+
+//  if (qTxBottom(text) && len == 0) return;
+//  fprintf(stderr, "Colorize(y=%ld,len=%d),prev=", text->txy+1, len);
+//  printSynt(text->prevSynts);
+//-
+  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  if (tcp[0] == AT_DIRTY+'^') { // add non-closed bracket into end-of-text line
+//+
+//  fprintf(stderr, "--end-of-text\n");
+//-
+    if (brnclo > 0) {
+      for (i=3; i<len;     i++) tcp[i] = AT_COMMENT|0xB7; //·
+      for (i=1; i<=brnclo; i++) {
+        word1 = (text->prevSynts[i] >> 8);
+        while (Type_tc(tcp[word1]) == '(') word1++;
+        tcp[word1] = (text->prevSynts[i] & 0xFF)|AT_ERROR;
+        if (len < word1+1) len = word1+1;
+    } }        // ^
+    return;    // make sure the mark is included into displayed string (because
+  }            // of "dirty" mark, TxInfo will clear everything we wrote there)
   //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   for (int N = word1; N < len; N++) {
     if (mode == 'c') {
@@ -190,19 +221,29 @@ quoted: tcp[N = i] |= AT_QCLOSE;
                              brakt[brx] = tc; brx++; } break;
       case ')':
         if (brx) { brx--;
-          if (matchingBrak(tc) != brakt[brx]) { // mismatching bracket, makes
-             tcp[N]          |= AT_ERROR;       // no sense to continue parse
-             tcp[brakp[brx]] |= AT_ERROR;  return;
+          if (matchingBrak(tc) != brakt[brx]) { // mismatching bracket -- show
+             tcp[N]          |= AT_ERROR;       //          only the 1st error
+             tcp[brakp[brx]] |= AT_ERROR; goto end_of_loop;
         } }
-        else if (brnclo && (text->prevSynts[brnclo] & 0xFF) == tc) {
-           word1 = (text->prevSynts[brnclo] >> 8);
-           brnclo--;             // ^
-           braclo[brtclo++] = N; // close prev: verify type now, but pos later
+        else if (brnclo) { bool matched = false;
+          while (brnclo) {
+            if (matchingBrak(tc) == (text->prevSynts[brnclo] & 0xFF)) {
+              word1 = (text->prevSynts[brnclo] >> 8);
+              brnclo--;              // ^                   |
+              braclo[brtclo++] =  N; // to cover this case: |if (two-line
+              matched = true; break; //                     |    condition) {
+            }
+            else if (badSynt == 0) { badSynt = text->prevSynts[brnclo--];
+                                     tcp[N] |= AT_ERROR;        continue; }
+            else break;
+          }
+          if (!matched) tcp[N] |= AT_ERROR;
         }
         else { tcp[N] |= AT_ERROR; return; }
       }
       mode = '.';
   } }
+end_of_loop:
   if (mode == 'x') SyntMARK_WHEN_KEYWORD(len);
 //
 // Make sure all (already type-matched) closing brackets are positioned correct
@@ -212,33 +253,66 @@ quoted: tcp[N = i] |= AT_QCLOSE;
     if ((text->prevSynts[brnclo+i+1] >> 8) > braclo[i])
       tcp[braclo[i]] |= AT_ERROR;
 //
+// Move Synt pair of the first (hopefully, single) mismatched bracket in front
+// of the list, trying to avoid multiple error marks and provide more relevant
+// info for the end-of-file unclosed brackets lineup
+//
+  if (badSynt) newSynts[numNews++] = badSynt;
+//
 // Copy not-closed brackets from prevSynt to temporary storage, add new opening
 // brackets after that (using first non-space in the line as adjusted position)
 // and (only in line-edit mode) colorize all opening non-matched bracket
 //
   for (i = 0; i < brnclo; i++)  newSynts[numNews++] = text->prevSynts[i+1];
   for (i = 0; i < brx && numNews < MAXSYNTBUF; i++) {
-    newSynts[numNews++] = (word1 << 8) | matchingBrak(brakt[i]);
+    newSynts[numNews++] = (word1 << 8) | brakt[i];
     if (in_le_mode) tcp[brakp[i]] |= AT_MARKOK;
   }
+// Extra feature (TODO: make optional?): mark as error when non-closed brackets
+// in current line starts (as measured by 'word1') without indent from the last
+// element in prevSynts (NOTE: may not work properly with badSynt move, test)
+//
+  if (brx && brnclo && word1 <= (text->prevSynts[brnclo-1] >> 8))
+    tcp[brakp[0]] |= AT_ERROR;
+//
   if (!in_le_mode) {
     newSynts[0] = ((mode == 'c') ? AT_COMMENT : 0) + (numNews-1);
-    len = numNews * sizeof(int);
-    if (memcmp(newSynts, text->thisSynts, len) != 0) {
-      blkmov(newSynts, text->thisSynts, len);
-      DqEmpt(text->cldstk);
-      DqAddB(text->cldstk, (char*)newSynts, len); wndop(TW_DWN, text);
-} } }
+//+
+//  fprintf(stderr, ";new=");
+//  printSynt(newSynts);
+//-
+    int syntlen = numNews * sizeof(int);
+    if (memcmp(newSynts, text->thisSynts, syntlen) != 0) {
+//+
+//  fprintf(stderr, "--updated\n((");
+//
+      blkmov  (newSynts, text->thisSynts, syntlen);
+      DqEmpt(text->cldstk);                           // emptying CL stack will
+      DqAddB(text->cldstk, (char*)newSynts, syntlen); // force re-parse of text
+      wndop(TW_DWN, text);            TxBottom(text); // below, make sure final
+//+
+//  fprintf(stderr, "))");
+//
+
+  } }                                                 // Synts are updated too
+//+
+//  fprintf(stderr, "\n");
+//
+}
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-int SyntParse(txt *text, char *str, int len, int *out)
-{
-  int brnclo = text->prevSynts[0] & (~AT_COMMENT);
-  blkmov(text->prevSynts+1, out+1, sizeof(int)*brnclo);
-  char brakt [MAXTXRM];                    int brx = 0;
-  int i, word0 = 0, word1 = 0;
+int SyntParse(txt *text, char *str, int len, int *out) // NOTE: 'out' may point
+{                                                      //   to text->precSynts
   char mode = '.';
+  char brakt [MAXTXRM]; int brnclo = text->prevSynts[0] & (~AT_COMMENT);
+  int i, word0 = 0, word1 = 0, badSynt = 0, haveBad = 0;    int brx = 0;
+  int *pout = out;
   if (text->prevSynts[0] & AT_COMMENT) mode = 'c';
   else while (word1 < len && str[word1] == ' ') word1++;
+//+
+//  fprintf(stderr, "parse(y=%ld,len=%d),prev=", text->txy, len);
+//  printSynt(text->prevSynts);
+//  fprintf(stderr, ":'%.*s'", len, str);
+//-
   //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   for (int N = word1; N < len; N++) {
     if (mode == 'c') {
@@ -265,12 +339,32 @@ int SyntParse(txt *text, char *str, int len, int *out)
       if (brx < MAXTXRM) brakt[brx++] = str[N];
       break;
     case ')': if (brx) brx--;
-         else if (brnclo) brnclo--;
+      else
+         if (brnclo) { bool matched = false;
+      while (brnclo) {
+        if (matchingBrak(c) == (text->prevSynts[brnclo] & 0xFF)) {
+          brnclo--;
+          matched = true; break;
+        }
+        else if (!haveBad) { haveBad++;
+                             badSynt = text->prevSynts[brnclo--]; }
+        else break;  }}
   } }
 end_of_loop:
-  if (brnclo+brx > MAXSYNTBUF-1) brx = MAXSYNTBUF-brnclo-1;
-  *out = ((mode == 'c') ? AT_COMMENT : 0) + (brnclo + brx);
-  for (i = 0, out += brnclo; i < brx; i++)
-    *(++out) = (word1 << 8) | matchingBrak(brakt[i]);   return brnclo+brx+1;
+//+
+//  fprintf(stderr, ";brnclo=%d,brx=%d,hB=%d", brnclo,brx,haveBad);
+//  if (haveBad) fprintf(stderr, "(%x)", badSynt);
+//-
+  if (brnclo+brx+haveBad > MAXSYNTBUF-1) brx = MAXSYNTBUF-brnclo-haveBad-1;
+  *pout++ = ((mode == 'c') ? AT_COMMENT : 0)  + ( brnclo + brx + haveBad );
+  pout = (int*)blkmov(text->prevSynts+1, pout+haveBad, sizeof(int)*brnclo);
+  for (i = 0; i < brx; i++) *(pout++) = (word1 << 8) | brakt[i]; //
+  if (haveBad) out[1] = badSynt;                                 // out[1] must
+//+                                                              // be the last
+//  fprintf(stderr, ";new=");
+//  printSynt(out);
+//  fprintf(stderr, "(len=%d)\n", brnclo+brx+haveBad+1);
+//-
+                                   return brnclo+brx+haveBad+1;
 }
 //-----------------------------------------------------------------------------

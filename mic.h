@@ -34,7 +34,7 @@ typedef long tchar;                           /* Unicode символ с атр�
 #define AT_PROMPT  0x00020000 /* prompts text (def. dark blue text) == KxBLK */
 #define AT_REGEX   0x00040000 /* indicates regex search (dark red)  == KxTMP */
 #define AT_SUPER   0x00080000 /* sky blue (special chars) forces Insert mode */
-#define AT_UNDERL  0x00100000 /* reserved for underline                      */
+#define AT_DIRTY   0x00100000 /* "dirty" mark  (was: reserved for underline) */
 #define AT_IN_FILE 0x001F0000 /* <---- mask of attributes saved in file ---- */
 #define AT_INVERT  0x00200000 /* when added to AT_BG_CLR => indicates cursor */
 #define AT_BG_CLR  0x00c00000 /* background color:                           */
@@ -56,6 +56,7 @@ typedef long tchar;                           /* Unicode символ с атр�
 #define AF_NONE    "\xCA\x80" /*   file representation for some attributes   */
 #define AF_PROMPT  "\xCA\x82" /*   (used to set nice prompt for LenterARG)   */
 #define AF_SUPER   "\xCA\x88"
+#define AF_DIRTY   "\xCA\x90"
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #define CpSCH_NEW_LINE  '\f'          /* Beginning of new line in CP buffer  */
 #define LeSCH_REPL_BEG  AT_SUPER+'>'  /* Replace substring begin             */

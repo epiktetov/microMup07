@@ -7,9 +7,10 @@
 small SyntKnownLang(QString filename); // returns lang code (or 0 if not known)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 // Colorize the line from given text (the line assumed to be located in tcbuf),
-// may change txt->thisSynts (in which case it empties the entire txt->cldstk):
+// may change txt->thisSynts (in which case it empties the entire txt->cldstk),
+// and may add something past the end of the supplied text, updating len param:
 //
-void SyntColorize (txt *t, tchar *tcp, int len);
+void SyntColorize (txt *t, tchar *tcp, int& len);
 
 extern "C" {
 #endif
