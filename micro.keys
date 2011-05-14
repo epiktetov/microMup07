@@ -12,11 +12,11 @@
  Insert (synonym F11) is "fn" or "Help" key on Mac
  Delele (synonym F12) is "Delete⌦" on Mac keyboard ("delete" key is Backspace)
 
-COMMAND LINE    µMup07 :help       - view the МикроМир07 help (this text)
-  PARAMETERS:   µMup07             - start editing an empty text
-                µMup07 filename    - start editing the given file
-                µMup07 filename:N: - start editing the given file at line N
-                µMup07 dirname     - open the contents of given directory
+COMMAND LINE        µMup07 :help       - view the МикроМир07 help (this text)
+     PARAMETERS:    µMup07             - start editing an empty text
+                    µMup07 filename    - start editing the given file
+(see also FILES     µMup07 filename:N: - start editing the given file at line N
+   section below)   µMup07 dirname     - open the contents of given directory
 */
 k_BEGIN
 /*
@@ -69,9 +69,7 @@ replaces anything, it just pushes current text into stack like Esc <down> does)
 
   Meta+'='/'+'/F12     - fork current window into two, with identical contents
   Meta+'-'             - split the window into two, forking the contents
-  Meta+'\' or Ctrl+Esc - ask for filename and enter that file. Special file
-                         names - ':clip' = content of copy/paste buffer
-                               - ':help' = this text (if found near executable)
+  Meta+'\' or Ctrl+Esc - ask for filename and enter that file (see FILES below)
 
   Meta+<arrow> - move cursor to closest window in given direction
   Meta+Enter   - SyncPos(tm) - open (in upper pane) file mentioned here
@@ -97,10 +95,10 @@ a_(TM_VFORK,     mod_CTRL+mod_ALT+'=',       0) /* открыть новое о�
 a_(TM_HFORK,     mod_CTRL+mod_ALT+'-',       0) /* поделить окно пополам     */
 a_(TM_FENTR,     mod_CTRL+mod_ALT+'\\',      0) /* ввести имя и войти в файл */
 #ifdef Q_OS_WIN
-a_(TM_UWINDOW,   mod_CTRL+mod_ALT+Mk_UP,     0) /* к верхнему окну           */
-a_(TM_LWINDOW,   mod_CTRL+mod_ALT+Mk_LEFT,   0) /* к левому окну             */
-a_(TM_RWINDOW,   mod_CTRL+mod_ALT+Mk_RIGHT,  0) /* к правому окну            */
-a_(TM_DWINDOW,   mod_CTRL+mod_ALT+Mk_DOWN,   0) /* к нижнему окну            */
+a_(TM_UWINDOW,   mod_CTRL+mod_ALT+Mk_UP,     0) /* перейти к верхнему окну   */
+a_(TM_LWINDOW,   mod_CTRL+mod_ALT+Mk_LEFT,   0) /* - к левому окну           */
+a_(TM_RWINDOW,   mod_CTRL+mod_ALT+Mk_RIGHT,  0) /* - к правому окну          */
+a_(TM_DWINDOW,   mod_CTRL+mod_ALT+Mk_DOWN,   0) /* - к нижнему окну          */
 #endif
 /*
 As a consequence of First Principle, Enter and Tab keys don't insert any symbol
@@ -108,29 +106,33 @@ into text, but instead work as cursor movement commands (there are commands for
 inserting TAB into text and splitting lines at cursor, though).
 
   Tab / Shift+Tab  - move cursor to next / previous TAB position
-  Ctrl+`           - save cursor position
-  Ctrl+Tab         - cursor to saved (by Ctrl+`) position, saves curent one
-  Ctrl+Shift+Tab   - insert TAB character into text - mostly for GNU make ;)
-  Ctrl+Shift+{1…5} - set marker N (where N is any digit from 1 to 5)
-  Ctrl+{1…5}       - go to marker N (and save cursor position for Ctrl+Tab)
+  Ctrl+Tab         - cursor to last saved position, saves curent one
+  Ctrl+Shift+Tab   - insert TAB character into text - mostly for legacy make ;)
+  Ctrl+Shift+'~'   - set marker 0 (brown)
+  Ctrl+Shift+1     - set marker 1 (red)   | all four mark are shown in the text
+  Ctrl+Shift+2     - set marker 2 (green) | as colored "flag" with number right
+  Ctrl+Shift+3     - set marker 3 (blue)  | after the end of text in line, and
+  Ctrl+'~'         - go to marker 0 |     | as colored dots in "position bar"
+  Ctrl+1           - go to marker 1 |
+  Ctrl+2           - go to marker 2 | all save cursor position for Ctrl+Tab
+  Ctrl+3           - go to marker 3 |
   Enter            - move cursor to beginning of next line
   Shift+Enter      - move cursor to next line, aligned with text in current one
 */
 k_(LE_TAB,    0xc130a,             Mk_TAB,     KxBLK) /* в следующую...      */
 k_(LE_LTAB,   0xc132a,   mod_SHIFT+Mk_TAB,     KxBLK) /* в предыдущую...     */
 a_(LE_LTAB,            mod_SHIFT+Mk_BkTAB,     KxBLK) /*   позицию табуляции */
-k_(TE_SMARK,  0xc1350, mod_CTRL+'`',           KxBLK) /* установить маркер   */
-k_(TE_CMARK,  0xc1360, mod_CTRL+Mk_TAB,        KxBLK) /* курсор <--> маркер  */
 k_(LE_TABCHR, 0xc133a, mod_CTRL+mod_SHIFT+Mk_TAB,  0) /* вставить символ TAB */
-a_(LE_TABCHR,         mod_CTRL+mod_SHIFT+Mk_BkTAB, 0) /* (Mk_BkTAB ~ Mk_TAB) */
-k_(TE_SMARK1, 0xc1351, mod_CTRL+mod_SHIFT+'!', KxBLK)
-k_(TE_SMARK2, 0xc1352, mod_CTRL+mod_SHIFT+'@', KxBLK)
-k_(TE_SMARK3, 0xc1353, mod_CTRL+mod_SHIFT+'#', KxBLK) /* (shift+N уже     */
-k_(TE_SMARK4, 0xc1354, mod_CTRL+mod_SHIFT+'$', KxBLK) /*   преобразовано) */
-k_(TE_CMARK1, 0xc1361, mod_CTRL+'1',           KxBLK) /*------------------*/
-k_(TE_CMARK2, 0xc1362, mod_CTRL+'2',           KxBLK) /* NOTE: codes must */
-k_(TE_CMARK3, 0xc1363, mod_CTRL+'3',           KxBLK) /*  be TE_S/CMARK+N */
-k_(TE_CMARK4, 0xc1364, mod_CTRL+'4',           KxBLK)
+a_(LE_TABCHR,          mod_CTRL+mod_SHIFT+Mk_BkTAB,0) /*  (Mk_BkTAB ≈ Mk_TAB)*/
+k_(TE_CMARK,  0xc1340, mod_CTRL+Mk_TAB,        KxBLK) /* курсор --> где были */
+k_(TE_SMARK0, 0xc1350, mod_CTRL+mod_SHIFT+'~', KxBLK) /* установить маркер 0 */
+k_(TE_SMARK1, 0xc1351, mod_CTRL+mod_SHIFT+'!', KxBLK) /* 1                   */
+k_(TE_SMARK2, 0xc1352, mod_CTRL+mod_SHIFT+'@', KxBLK) /* 2  (shift+N уже     */
+k_(TE_SMARK3, 0xc1353, mod_CTRL+mod_SHIFT+'#', KxBLK) /* 3    преобразовано) */
+k_(TE_CMARK0, 0xc1360, mod_CTRL+'`',           KxBLK) /* перейти к маркеру 0 */
+k_(TE_CMARK1, 0xc1361, mod_CTRL+'1',           KxBLK) /* 1                   */
+k_(TE_CMARK2, 0xc1362, mod_CTRL+'2',           KxBLK) /* 3  NOTE: codes must */
+k_(TE_CMARK3, 0xc1363, mod_CTRL+'3',           KxBLK) /* 4  be TE_S/CMARK0+N */
 k_(TE_CR,     0xc130e,           Mk_ENTER,         0) /* начало след.строки  */
 k_(TE_RCR,    0xc132e, mod_SHIFT+Mk_ENTER,         0) /* - с выравниванием   */
 /*
@@ -147,8 +149,8 @@ k_(LE_RREP, 0xc1462, mod_CTRL+Mk_DELETE, KxSEL) /* установить режи
 a_(LE_RREP,          mod_CTRL+Mk_F12,    KxSEL)
 /*
 Although one can insert spaces into text by tapping space bar (in insert mode),
-that's not how it is usually done in MicroMir, as there are special command for
-text modification:
+that's not how it is usually done in MicroMir, since there are special commands
+for text modification:
                                                |  +Shift (stronger)
   ----------+----------------------------------+--------------------------
   Insert    | insert empty character (space)   | insert empty line
@@ -156,7 +158,7 @@ text modification:
   Backspace | delete/clear char left of cursor | delete/clear word on left
   ----------+----------------------------------+--------------------------
   Ctrl+D     - delete from cursor to end of line
-  Ctrl+U     - delete all characters up to cursor position
+  Ctrl+U     - delete/clear all characters up to cursor position
   Ctrl+W     - delete word under cursor (and trailing spaces) from the text
   Esc Ctrl+D - delete everything from cursor to end of file
   Esc Ctrl+U - delete everything from the beginning up to cursor (very strong)
@@ -183,13 +185,13 @@ should be pressed and released before the next key - unlike Shift/Ctrl/Alt/etc)
 
   Home Enter  - split the line, moving right part to the beginning of new line
   Home Backsp - join lines back, moving text as shown:  +------
-                                                        |like█  --> |like█this
+                                                        |like█  <-> |like█this
   Home Insert - split the line vertically               |this       |
   Home Delete - join back:  +---------
-                            |like█      --> |like█that     (both join commands
+                            |like█      <-> |like█that     (both join commands
                             |     that      |               discard text right
   Meta+Shift+<arrow> -                                      of cursor position)
-    move selected text (from cursor to end of the line)
+    move selected text (or from cursor to end of the line)
     in given direction, overwriting whatever it moves over
 
   Ctrl+T - center current line in the text (using current window width)
@@ -202,7 +204,6 @@ a_(TE_SLIN,           mod_HOME+Mk_F11,    0)
 k_(TE_NBLIN, 0xc160a, mod_HOME+Mk_BACK,   0) /* склеить строки               */
 k_(TE_NSLIN, 0xc1602, mod_HOME+Mk_DELETE, 0) /* склеить строки вертикально   */
 a_(TE_NSLIN,          mod_HOME+Mk_F12,    0)
-
 k_(TE_MOVUP,    0xc1631, mod_META+mod_SHIFT+Mk_UP,    KxSEL)
 k_(LE_MOVLEFT,  0xc1632, mod_META+mod_SHIFT+Mk_LEFT,  KxSEL)
 k_(LE_MOVRIGHT, 0xc1633, mod_META+mod_SHIFT+Mk_RIGHT, KxSEL)
@@ -356,16 +357,13 @@ by listing filenames in 'micros.dir'.  This is a regular text file, except that
 it has '|' symbols in all lines in 64th position (and, optionally, in 69th one)
 
   Esc <right> - move right to the filename field (return back by Enter)
-  Esc <down>  - down into file
+  Esc <down>  - down into file (filename taken from the text, see below)
   Esc <up>    - up one level = normal exit (with changes automatically saved)
   Esc PageUp  - up all levels (closing the window), with changes saved
   Esc Ctrl+A  - abandon all changes and leave the file (up one level)
   Esc Ctrl+B  - exit the file, save both original and new versions
   Meta/Ctrl+R - reload the file (or directory contents) from disk
   Meta/Ctrl+S - save all changes without leaving the file
-
-  Ctrl+Meta+Ins - set text edit mode (green or blue cursor, can change text)
-  Ctrl+Meta+Del - set text view mode (no changes allowed, red cursor)
 */
 k_(TM_INFILE, 0xc3003, mod_ESC+Mk_RIGHT,     0) /* перейти к имени файла */
 k_(TM_FNEW,   0xc3001, mod_ESC+Mk_DOWN,  KxSEL) /* войти в новый файл    */
@@ -377,6 +375,32 @@ k_(TM_RELOAD, 0xc3011, mod_META+'R',         0)
 a_(TM_RELOAD,          mod_CTRL+'R',         0) /* перезагрузить файл    */
 k_(TM_UPDATE, 0xc3005, mod_META+'S',         0) /* сохранить изменения   */
 a_(TM_UPDATE,          mod_CTRL+'S',         0)
+/*
+  This "down into file" command works not only in 'micros.dir', but also in any
+text that have name of other file included: just move cursor to that name, then
+press Esc <down> (the name should be separated from surrounding text by spaces,
+commas or quotes - if is't not, you'll need to use block selection to mark it)
+
+Special FILES (MacOS X/Linux only):
+
+  filename:git:rev == filename::rev - file revision from 'rev' git commit
+  filename:gitlog:[options]         - list of revisions, from 'git log'
+  filename:blame:[options]          - results of 'git blame' for given file
+  filename:hg:rev                   - file revision from 'rev' Mercurial commit
+  «shell-command»                   - the result of specific shell command
+  (double angle quotations mark can be entered by Alt+'\' and Alt+Shift+'\')
+
+More FILES (kinda deprecated, will be changed in the futue versions):
+
+  :clip  - content of copy/paste buffer (mostly for debug purposes)
+  :help  - this text (if found - currently not reliable, but I'm working on it)
+
+MicroMir automatically detects read-only files and don't allow changing them...
+unless you insist: edit/view mode may be changed at any time (at your own risk)
+
+  Ctrl+Meta+Ins - set text edit mode (green or blue cursor, can change text)
+  Ctrl+Meta+Del - set text view mode (no changes allowed, red cursor)
+*/
 k_(TE_SRW,    0xc3051, mod_CTRL+mod_META+Mk_INSERT, 0) /* редактирование  */
 a_(TE_SRW,             mod_CTRL+mod_META+Mk_F11,    0)
 k_(TE_SRO,    0xc3052, mod_CTRL+mod_META+Mk_DELETE, 0) /* просмотр текста */
@@ -405,7 +429,11 @@ a_(LE_SPCHAR,          mod_CTRL+mod_SHIFT+Mk_F11,    0)
 k_(TE_CENTR,  0xc314e, mod_CTRL+'E',             KxSEL) /* в середину окна */
 a_(TE_CENTR,           mod_META+'E',             KxSEL)
 /*
-   Ctrl+Shift+'=' - Calculator (MacOS X/Linux only), courtesy of /usr/bin/bc
+   Ctrl+Shift+'=' - Calculator (MacOS X/Linux only), courtesy of /usr/bin/bc,
+
+input: from block selection (if active),    output: inserted to the right of
+    or from '«' mark in text to cursor,             cursor position (exsting
+    or from first word left of cursor               text there will be DELETED)
 */
 k_(TM_CALC, 0xc3142, mod_CTRL+mod_SHIFT+'+', KxSEL)
 /*

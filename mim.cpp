@@ -607,10 +607,10 @@ void MiScTwin::repaintPosBar (QPainter& dc)
                                       vppb0 + mimBORDER, mimVpPOSBAR-1, vppbh);
   dc.drawRect(vppBar);
   //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  static QColor *colors[] = { &colorBlack, &colorSolidRed,  &colorDarkWheat,
-                                           &colorSolidBlue, &colorSolidGreen };
+  static QColor *colors[] = { &colorDarkWheat,  &colorSolidRed,
+                              &colorSolidGreen, &colorSolidBlue };
   int N;
-  for (int i = 1; i < TXT_MARKS; i++) {
+  for (int i = 0; i < TXT_TempMARK; i++) {
     if (tx->txmarky[i] < 0) continue;
     if (tx->txmarky[i] < vp->wty) N = int(wH*double(tx->txmarky[i])/total+0.5);
     else if (tx->txmarky[i] >= vp->wty + vp->wsh)

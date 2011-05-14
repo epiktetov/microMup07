@@ -7,7 +7,7 @@
 #include "vip.h"
 #include "clip.h"
 #include "le.h"
-#include "te.h" // teIL();
+#include "te.h" // teIL(), tesmark();
 #include "tx.h"
 #include "ud.h"
 #include <stdlib.h>       /* calloc() used in tpstrdup()                     */
@@ -68,11 +68,11 @@ void EnterLEmode (void) { TxSetY(Ttxt, Ty); tleload(); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tleunload (void)                              /* unload LE line to text */
 {
-  if (Lwnd) { 
-    Lwnd  = NIL; tundounload(Ttxt);
+  if (Lwnd) {   Lwnd = NIL;
+    tundounload(Ttxt);
     Tx = Lx;
-    if (Lchange) { TxSetY(Ttxt, Ty);
-                   TxTRep(Ttxt, Lebuf, Lleng); Ttxt->txstat |= TS_CHANGED; }
+    if (Lchange) { TxSetY(Ttxt, Ty); TxTRep(Ttxt, Lebuf, Lleng);
+                                     Ttxt->txstat |= TS_CHANGED; tesmark(); }
     else
       if (Lclang) vipRedrawLine(Twnd, Ty - Twnd->wty);
 } }

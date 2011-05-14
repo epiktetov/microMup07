@@ -305,7 +305,7 @@ int tmSyncPos (void) /* SyncPos(tm) -- NOTE: only works with ASCII filenames */
   wnd *other_wnd = NULL;
   small len,  steps = 0;                       // gcc "unix.cpp:277: error:..."
   QString filename;                            // grep "unix.cpp:273:int tm..."
-  QRegExp gnuFileLine("([+.0-z]+):(\\d+):.*"); //-
+  QRegExp gnuFileLine("([+./0-9A-z-]+):(\\d+):.*");
   QRegExp unifiedDiff("@@ [^@]+\\+(\\d+),[^@]+ @@.*");
   QRegExp lineKeyword("\"?([+.0-z]+)\"?, line (\\d+)(?:.(\\d+))?");
 //        ^

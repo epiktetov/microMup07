@@ -27,31 +27,40 @@ BOOL tesetxy (small x, large y)
                            Ty = Ttxt->txy; return q;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void tesmark() { Ttxt->txmarkx[0] = Tx;
-                 Ttxt->txmarky[0] = Ty; }
-void tecmark() 
+void tesmark()   /* "temporary" marker -- "временный" маркера (ставится сам) */
 {
-  int tmp = Ttxt->txmarkx[0]; Ttxt->txmarkx[0] = Tx; Tx = tmp;
-      tmp = Ttxt->txmarky[0]; Ttxt->txmarky[0] = Ty; qsety(tmp);
+  int N; for (N = 0; N < TXT_MARKS; N++) if (Ty == Ttxt->txmarky[N]) return;
+  Ttxt->txmarkx[TXT_TempMARK] = Tx;
+  Ttxt->txmarky[TXT_TempMARK] = Ty;
+}
+void tecmark() /* вернуться туда, где были (и запомнить место откуда пришли) */
+{
+  small Mx = Ttxt->txmarkx[TXT_TempMARK];
+  large My = Ttxt->txmarky[TXT_TempMARK]; if (My < 0) exc(E_MOVUP);
+  tesmark();
+  qsety(My); Tx = Mx;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tesmarkN()                       /* Set/clear mark N | NOTE: codes must */
-{                                     /* and go to mark N |  be TE_S/CMARK+N */
-  int N = KbCode - TE_SMARK;
+{                                     /* and go to mark N | be TE_S/CMARK0+N */
+  int N = KbCode - TE_SMARK0;
   if (Ttxt->txmarky[N] != Ty) { Ttxt->txmarkx[N] = Tx;
                                 Ttxt->txmarky[N] = Ty; wndop(TW_ALL, Ttxt); }
-  else { Ttxt->txmarkx[N] = 0;
-         Ttxt->txmarky[N] = 0; wndop(TW_RP, Ttxt); }
+  else { Ttxt->txmarkx[N] = -1;
+         Ttxt->txmarky[N] = -1; wndop(TW_RP, Ttxt); }
 }
 void tecmarkN()
 {
-  int N = KbCode - TE_CMARK;
-  if (Ttxt->txmarky[N] > 0) { tesmark(); Tx =  Ttxt->txmarkx[N];
-                                         qsety(Ttxt->txmarky[N]); }
-}
+  int N = KbCode - TE_CMARK0;
+  int My =  Ttxt->txmarky[N];
+  if (My >= 0 && My != Ty) { tesmark(); Tx =  Ttxt->txmarkx[N];
+                                        qsety(Ttxt->txmarky[N]); }
+  else { KbCode = TE_SMARK0+N; //
+                   tesmarkN(); // for convenience, if requested mark is not set
+} }                            // then set it at the current line (do not move)
 /*---------------------------------------------------------------------------*/
-void tedown() { Ty++; }  void tetbeg() { tesetxy(Tx,          0); }
-void teup  () { Ty--; }  void tetend() { tesetxy(Tx, 2147483647); }
+void tedown() { Ty++; }  void tetbeg() { tesmark(); tesetxy(Tx,          0); }
+void teup  () { Ty--; }  void tetend() { tesmark(); tesetxy(Tx, 2147483647); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tecentr()             /* Esc NN Ctrl+E => В строку с номером KbCount-1  */
 {                          /*          else => Текущую строку в центр экрана */
@@ -344,15 +353,12 @@ comdesc tecmds[] =
   { TE_DOWN,   tedown,          CA_NEND }, /* курсор вниз                    */
   { TE_TBEG,   tetbeg,   CA_RPT         }, /* в начало текста                */
   { TE_TEND,   tetend,   CA_RPT         }, /* в конец текста                 */
-  { TE_SMARK,  tesmark,  CA_RPT         }, /* установить маркер              */
-  { TE_CMARK,  tecmark,  0              }, /* обменять курсор и маркер       */
   { TE_CENTR,  tecentr,  CA_RPT         }, /* текущую строку в середину окна */
-  { TE_SMARK1, tesmarkN, CA_RPT },
-  { TE_CMARK1, tecmarkN, CA_RPT },
-  { TE_SMARK2, tesmarkN, CA_RPT },
-  { TE_CMARK2, tecmarkN, CA_RPT },
-  { TE_SMARK3, tesmarkN, CA_RPT }, { TE_SMARK4, tesmarkN, CA_RPT },
-  { TE_CMARK3, tecmarkN, CA_RPT }, { TE_CMARK4, tecmarkN, CA_RPT },
+  { TE_CMARK,  tecmark,  CA_RPT },
+  { TE_CMARK0, tecmarkN, CA_RPT }, { TE_SMARK0, tesmarkN, CA_RPT },
+  { TE_CMARK1, tecmarkN, CA_RPT }, { TE_SMARK1, tesmarkN, CA_RPT },
+  { TE_CMARK2, tecmarkN, CA_RPT }, { TE_SMARK2, tesmarkN, CA_RPT },
+  { TE_CMARK3, tecmarkN, CA_RPT }, { TE_SMARK3, tesmarkN, CA_RPT },
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   { TE_CR,     teCR,                       CA_NEND        }, /*       Enter  */
   { TE_RCR,    teRCR,                      CA_NEND        }, /* Shift+Enter  */

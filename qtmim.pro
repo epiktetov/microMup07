@@ -49,7 +49,8 @@ macx {
   POST_TARGETDEPS += $$icns.target $$keys.target $$symlink.target
 }
 MimFILES  = micros.dir qtmim.pro qtmim.desktop qtmim.rc mim.Info.plist
-MimFILES += micons.psd qtmim.ico qtmim.png keywords.txt abc LICENSE
+MimFILES += micons.psd qtmim.ico qtmim.png keywords.txt Qt.bundle.sh
+MimFILES += abc LICENSE
 zip.target  = zip
 zip.depends = Qtmim.zip
 zipfile.target = Qtmim.zip

@@ -326,10 +326,10 @@ vanilla_char:
   return laf;
 }
 /*---------------------------------------------------------------------------*/
-tchar txFlags[TXT_MARKS] = { 0, AT_MARKFLG + AT_BG_RED + 0xB9,     /* red  ¹ */
-                                AT_MARKFLG             + 0xB2,     /* brown² */
-                                AT_MARKFLG + AT_BG_BLU + 0xB3,     /* blue ³ */
-                                AT_MARKFLG + AT_BG_GRN + 0x2074 }; /* green⁴ */
+tchar txFlags[TXT_MARKS] = { AT_MARKFLG             + 0xB0,   /* brown °     */
+                             AT_MARKFLG + AT_BG_RED + 0xB9,   /* red   ¹     */
+                             AT_MARKFLG + AT_BG_GRN + 0xB2,   /* green ²     */
+                             AT_MARKFLG + AT_BG_BLU + 0xB3 }; /* blue  ³     */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 tchar *TxInfo (wnd *w, large y, int *pl)      /* used for repaint in vip.cpp */
 {                                             /* to get current char mim.cpp */
@@ -340,9 +340,9 @@ tchar *TxInfo (wnd *w, large y, int *pl)      /* used for repaint in vip.cpp */
     if (w == Lwnd && y == Ly) blktmov(Lebuf, tcbuf, len = Lleng);
     else                                 len = TxTRead(t, tcbuf);
     if (t->maxTy < y) t->maxTy = y;
-    if (y > 0 && len < MAXLPAC-3) {
+    if (len < MAXLPAC-3) {
       int i;
-      for (i=1; i<TXT_MARKS; i++) {
+      for (i = 0; i < TXT_TempMARK; i++) {
         if (t->txmarky[i] == y) {
           if (len < w->wsw-1) tcbuf[len++] = ' ';
                               tcbuf[len++] =      txFlags[i];

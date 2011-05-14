@@ -28,7 +28,8 @@ Windows resource file, adds qtmim.ico                          |qtmim.rc
                                                (auto-generated)|Makefile
 Sun-like license                                               |LICENSE
 MacOS info.plist                                               |mim.Info.plist
-+shell script to make µMup07.Qt.app (with Qt framework bundled)|make.bundle.sh
+shell script to make µMup07.Qt.app  -- newer Qt (version 4.5+) |Qt.bundle.sh
+        (with Qt framework bundled) -- legacy Qt version 4.3.3 |make.bundle.sh
 ---------------------------------------------------------------|---------------
 --------------- Legacy code (not converted to C++) ------------|---------------
 Text Editor                                                    |te.h

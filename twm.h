@@ -9,6 +9,7 @@
 #define MCD_RIGHT    68     /* второй разделитель в micros.dir (optional)    */
 #define DIRLST_FNPOS 40     /* position of the filename in the TS_DIRLST txt */
 #define TXT_MARKS     5     /* макс.количество запомненных маркеров в тексте */
+#define TXT_TempMARK  4     /* - индекс "временного" маркера (последний)     */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 struct txt_tag 
 {
