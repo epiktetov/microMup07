@@ -452,8 +452,15 @@ static void tmFnewSearchIncs (QString foundName)
   incList.append(QString("/usr/local/include,/usr/include"));
 #endif
   for (it = incList.constBegin(); it != incList.constEnd(); it++)
+#if (QT_VERSION > 0x405000)
     searchList.append(it->split(QRegExp(",\\s*")));
-
+#else
+    { QStringList subList = it->split(QRegExp(",\\s*"));
+      QStringList::const_iterator st;
+      for (st = subList.constBegin(); st != subList.constEnd(); st++)
+        searchList.append(*st);
+    }
+#endif
   for (it = searchList.constBegin(); it != searchList.constEnd(); it++) {
     QString filename = (*it) + "/" + foundName;
     if (QfsExists(filename)) { twDirPush(filename); return; }

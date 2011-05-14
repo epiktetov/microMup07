@@ -3,7 +3,13 @@
 //------------------------------------------------------+--------------------*/
 #include <QString>        /* Old tm.c (c) Attic 1989-91, (c) EpiMG 1997-2003 */
 #include <QRegExp>
-#include <QProcessEnvironment>
+#if (QT_VERSION > 0x406000)
+# include <QProcessEnvironment>
+# define GetENV(var,default) \
+         QProcessEnvironment::systemEnvironment().value(var,default);
+#else
+# define GetENV(var,default) default
+#endif
 #include "mic.h"
 #include "ccd.h"
 #include "qfs.h"
@@ -168,8 +174,7 @@ static void shellexec (txt *Stxt, small& Sx,
                                               dup2(fdsout[1], 1);  /* stdout */
                            close(fdsout[0]);  dup2(fdsout[1], 2);  /* stderr */
 
-    QString shell = QProcessEnvironment::systemEnvironment().
-                                               value("SHELL", "/bin/sh");
+    QString shell = GetENV("SHELL", "/bin/sh");
     execl(shell.cStr(),
           shell.cStr(), "-c", cmd, NULL); exit(1);
 } }

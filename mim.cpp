@@ -491,10 +491,15 @@ void MiConfigDlg::selectFont() // - - - - - - - - - - - - - - - - - - - - - - -
 {
   QFont refont = QFont(MiApp_defaultFont, MiApp_defFontSize);
   bool ok;   
+//
+// Bug in Qt 4.5+ (or in Carbon version?): native (i.e. Cocoa) font selection
+// dialog does not really works. In addition to some funky issues with focus,
+// it does not allow selection of some fonts... like Menlo (which is the best)
+//
 #ifdef notdef_Q_OS_MAC_does_not_work
   setModal(false); refont = QFontDialog::getFont(&ok, refont, parentWidget());
-  setModal(true);         // ^
-#elif defined(Q_OS_MAC)   // cannot select some fonts (like Menlo) with native
+  setModal(true);
+#elif defined(Q_OS_MAC) && (QT_VERSION > 0x405000)
   QString title = "Font";
   refont = QFontDialog::getFont(&ok, refont, parentWidget(),
                               title, QFontDialog::DontUseNativeDialog);
