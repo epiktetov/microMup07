@@ -6,6 +6,7 @@
 #include "twm.h"
 #include "vip.h"
 #include "clip.h"
+#include "synt.h"
 #include "le.h"
 #include "te.h"
 #include "tx.h"
@@ -35,11 +36,14 @@ void tesmark()   /* "temporary" marker -- "временный" маркера (�
 }
 void tecmark() /* вернуться туда, где были (и запомнить место откуда пришли) */
 {
-  small Mx = Ttxt->txmarkx[TXT_TempMARK];
-  large My = Ttxt->txmarky[TXT_TempMARK]; if (My < 0) exc(E_MOVUP);
-  tesmark();
-  qsety(My); Tx = Mx;
-}
+  if (BlockMark) { long tmp = BlockTx; BlockTx = Tx; Tx = tmp;
+                        tmp = BlockTy; BlockTy = Ty; Ty = tmp; }
+  else {
+    small Mx = Ttxt->txmarkx[TXT_TempMARK];
+    large My = Ttxt->txmarky[TXT_TempMARK]; if (My < 0) exc(E_MOVUP);
+    tesmark();
+    qsety(My); Tx = Mx;
+} }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tesmarkN()                       /* Set/clear mark N | NOTE: codes must */
 {                                     /* and go to mark N | be TE_S/CMARK0+N */
@@ -181,6 +185,54 @@ void teformat()
   int txw = my_min(Twnd->wsw, Ttxt->txrm)-1; tchar *Lepos = Lebuf;
   int len;
   if (Ttxt->txstat & TS_MCD) exc(E_FORMAT);
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// Block Format - try to fill the 1-line block with just enough text, splitting
+// content past right edge into next line, or grabbing some text from next line
+// (always in whole words only, using leNword function for word breaks):
+//
+  if (BlockMark) {
+    int len,    x0,  x1;
+    Block1size(&x0, &x1); // exc(E_BLOCKOUT) if not 1-line block
+    small wbeg;
+    Lleng = TxFRead(Ttxt, Lebuf);
+    if (Lleng > x1) {
+      if (tcharIsBlank(Lebuf[x1])) {        // long line, but can split exactly
+        Lx = x1; leNword (NIL, NIL, &wbeg); //   at the right edge of the block
+        Lx = Tx;
+        if (wbeg >= Lleng) { BlockTy++; Ty++; return; }
+      }
+      else { Lx = x1-1; leNword(&wbeg, NIL, NIL); // cannot, find the beginning
+             Lx = Tx;                             //  of word that does not fit
+             if (wbeg <= x0) exc(E_FORMAT);
+      }
+      BlockTy++; TxTRep(Ttxt, Lebuf, wbeg); TxDown(Ttxt);
+           Ty++;
+      blktspac(Lebuf, x0);                        // clear head of the new line
+      blktmov (Lebuf+wbeg, Lebuf+x0, Lleng-wbeg); // move split-over text there
+      TxTIL (Ttxt,  Lebuf, Lleng - (wbeg-x0));    // and insert that into text
+    }
+    //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    else if (Lleng < x1-1) {  Lebuf[Lleng++] = (tchar)' '; // first of all, add
+      int len2fill = x1-Lleng;                             // a space to Lebuf,
+      blktmov(Lebuf, lfbuf, (len = Lleng) ); TxDown(Ttxt); // save it in lfbuf
+      Lleng = TxFRead(Ttxt,  Lebuf);
+      if (Lleng < x0) exc(E_FORMAT);
+      if (Lleng < len2fill) {                               // can fill the gap
+        TxDL(Ttxt); blktmov(Lebuf+x0, lfbuf+len, Lleng-x0); // entirely by next
+                    TxTRep (Ttxt, lfbuf, len + (Lleng-x0)); // line => do that!
+      }
+      else {                                         // cannot, find first word
+        Lx = x0+len2fill; leNword (&wbeg, NIL, NIL); // in next line to reamain
+        Lx = Tx;      if (wbeg <= x0) exc(E_FORMAT); // (hopefully there's one)
+
+        blktmov(Lebuf+x0,   lfbuf+len,   wbeg-x0); len += wbeg-x0;
+        blktmov(Lebuf+wbeg, Lebuf+x0, Lleng-wbeg);
+        BlockTy++;             TxTRep(Ttxt, Lebuf, Lleng-(wbeg-x0));
+             Ty++; TxUp(Ttxt); TxTRep(Ttxt, lfbuf, len);
+    } }
+    return;
+  }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   Lleng = TxFRead(Ttxt, Lebuf); TxDL(Ttxt);
 //
 // Folding Very Long Lines (VLL): if the line has continuation mark at the end,
@@ -202,7 +254,7 @@ void teformat()
   else if (Lleng > txw) {
     while (Lleng > txw) {
       small wbeg;
-      Lx = txw-1; leNword(&wbeg, NIL, NIL);
+      Lx = (Lepos-Lebuf)+txw-1; leNword(&wbeg, NIL, NIL);
       Lx = Tx;
       len =  (wbeg > txw - txw/10) ? wbeg : txw;
       blktmov(Lepos, lfbuf, len);  Lepos += len; Lleng -= len;
@@ -213,7 +265,7 @@ void teformat()
 //
 // Otherwise, try to merge the line with the next one (only if the result fits
 // into suggested width; when empty line added it always does). In this case,
-// DO NOT repeat the operation - let user do if s/he wants.
+// DO NOT repeat the operation - let the user do that, if s/he wants.
 //
   else if (!qTxBottom(Ttxt)) {
     len = TxFRead(Ttxt, lfbuf);
@@ -402,6 +454,8 @@ comdesc tecmds[] =
   { TE_UNUNDO,  leunundo,  0 }, /* откатка откатки             */
   { TE_SUNDO,   lesundo,   0 }, /* "медленная" откатка         */
   { TE_SUNUNDO, lesunundo, 0 }, /* "медленная" откатка откатки */
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+  { TE_SHBRAK,  SyntBrakToggle, CA_RPT }, /* toggle ShowBrak mode - synt.cpp */
   { 0,0,0 }
 };
 comdesc *Tdecode (int kcode)  /*- - - - - - - - - - - - - - - - - - - - - - -*/

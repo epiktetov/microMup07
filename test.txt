@@ -1,8 +1,8 @@
-Test ʁboldʀ test $QT_END_LICENSE$           el-i-one    oh-zero
-ʂepi/Dvlm/mim->ʀ sky ʈ>>>ʀ blue ʄredʀ normal    ll-II-11    OOO-000
+Test ʁboldʀ test                          el-i-one   oh-zero
+ʂepi/Dvlm/mim->ʀ sky ʈ>>>ʀ blue ʄredʀ normal  ll-II-11   OOO-000   $QT_END_LICENSE$
 
-The quick brown fox jumped over the lazy dog's back.  just_in_time
-test,test,   test;test;   test(test)  test   привет   for_holidays
+The quick brown fox jumped over the lazy dog's back. -NOT- just_in_time
+test,test,  test;test;  single[test]  double((test))       for_holidays
 
 ┌───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┐
 │~Ю`│!! │@@€│#ё‹│$$›│%%ﬁ│^^ﬂ│&&‡│**°│((·│))‚│_ъ │+Ь±│
@@ -15,7 +15,7 @@ test,test,   test;test;   test(test)  test   привет   for_holidays
       │aаå│sсß│dд∂│fфƒ│gг©│hч˙│jй∆│kк˚│lл¬│;;…│''æ│
       └┬──┴┬──┴┬──┴┬──┴┬──┴┬──┴┬──┴┬──┴┬──┴┬──┴┬──┘
        │ZЗ¸│XХ˛│CЦÇ│VЖ◊│BБı│NН˜│MМÂ│<<¯│>>˘│??¿│
--NOT-  │zзΩ│xх≈│cцç│vж√│bб∫│nн˜│mмµ│,,≤│..≥│//÷│
+       │zзΩ│xх≈│cцç│vж√│bб∫│nн˜│mмµ│,,≤│..≥│//÷│
        └───┴───┴───┴───┴───┴───┴───┴───┴───┴───┘
 
 Very Long Line (1600 characters):
@@ -26,4 +26,12 @@ Not Very Long At All (just 200 characters):
 ....x....1....x....2....x....3....x....4....x....5....x....6....x....7....x....8....x....9....x...10....x...11....x...12....x...13....x...14....x...15....x...16....x...17....x...18....x...19....x...20
 Rather Short Line (only 100 characters):
 ....x....1....x....2....x....3....x....4....x....5....x....6....x....7....x....8....x....9....x...10
+
+Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor
+  incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis
+  nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+  Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore
+  eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident,
+  sunt in culpa qui officia deserunt mollit anim id est laborum.
 

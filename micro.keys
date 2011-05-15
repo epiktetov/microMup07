@@ -41,8 +41,8 @@ k_(LE_BEG,   0xc1042, mod_CTRL+Mk_LEFT,  KxBLK) /* - в начало строк�
 k_(LE_END,   0xc1043, mod_CTRL+Mk_RIGHT, KxBLK) /* - в конец строки         */
 k_(TW_UP,    0xc1081,  mod_ALT+Mk_UP,    KxBLK) /* на несколько строк вверх */
 k_(TW_DOWN,  0xc1084,  mod_ALT+Mk_DOWN,  KxBLK) /* на несколько строк вниз  */
-k_(LE_PWORD, 0xc1082,  mod_ALT+Mk_LEFT,  KxBLK) /* предыдущее слово         */
-k_(LE_NWORD, 0xc1083,  mod_ALT+Mk_RIGHT, KxBLK) /* следующее слово          */
+k_(LE_PWORD, 0xc1082,  mod_ALT+Mk_LEFT,  KxBLK) /* -> предыдущее слово      */
+k_(LE_NWORD, 0xc1083,  mod_ALT+Mk_RIGHT, KxBLK) /* -> следующее слово       */
 /*
      PageUp/PageDown - scroll text page up / down
 Ctrl+PageUp/PageDown - move cursor to beginning / end of document
@@ -208,8 +208,30 @@ k_(TE_MOVUP,    0xc1631, mod_META+mod_SHIFT+Mk_UP,    KxSEL)
 k_(LE_MOVLEFT,  0xc1632, mod_META+mod_SHIFT+Mk_LEFT,  KxSEL)
 k_(LE_MOVRIGHT, 0xc1633, mod_META+mod_SHIFT+Mk_RIGHT, KxSEL)
 k_(TE_MOVDOWN,  0xc1634, mod_META+mod_SHIFT+Mk_DOWN,  KxSEL)
-k_(LE_CENTR,    0xc1654, mod_CTRL+'T',                    0)
-k_(TE_FORMAT,   0xc16f6, Mk_F6,                           0)
+/*
+Rudimental text formatting:
+
+  Ctrl+T - center text in current line using current window width
+  F6 - do some formatting (depending of what pre-condition is applicable):
+
+   * Block Format (for single-line selections): try to fill the selected area
+     with just enough text, splitting content past right edge into next line,
+     or grabbing some text from next line (always doing that in whole words)
+
+   * Split Very Long Lines (VLL): if the text in current line does not fit into
+     window, then unfold it to several lines (splitting on word boundary unless
+     that makes gap too big), adding continuation mark (sky blu '»') at the end
+
+   * However, if current line already ends with continuation mark, do just the
+     opposite - fold all consequent lines with that mark into single one; that
+     line may be no fully editable, but should be Ok for saving it into a file
+     (unless the length if more than MicroMir limit of 16K per line)
+
+   * If neither of above applies, try to join current line with the next one,
+     provided the combined content fits into the window width
+*/
+k_(LE_CENTRX, 0xc1654, mod_CTRL+'T', 0)
+k_(TE_FORMAT, 0xc16f6, Mk_F6,    KxSEL)
 /*
 SEARH AND REPLACE. MicroMir can search in text mode (case-sensitive or not), in
 wildcard mode (? matches any symbol and * matches any substring), or in regular
@@ -313,17 +335,17 @@ selection (grey rectangle) and F5 followed by any regular cursor movement makes
    Alt +Shift+  <arrows>    "temporary"  |  F5 ..  except for  ..   "permanent"
    Ctrl+Shift+<left/right>    selection  |       [Shift+]Enter)       selection
 */
-a_(TE_UP,    mod_SHIFT+         Mk_UP,    KxTS+KxSEL)
-a_(LE_LEFT,  mod_SHIFT+         Mk_LEFT,  KxTS+KxSEL)
-a_(LE_RIGHT, mod_SHIFT+         Mk_RIGHT, KxTS+KxSEL)
-a_(TE_DOWN,  mod_SHIFT+         Mk_DOWN,  KxTS+KxSEL)
-a_(TW_UP,    mod_SHIFT+ mod_ALT+Mk_UP,    KxTS+KxSEL)
-a_(LE_NWORD, mod_SHIFT+ mod_ALT+Mk_RIGHT, KxTS+KxSEL)
-a_(LE_PWORD, mod_SHIFT+ mod_ALT+Mk_LEFT,  KxTS+KxSEL)
-a_(TW_DOWN,  mod_SHIFT+ mod_ALT+Mk_DOWN,  KxTS+KxSEL)
-a_(LE_BEG,   mod_SHIFT+mod_CTRL+Mk_LEFT,  KxTS+KxSEL)
-a_(LE_END,   mod_SHIFT+mod_CTRL+Mk_RIGHT, KxTS+KxSEL)
-k_(TX_MCBLOCK, 0xc2100,            Mk_F5,          0) /* начало блока */
+a_(TE_UP,    mod_SHIFT+         Mk_UP,    KxTS+KxSEL) /* вверх  |            */
+a_(LE_LEFT,  mod_SHIFT+         Mk_LEFT,  KxTS+KxSEL) /* влево  | с отметкой */
+a_(LE_RIGHT, mod_SHIFT+         Mk_RIGHT, KxTS+KxSEL) /* вправо |     блоком */
+a_(TE_DOWN,  mod_SHIFT+         Mk_DOWN,  KxTS+KxSEL) /* вниз   |            */
+a_(TW_UP,    mod_SHIFT+ mod_ALT+Mk_UP,    KxTS+KxSEL) /* на несколько строк  */
+a_(TW_DOWN,  mod_SHIFT+ mod_ALT+Mk_DOWN,  KxTS+KxSEL) /*          вверх/вниз */
+a_(LE_NWORD, mod_SHIFT+ mod_ALT+Mk_RIGHT, KxTS+KxSEL) /* -> следующее слово  */
+a_(LE_PWORD, mod_SHIFT+ mod_ALT+Mk_LEFT,  KxTS+KxSEL) /* -> предыдущее слово */
+a_(LE_BEG,   mod_SHIFT+mod_CTRL+Mk_LEFT,  KxTS+KxSEL) /* в начало строки     */
+a_(LE_END,   mod_SHIFT+mod_CTRL+Mk_RIGHT, KxTS+KxSEL) /* в конец строки      */
+k_(TX_MCBLOCK, 0xc2100,            Mk_F5,          0) /* = "постоянный" блок */
 /*
 When selection (of either type) is active, some commands operate with selected
 text instead of character, namely:
@@ -416,18 +438,25 @@ For example:                                0ddd octal number such as 0176
   Esc N Alt+Meta+'<'   - convert word / selection to decimal from radix-N (hex)
   Esc N Alt+Meta+'>'   - convert word / selection to radix-N (where N = 2..36)
   Esc N Ctrl+Shift+Ins - insert character with given code
-  Esc N Meta/Ctrl+E    - move cursor to Nth line in text (without prefix Ctrl+E
-                                           centers current line in the windows)
+  Esc N Meta/Ctrl+E    - move cursor to Nth line in text
+  Esc N      Ctrl+H    - move cursor to Nth position in current line
+
+Note: without repetiotion prefix, the last two commands work differently, which
+      is a special convenince feature to allow easy centering specific position
+
+  Meta/Ctrl+E - centers current line in the windows (vertically only)
+       Ctrl+H - centers curret position in the windows (horizontally)
 */
-k_(TK_ESC,    0xc0e5c, Mk_ESCAPE,                    0) /* Esc префикс     */
-k_(TK_HOME,   0xc0f10, Mk_HOME,                      0) /* Home префикс    */
-a_(TK_HOME,            Mk_F10,                       0)
+k_(TK_ESC,    0xc0e5c, Mk_ESCAPE,                    0) /* Esc префикс      */
+k_(TK_HOME,   0xc0f10, Mk_HOME,                      0) /* Home префикс     */
+a_(TK_HOME,            Mk_F10,                       0) /* - синоним        */
 k_(LE_CWDEC,  0xc3109, mod_ALT+mod_META+',',     KxSEL)
 k_(LE_CWHEX,  0xc310f, mod_ALT+mod_META+'.',     KxSEL)
-k_(LE_SPCHAR, 0xc3161, mod_CTRL+mod_SHIFT+Mk_INSERT, 0) /* символ с кодом  */
+k_(LE_SPCHAR, 0xc3161, mod_CTRL+mod_SHIFT+Mk_INSERT, 0) /* символ с кодом   */
 a_(LE_SPCHAR,          mod_CTRL+mod_SHIFT+Mk_F11,    0)
-k_(TE_CENTR,  0xc314e, mod_CTRL+'E',             KxSEL) /* в середину окна */
-a_(TE_CENTR,           mod_META+'E',             KxSEL)
+k_(TE_CENTR,  0xc3145, mod_CTRL+'E',             KxSEL) /* в середину окна  */
+a_(TE_CENTR,           mod_META+'E',             KxSEL) /* - по вертикали   */
+k_(LE_CENTR,  0xc3148, mod_CTRL+'H',             KxSEL) /* - по горизонтали */
 /*
    Ctrl+Shift+'=' - Calculator (MacOS X/Linux only), courtesy of /usr/bin/bc,
 
@@ -456,6 +485,7 @@ MISCELLANEOUS.
   Ctrl+A - abandon (cancel) current command (e.g. stop entering search pattern)
   Ctrl+K - display unicode value of the current character in the info window
   Ctrl+L - display line number in the info window (default)
+  Ctrl+O - toggle bracket coloring mode (use Esc 0 Ctrl+O to reduce warnings)
   Ctrl+Q - ask for shell command and execute it (MacOS X/Linux only)
    in shell command:
         light blue '•' (Ctrl+'<') is replaced with the name of current file,
@@ -465,6 +495,7 @@ k_(TK_NONE,   0xc3300, 0,            0) /* None command                     */
 k_(TK_BREAK,  0xc3341, mod_CTRL+'A', 0) /*                                  */
 k_(TK_CHARK,  0xc334b, mod_CTRL+'K', 0) /*                                  */
 k_(TK_LINFO,  0xc334c, mod_CTRL+'L', 0) /*                                  */
+k_(TE_SHBRAK, 0xc334f, mod_CTRL+'O', 0) /*                                  */
 k_(TM_SHELL,  0xc3351, mod_CTRL+'Q', 0) /* ввести и выполнить команду shell */
 k_(TM_FEXEC,  0xc335a, 0,            0) /* ^^ выполнить команду             */
 k_(TM_F2EXEC, 0xc335b, 0,            0) /* ^^ - в новом окне                */

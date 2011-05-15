@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07  Command Codes Definition / transcoding   | (c) Epi MG, 1998-2007
+// МикроМир07  Command Codes Definition / transcoding   | (c) Epi MG, 1998-2011
 //------------------------------------------------------+----------------------
 #include <Qt>
 #include "mic.h"
@@ -81,8 +81,8 @@ static micom *key_translate (int key_mask)
         else
         if (0 <= digit && digit <= 9) { KbRadix = 10;
                                         KbCount = digit; return &NoCMD; }
-    } }               kbMode  = 0;
-    if (KbCount <= 0) KbCount = 1;
+    } }              kbMode  = 0;
+    if (KbCount < 0) KbCount = 0;
     if (KbRadix) return key_translate(key_mask);
     else {
       res =    translate_by_tbl(mod_ESC | key_mask);

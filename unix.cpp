@@ -3,7 +3,7 @@
 //------------------------------------------------------+--------------------*/
 #include <QString>        /* Old tm.c (c) Attic 1989-91, (c) EpiMG 1997-2003 */
 #include <QRegExp>
-#if (QT_VERSION > 0x406000)
+#if (QT_VERSION >= 0x040600)
 # include <QProcessEnvironment>
 # define GetENV(var,default) \
          QProcessEnvironment::systemEnvironment().value(var,default);

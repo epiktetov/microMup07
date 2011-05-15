@@ -452,7 +452,7 @@ static void tmFnewSearchIncs (QString foundName)
   incList.append(QString("/usr/local/include,/usr/include"));
 #endif
   for (it = incList.constBegin(); it != incList.constEnd(); it++)
-#if (QT_VERSION > 0x405000)
+#if (QT_VERSION >= 0x040500)
     searchList.append(it->split(QRegExp(",\\s*")));
 #else
     { QStringList subList = it->split(QRegExp(",\\s*"));

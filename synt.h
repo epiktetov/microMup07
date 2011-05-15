@@ -18,6 +18,9 @@ extern "C" {
 /*  (provided text used only to get prevSynts, no changes to text is made):  */
 /*                                                                           */
 int SyntParse(txt *t, char *str, int len, int *out); /* called from TxDown() */
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+char SyntType(tchar tc); /* syntactic type of the given character: `(0x) etc */
+void SyntBrakToggle();
 #ifdef __cplusplus
 }
 #endif

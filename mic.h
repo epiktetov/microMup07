@@ -42,7 +42,7 @@ typedef long tchar;                           /* Unicode символ с атр�
 #define AT_BG_GRN  0x00800000 /*  = green (can edit, text unchanged)         */
 #define AT_BG_BLU  0x00c00000 /*  = blue (text changed / regular block mark) */
 #define AT_MARKFLG 0x01000000 /* numbered marker flag (solid color gradient) */
-#define AT_BRIGHT  0x02000000 /* bright background (for error/matched marks) */
+#define AT_BRIGHT  0x02000000 /* bright background (for error/open brackets) */
 #define AT_ERROR   0x02400000 /* - error mark                                */
 #define AT_MARKOK  0x02800000 /* - regular (ok) mark                         */
 #define AT_QUOTE   0x04000000 /* "smart" quotes, shown as ‘x’ and “string”   */

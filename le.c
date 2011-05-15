@@ -6,6 +6,7 @@
 #include "twm.h"
 #include "vip.h"
 #include "clip.h"
+#include "synt.h"
 #include "le.h"
 #include "te.h" // teIL(), tesmark();
 #include "tx.h"
@@ -46,6 +47,17 @@ void letab ()
   int x = (Lx + TABsize)/TABsize*TABsize;         Lx = (x < Lxrm) ? x : Lxrm-1;
 }
 void leltab() { int x = (Lx - 1)/TABsize*TABsize; Lx = (x > Lxlm) ? x : Lxlm; }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+void lecentr()            /* Esc NN Ctrl+H => В позицию с номером KbCount-1  */
+{                         /*          else => Текущую позицию в центр экрана */
+  if (KbRadix) {
+    small x = KbCount ? KbCount-1 : 0; if (Lxlm <= x && x <= Lxrm) Lx = x;
+                                       else                 exc(E_MOVEND); }
+  else {
+    small dx = (Lwnd->wsw - 1) / 2; if (Lx < dx) wadjust(Lwnd, 0,     Ly);
+                                    else {       wadjust(Lwnd, Lx+dx, Ly);
+                                                 wadjust(Lwnd, Lx-dx, Ly); }}
+}
 /*---------------------------------------------------------------------------*/
 void tleload (void)                                /* load LE line from text */
 {
@@ -192,20 +204,20 @@ BOOL leNword (small *cwbeg, /* Найти (unless ptr=0): начало теку�
   int x = Lx;
   if (tcharIsBlank(Lebuf[x]))  onWord = FALSE;
   else {
-    if (cwbeg) {
-      for (x = Lx; x > Lxlm; x--) {
+    if (cwbeg) {                    // NOTE: logic for cwbeg/cwend is different
+      for (x = Lx; x > Lxlm; x--) { //      (despite code looking very similar)
         int pc = Lebuf[x-1] & AT_CHAR;
-        if (pc == ' ' ||
-            pc == ',' ||
-            pc == ';' || ((Lebuf[x] & AT_CHAR) == '(' && pc != '(')) break;
-      }
-      *cwbeg = x;
+        if (pc == ' ' ||   SyntType(pc) == ';'
+                      || ( SyntType(pc) != '(' &&
+                           SyntType(Lebuf[x] & AT_CHAR) == '(' )) break;
+      } *cwbeg = x;
     }
     if (cwend || nwbeg) {
       for (x = Lx; x < Lxrm-1; x++) {
         int tc = Lebuf[x] & AT_CHAR, nc = Lebuf[x+1] & AT_CHAR;
-        if (nc == ' ' || tc == ',' ||
-                         tc == ';' || (nc == '(' && tc != '(')) break;
+        if (nc == ' ' ||   SyntType(tc) == ';'
+                      || ( SyntType(tc) != '(' &&
+                           SyntType(nc) == '(' )) break;
     } }
     if (cwend) *cwend = x;
   }
@@ -244,7 +256,7 @@ void ledlword()        /* удалить слово влево (очистить
     else           llmove(Lx, old_Lx, REPLACE, NIL);
 } }
 /*---------------------------------------------------------------------------*/
-void lecentr()
+void lecentrx()    /* центрировать текст в текущей строке (по размерам окна) */
 {
   int xll = my_max(Lxle, Lxlm), xl = xll, mvlen,
       xrr = my_min(Lxre, Lxrm), xr = xrr;
@@ -458,6 +470,7 @@ comdesc lecmds[] =
   { LE_END,    leend,    CA_RPT                   }, /* - в конец строки     */
   { LE_TAB,    letab,                     CA_NEND }, /* в следующую TAB      */
   { LE_LTAB,   leltab,                    CA_NBEG }, /* в предыдущую TAB     */
+  { LE_CENTR,  lecentr,  0                        }, /* курсор в центр окна  */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   { LE_IC,     leIC,   CA_BLOCK|CA_CHANGE|CA_NEND }, /* вставить пробел      */
   { LE_DC,     leDC,   CA_BLOCK|CA_CHANGE|CA_NEND }, /* удалить за курсором  */
@@ -474,7 +487,7 @@ comdesc lecmds[] =
   { LE_PWORD,  lepword,                   CA_NBEG }, /* предыдущее слово     */
   { LE_DWORD,  ledword,         CA_CHANGE|CA_NEND }, /* удалить слово        */
   { LE_DLWORD, ledlword,        CA_CHANGE|CA_NBEG }, /* удалить слово влево  */
-  { LE_CENTR,  lecentr,  CA_RPT|CA_CHANGE         }, /* центрировать строку  */
+  { LE_CENTRX, lecentrx, CA_RPT|CA_CHANGE         }, /* центрировать строку  */
   { LE_RINS,   lerins,   0                        }, /* режим вставки        */
   { LE_RREP,   lerrep,   0                        }, /* режим замены         */
   { LE_CCUP,   leccup,          CA_CHANGE|CA_NEND }, /* -> прописная         */

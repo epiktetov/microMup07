@@ -183,7 +183,7 @@ MiFrame::~MiFrame() //- - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiFrame::makeFonts() // makes textFont and boldFont from MiApp_defaultFont
 {
   textFont = QFont(MiApp_defaultFont, MiApp_defFontSize);
-#if QT_VERSION > 0x040700
+#if QT_VERSION >= 0x040700
   textFont.setStyleHint(QFont::AnyStyle, QFont::ForceIntegerMetrics);
 #endif
 //+
@@ -499,7 +499,7 @@ void MiConfigDlg::selectFont() // - - - - - - - - - - - - - - - - - - - - - - -
 #ifdef notdef_Q_OS_MAC_does_not_work
   setModal(false); refont = QFontDialog::getFont(&ok, refont, parentWidget());
   setModal(true);
-#elif defined(Q_OS_MAC) && (QT_VERSION > 0x405000)
+#elif defined(Q_OS_MAC) && (QT_VERSION >= 0x040500)
   QString title = "Font";
   refont = QFontDialog::getFont(&ok, refont, parentWidget(),
                               title, QFontDialog::DontUseNativeDialog);
@@ -656,7 +656,7 @@ void MiScTwin::Erase (QPainter& dc, int tx, int ty, int len)
 //   AT_BG_RED        - red, temporary block / "can't edit" cursor / error mark
 //   AT_BG_GRN        - green, "can edit, text unchanged" cursor / matched mark
 //   AT_BG_BLU        - blue, regular block mark / "text changed" cursor
-// AT_BRIGHT          bright background (for error / "bracket matched" marks)
+// AT_BRIGHT          bright background (for errors / non-closed bracket marks)
 // AT_INVERT          when added to AT_BG_CLR => indicates cursor, replace mode
 // AT_INVERT+AT_SUPER with AT_BG_CLR indicates gradient cursor, insert mode
 //
@@ -690,8 +690,8 @@ void MiScTwin::Text (QPainter& dc, int x, int y, int attr, QString text)
       fg_color = &colorWhite; attr |= AT_SUPER;
     }
     else if (attr & AT_BRIGHT) {
-           if ((attr & AT_BG_CLR) == AT_BG_RED) bg_color = &colorLightRed;
-      else if ((attr & AT_BG_CLR) == AT_BG_GRN) bg_color = &colorLightGreen;
+           if (attr & AT_BG_RED) bg_color = &colorLightRed;
+      else if (attr & AT_BG_GRN) bg_color = &colorLightGreen;
     }
     else if ((attr & AT_BG_CLR) == AT_BG_RED) bg_color = &colorLightPink;
     else if ((attr & AT_BG_CLR) == AT_BG_GRN) bg_color = &colorDarkWheat;
