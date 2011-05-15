@@ -225,7 +225,7 @@ Rudimental text formatting:
    * However, if current line already ends with continuation mark, do just the
      opposite - fold all consequent lines with that mark into single one; that
      line may be no fully editable, but should be Ok for saving it into a file
-     (unless the length if more than MicroMir limit of 16K per line)
+     (unless the length is more than current MicroMir limit of 4K per line)
 
    * If neither of above applies, try to join current line with the next one,
      provided the combined content fits into the window width

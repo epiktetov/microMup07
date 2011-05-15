@@ -254,13 +254,15 @@ void teformat()
   else if (Lleng > txw) {
     while (Lleng > txw) {
       small wbeg;
-      Lx = (Lepos-Lebuf)+txw-1; leNword(&wbeg, NIL, NIL);
+      Lx = txw-1; if (tcharIsBlank(Lebuf[Lx])) wbeg = Lx;
+                  else          leNword(&wbeg, NIL, NIL);
       Lx = Tx;
       len =  (wbeg > txw - txw/10) ? wbeg : txw;
-      blktmov(Lepos, lfbuf, len);  Lepos += len; Lleng -= len;
+      blktmov(Lepos, lfbuf, len);
       lfbuf[len++] = TeSCH_CONTINUE;
-      TxTIL(Ttxt, lfbuf, len); 
-      TxDown(Ttxt);      Ty++;
+      TxTIL (Ttxt, lfbuf, len);
+      TxDown(Ttxt);       Ty++;
+      blktmov(Lebuf+len, Lebuf, ( Lleng -= len ));
   } }
 //
 // Otherwise, try to merge the line with the next one (only if the result fits
