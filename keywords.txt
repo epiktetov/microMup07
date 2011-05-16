@@ -1,3 +1,9 @@
+Bash reserved words and selected build-ins (25):
+
+  if  then  elif  for  do     until  select  case  function  time   shift
+  fi        else  in   done   while          esac  exit      eval
+  export               break  continue             return    unset  umask
+
 Old C reserved keywords (32):
 
   auto   const     double  float  int       short   struct   unsigned
@@ -23,4 +29,19 @@ Preprocessor directives (not really reserved, but common in C code):
 
   define    ifdef   ifndef  |
   include   endif   elif    | NOTE: if and else are already C keywords
+
+Perl keywords and stuff (30):
+
+  and  eq     my      if     while   foreach   last  use   strict  require
+  or   ne     sub     else   until   for       next  do    print   shift
+  die  undef  return  elsif  unless  continue  redo  goto  printf  unshift
+
+Python keywords and constant name (32):
+
+  and        def      finally   in       print    yield   None
+  as         del      for       is       raise
+  assert     elif     from      lambda   return
+  break      else     global    not      try
+  class      except   if        or       while
+  continue   exec     import    pass     with
 

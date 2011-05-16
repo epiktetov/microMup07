@@ -13,10 +13,11 @@
  Delele (synonym F12) is "Delete⌦" on Mac keyboard ("delete" key is Backspace)
 
 COMMAND LINE        µMup07 :help       - view the МикроМир07 help (this text)
-     PARAMETERS:    µMup07             - start editing an empty text
-                    µMup07 filename    - start editing the given file
-(see also FILES     µMup07 filename:N: - start editing the given file at line N
-   section below)   µMup07 dirname     - open the contents of given directory
+     PARAMETERS:    µMup07             - start with current directory contents
+                    µMup07 -           - start editing an empty text
+(see also FILES     µMup07 filename    - start editing the given file
+   section below)   µMup07 filename:N: - start editing the given file at line N
+                    µMup07 dirname     - open the contents of given directory
 */
 k_BEGIN
 /*
@@ -485,7 +486,6 @@ MISCELLANEOUS.
   Ctrl+A - abandon (cancel) current command (e.g. stop entering search pattern)
   Ctrl+K - display unicode value of the current character in the info window
   Ctrl+L - display line number in the info window (default)
-  Ctrl+O - toggle bracket coloring mode (use Esc 0 Ctrl+O to reduce warnings)
   Ctrl+Q - ask for shell command and execute it (MacOS X/Linux only)
    in shell command:
         light blue '•' (Ctrl+'<') is replaced with the name of current file,
@@ -495,10 +495,24 @@ k_(TK_NONE,   0xc3300, 0,            0) /* None command                     */
 k_(TK_BREAK,  0xc3341, mod_CTRL+'A', 0) /*                                  */
 k_(TK_CHARK,  0xc334b, mod_CTRL+'K', 0) /*                                  */
 k_(TK_LINFO,  0xc334c, mod_CTRL+'L', 0) /*                                  */
-k_(TE_SHBRAK, 0xc334f, mod_CTRL+'O', 0) /*                                  */
 k_(TM_SHELL,  0xc3351, mod_CTRL+'Q', 0) /* ввести и выполнить команду shell */
 k_(TM_FEXEC,  0xc335a, 0,            0) /* ^^ выполнить команду             */
 k_(TM_F2EXEC, 0xc335b, 0,            0) /* ^^ - в новом окне                */
+/*
+SYNTAX CHECKER:  Automatically do minimal syntax checks (mostly bracket balance
+and proper quoting) and highlights keywords and comments, depending on language
+used in the text (which is determined by file extension and/or #! in 1st line).
+ Currently works more or less reliable for C/C++ formatted with "proper" style,
+so a couple of commands added to turn it on/off dynamically (on per-file basis)
+
+  Ctrl+Shift+'0'/')' - disable syntax check / coloring for given file
+  Ctrl+Shift+'9'/'(' - (re-)enable syntax check
+  Ctrl+O (letter O)  - toggle "show all brackets not closed in the line" mode
+   (sequence Esc 0 Ctrl+O turns off bracket position check, reducing warning)
+*/
+k_(TE_BRAK0,  0xc3330, mod_CTRL+mod_SHIFT+')', 0) /* выключить раскраску    */
+k_(TE_BRAK9,  0xc3339, mod_CTRL+mod_SHIFT+'(', 0) /* включить раскраску     */
+k_(TE_SHBRAK, 0xc334f, mod_CTRL+'O',           0) /* переключить режим      */
 /*
 Useful Alt+CHARs for Linux/Windows (already present on Mac):
 */

@@ -224,7 +224,15 @@ void teformat()
       else {                                         // cannot, find first word
         Lx = x0+len2fill; leNword (&wbeg, NIL, NIL); // in next line to reamain
         Lx = Tx;      if (wbeg <= x0) exc(E_FORMAT); // (hopefully there's one)
-
+//
+// TODO: probably, need to squize extra spaces between words in the next line
+// ortherwise this is quite confusing:
+//
+//   [short-line    ]
+//    word1       word2
+//    ^
+//    wbeg
+//
         blktmov(Lebuf+x0,   lfbuf+len,   wbeg-x0); len += wbeg-x0;
         blktmov(Lebuf+wbeg, Lebuf+x0, Lleng-wbeg);
         BlockTy++;             TxTRep(Ttxt, Lebuf, Lleng-(wbeg-x0));
@@ -258,11 +266,11 @@ void teformat()
                   else          leNword(&wbeg, NIL, NIL);
       Lx = Tx;
       len =  (wbeg > txw - txw/10) ? wbeg : txw;
-      blktmov(Lepos, lfbuf, len);
-      lfbuf[len++] = TeSCH_CONTINUE;
-      TxTIL (Ttxt, lfbuf, len);
-      TxDown(Ttxt);       Ty++;
-      blktmov(Lebuf+len, Lebuf, ( Lleng -= len ));
+      blktmov(Lepos, lfbuf,  len);
+      lfbuf[len] = TeSCH_CONTINUE;
+      TxTIL (Ttxt, lfbuf,  len+1);
+      TxDown(Ttxt); Ty++;
+      blktmov (Lebuf+len, Lebuf, ( Lleng -= len ));
   } }
 //
 // Otherwise, try to merge the line with the next one (only if the result fits
@@ -458,6 +466,8 @@ comdesc tecmds[] =
   { TE_SUNUNDO, lesunundo, 0 }, /* "медленная" откатка откатки */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   { TE_SHBRAK,  SyntBrakToggle, CA_RPT }, /* toggle ShowBrak mode - synt.cpp */
+  { TE_BRAK0,   SyntLangOff,    CA_RPT }, /* выключить раскраску             */
+  { TE_BRAK9,   SyntLangOn,     CA_RPT }, /* включить (снова) раскраску      */
   { 0,0,0 }
 };
 comdesc *Tdecode (int kcode)  /*- - - - - - - - - - - - - - - - - - - - - - -*/

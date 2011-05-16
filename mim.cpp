@@ -108,6 +108,8 @@ int main(int argc, char *argv[])
     else if (param.compare("-ti", IGNORE_CASE) == 0) MiApp_timeDELAYS =  true;
     else if (param.compare("-dg", IGNORE_CASE) == 0) MiApp_useDIAGRAD =  true;
     else if (param.compare("-lg", IGNORE_CASE) == 0) MiApp_useDIAGRAD = false;
+    else if (param == "-") { if (tmStart(QfsEMPTY_NAME)) return app.exec();
+                             else                        return 2;        }
     else {
 #ifdef Q_OS_WIN                // Qt operates with correct forward slashes, but
       param.replace('\\','/'); // argv here comes from Windows, have to replace
@@ -116,8 +118,8 @@ int main(int argc, char *argv[])
       if (tmStart(param)) return app.exec();
       else                return 1;
   } }
-  if (tmStart(QfsEMPTY_NAME)) return app.exec();
-  else                        return 2;
+  if (tmStart(".")) return app.exec();
+  else              return 2;
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void mimExit()
@@ -431,7 +433,7 @@ void MiInfoWin::paintEvent (QPaintEvent *)
     info.sprintf("%7d", int((sctw->vp == Twnd) ? Ty : sctw->vp->wcy)+1);
     if (sctw->vp->wtext && sctw->vp->wtext->lastSynts) {
       int *Synts = sctw->vp->wtext->lastSynts,
-        numSynts = (Synts[0] & (~AT_COMMENT));
+        numSynts = Synts[0] & AT_CHAR;
       for (int i = 0; i < numSynts && i < 3; i++) {
         if (info[i] > ' ') info[i+1] = QChar(0x2026);
                            info[i]   = QChar(Synts[i+1] & 0xFF);

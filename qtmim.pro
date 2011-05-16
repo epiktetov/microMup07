@@ -1,3 +1,4 @@
+#!qmake -- Qt project file for µMup07
 TEMPLATE = app
 unix:QtPLATF = unix# must be the first (as 'unix' condition's true on macx too)
 macx {

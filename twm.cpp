@@ -292,10 +292,12 @@ bool tmDoLoad (txt *t)  /*- - - - - - - - - - - - - - - - - - - - - - - - - -*/
   }
   bool editable = !(t->txstat & TS_RDONLY) && t->file->writable && (oc != 1);
   t->txredit = editable ? TXED_YES : TXED_NO;
-  t->txstat &= ~TS_CHANGED;     check_MCD(t); TxRecalcMaxTy(t);
-  t->txstat |=  TS_FILE;
+  t->txstat &= ~TS_CHANGED;     check_MCD(t);  // double-check file type
+  t->txstat |=  TS_FILE;                       //
+  if (t->clang == CLangNONE) TxEnableSynt(t, SyntSniffText(t));
   if (t->txudeq != NIL) { t->txstat  |= TS_UNDO;
-                          t->txudfile = t->txudcptr; } return true;
+                          t->txudfile = t->txudcptr; } TxRecalcMaxTy(t);
+  return true;
 }
 bool tmLoad (txt *t)  /*- - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 {

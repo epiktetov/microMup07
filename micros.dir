@@ -46,7 +46,7 @@ Texts -- Тексты                                                |tx.h
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -|- - - - - - - -
 runtime (memory management and string manipulation functions)  |rt.c
 ---------------------------------------------------------------|---------------
-Keywords for various languages (currently only C/C++)          |keywords.txt
+Keywords for various languages (Bash, C/C++, Perl, Python)     |keywords.txt
                                                                |test.txt
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -|- - - - - - - -
 ʂincdirs»ʀ(macx)/Library/Frameworks/QtCore.framework/Versions/4/Headers
