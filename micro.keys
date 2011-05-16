@@ -126,10 +126,14 @@ a_(LE_LTAB,            mod_SHIFT+Mk_BkTAB,     KxBLK) /*   позицию таб
 k_(LE_TABCHR, 0xc133a, mod_CTRL+mod_SHIFT+Mk_TAB,  0) /* вставить символ TAB */
 a_(LE_TABCHR,          mod_CTRL+mod_SHIFT+Mk_BkTAB,0) /*  (Mk_BkTAB ≈ Mk_TAB)*/
 k_(TE_CMARK,  0xc1340, mod_CTRL+Mk_TAB,        KxBLK) /* курсор --> где были */
-k_(TE_SMARK0, 0xc1350, mod_CTRL+mod_SHIFT+'~', KxBLK) /* установить маркер 0 */
-k_(TE_SMARK1, 0xc1351, mod_CTRL+mod_SHIFT+'!', KxBLK) /* 1                   */
-k_(TE_SMARK2, 0xc1352, mod_CTRL+mod_SHIFT+'@', KxBLK) /* 2  (shift+N уже     */
-k_(TE_SMARK3, 0xc1353, mod_CTRL+mod_SHIFT+'#', KxBLK) /* 3    преобразовано) */
+k_(TE_SMARK0, 0xc1350, mod_CTRL+mod_SHIFT+'`', KxBLK) /* установить маркер 0 */
+k_(TE_SMARK1, 0xc1351, mod_CTRL+mod_SHIFT+'1', KxBLK) /* 1 = красный флажок  */
+k_(TE_SMARK2, 0xc1352, mod_CTRL+mod_SHIFT+'2', KxBLK) /* 2 = зеленый флажок  */
+k_(TE_SMARK3, 0xc1353, mod_CTRL+mod_SHIFT+'3', KxBLK) /* 3 = синий флажок    */
+a_(TE_SMARK0,          mod_CTRL+mod_SHIFT+'~', KxBLK) /* (на MacOS Х / Linux */
+a_(TE_SMARK1,          mod_CTRL+mod_SHIFT+'!', KxBLK) /*    shift+N уже      */
+a_(TE_SMARK2,          mod_CTRL+mod_SHIFT+'@', KxBLK) /*      преобразовано) */
+a_(TE_SMARK3,          mod_CTRL+mod_SHIFT+'#', KxBLK)
 k_(TE_CMARK0, 0xc1360, mod_CTRL+'`',           KxBLK) /* перейти к маркеру 0 */
 k_(TE_CMARK1, 0xc1361, mod_CTRL+'1',           KxBLK) /* 1                   */
 k_(TE_CMARK2, 0xc1362, mod_CTRL+'2',           KxBLK) /* 3  NOTE: codes must */
@@ -510,9 +514,11 @@ so a couple of commands added to turn it on/off dynamically (on per-file basis)
   Ctrl+O (letter O)  - toggle "show all brackets not closed in the line" mode
    (sequence Esc 0 Ctrl+O turns off bracket position check, reducing warning)
 */
-k_(TE_BRAK0,  0xc3330, mod_CTRL+mod_SHIFT+')', 0) /* выключить раскраску    */
-k_(TE_BRAK9,  0xc3339, mod_CTRL+mod_SHIFT+'(', 0) /* включить раскраску     */
-k_(TE_SHBRAK, 0xc334f, mod_CTRL+'O',           0) /* переключить режим      */
+k_(TE_BRAK0,  0xc3330, mod_CTRL+mod_SHIFT+'0', 0) /* выключить раскраску */
+a_(TE_BRAK0,           mod_CTRL+mod_SHIFT+')', 0)
+k_(TE_BRAK9,  0xc3339, mod_CTRL+mod_SHIFT+'9', 0) /* включить раскраску  */
+a_(TE_BRAK9,           mod_CTRL+mod_SHIFT+'(', 0)
+k_(TE_SHBRAK, 0xc334f, mod_CTRL+'O',           0) /* переключить режим   */
 /*
 Useful Alt+CHARs for Linux/Windows (already present on Mac):
 */
