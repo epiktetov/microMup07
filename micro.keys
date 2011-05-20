@@ -5,19 +5,19 @@
  * "nanoMir" implementation (c) Attic (Д.В.Варсанофьев, А.Г.Дымченко) 1989-1991
  * "nanoMir" and МикроМир07 (c) EpiMG (М.Г.Эпиктетов)       1998-2001,2006-2011
 -------------------------------------------------------------------------------
- Meta == ⌘/command key on Mac keyboard, "WinKey" key on Windows-compatible one
- Alt  == ⌥/option  key on Mac keyboard, Alt key elsewhere
+ Insert is "Help" key on MacPro keyboard, missing on A1243, use F13 key instead
+ Delele is "Delete⌦" on Mac keyboard ("delete" key is Backspace)
  Enter is either "Enter" or "Return"
- Home has synonym F10 (for compact keyboards that lack separate Home key)
- Insert (synonym F11) is "fn" or "Help" key on Mac
- Delele (synonym F12) is "Delete⌦" on Mac keyboard ("delete" key is Backspace)
-
-COMMAND LINE        µMup07 :help       - view the МикроМир07 help (this text)
-     PARAMETERS:    µMup07             - start with current directory contents
+ Alt  == ⌥/option  key on Mac keyboard, Alt key elsewhere
+ Meta == ⌘/command key on Mac keyboard, "WinKey" key on Windows-compatible one
+                              (in most cases, Meta+{x} has alias Alt+Numpad{x})
+COMMAND LINE
+     PARAMETERS:    µMup07 filename    - start editing given file
+                    µMup07 filename:N: - start editing given file at line N
+(see also FILES     µMup07 dirname     - open the contents of given directory
+   section below)   µMup07             - start with current directory contents
                     µMup07 -           - start editing an empty text
-(see also FILES     µMup07 filename    - start editing the given file
-   section below)   µMup07 filename:N: - start editing the given file at line N
-                    µMup07 dirname     - open the contents of given directory
+                    µMup07 :help       - view the МикроМир07 help (this text)
 */
 k_BEGIN
 /*
@@ -59,27 +59,34 @@ k_(TW_CUP,      0xc1141, mod_CTRL+Mk_UP,           0) /* непрерывно в
 k_(TW_CDOWN,    0xc1144, mod_CTRL+Mk_DOWN,         0) /* непрерывно вниз    */
 k_(TW_SCROLUPN, 0xc11fa, 0,                    KxBLK) /* (mouse wheel up)   */
 k_(TW_SCROLDNN, 0xc11fb, 0,                    KxBLK) /* (mouse wheel down) */
-k_(TW_SCROLUP,  0xc1151, mod_CTRL+mod_META+Mk_UP,    KxBLK)
-k_(TW_SCROLLF,  0xc1152, mod_CTRL+mod_META+Mk_LEFT,  KxBLK)
-k_(TW_SCROLRG,  0xc1153, mod_CTRL+mod_META+Mk_RIGHT, KxBLK)
-k_(TW_SCROLDN,  0xc1154, mod_CTRL+mod_META+Mk_DOWN,  KxBLK)
+k_(TW_SCROLUP,  0xc1151, mod_CTRL+mod_META+Mk_UP,        KxBLK)
+k_(TW_SCROLLF,  0xc1152, mod_CTRL+mod_META+Mk_LEFT,      KxBLK)
+k_(TW_SCROLRG,  0xc1153, mod_CTRL+mod_META+Mk_RIGHT,     KxBLK)
+k_(TW_SCROLDN,  0xc1154, mod_CTRL+mod_META+Mk_DOWN,      KxBLK)
+a_(TW_SCROLUP,            mod_CTRL+mod_ALT+Mk_PAD_UP,    KxBLK)
+a_(TW_SCROLLF,            mod_CTRL+mod_ALT+Mk_PAD_LEFT,  KxBLK)
+a_(TW_SCROLRG,            mod_CTRL+mod_ALT+Mk_PAD_RIGHT, KxBLK)
+a_(TW_SCROLDN,            mod_CTRL+mod_ALT+Mk_PAD_DOWN,  KxBLK)
 /*
 For window handling, MicroMir uses concept familiar to UNIX programmers: 'fork'
 (make a copy of the window) and 'replace file' (although this does not actually
 replaces anything, it just pushes current text into stack like Esc <down> does)
 
-  Meta+'='/'+'/F12     - fork current window into two, with identical contents
-  Meta+'-'             - split the window into two, forking the contents
-  Meta+'\' or Ctrl+Esc - ask for filename and enter that file (see FILES below)
+  Meta+'+'('=')/F12 - open new window with the same contents as in current one
+  Meta+'-'          - split the window into two panes, forking the contents
+  Meta+Esc/F11      - ask for filename and enter that file (see FILES below)
 
   Meta+<arrow> - move cursor to closest window in given direction
   Meta+Enter   - SyncPos(tm) - open (in upper pane) file mentioned here
 */
 k_(TM_VFORK,   0xc122b, mod_META+'=',        0) /* открыть новое окно с тем  */
 a_(TM_VFORK,            mod_META+Mk_F12,     0) /*       же самым содержимым */
+a_(TM_VFORK,            mod_ALT+Mk_PAD_PLUS, 0) /*                           */
 k_(TM_HFORK,   0xc122d, mod_META+'-',        0) /* поделить окно пополам     */
-k_(TM_FENTR,   0xc125c, mod_META+'\\',       0) /* ввести имя и войти        */
-a_(TM_FENTR,            mod_CTRL+Mk_ESCAPE,  0) /*          в указанный файл */
+a_(TM_HFORK,            mod_ALT+Mk_PAD_MINUS,0) /*                           */
+k_(TM_FENTR,   0xc125c, mod_META+Mk_ESCAPE,  0) /* ввести имя и войти        */
+a_(TM_FENTR,            mod_META+Mk_F11,     0) /*          в указанный файл */
+a_(TM_FENTR,            mod_ALT+Mk_PAD_STAR, 0) /*                           */
 k_(TM_F1ENTR,  0xc1261, 0,                   0) /* в том же окне:      Enter */
 k_(TM_F2ENTR,  0xc1262, 0,                   0) /* в новом окне: Shift+Enter */
 k_(TM_UWINDOW, 0xc1211, mod_META+Mk_UP,      0) /* перейти к верхнему окну   */
@@ -87,6 +94,11 @@ k_(TM_LWINDOW, 0xc1212, mod_META+Mk_LEFT,    0) /* - к левому окну   
 k_(TM_RWINDOW, 0xc1213, mod_META+Mk_RIGHT,   0) /* - к правому окну          */
 k_(TM_DWINDOW, 0xc1214, mod_META+Mk_DOWN,    0) /* - к нижнему окну          */
 k_(TM_SYNCPOS, 0xc121e, mod_META+Mk_ENTER,   0)
+a_(TM_SYNCPOS,       mod_ALT+Mk_PAD_ENTER,   0)
+a_(TM_UWINDOW,       mod_ALT+Mk_PAD_UP,      0)
+a_(TM_LWINDOW,       mod_ALT+Mk_PAD_LEFT,    0)
+a_(TM_RWINDOW,       mod_ALT+Mk_PAD_RIGHT,   0)
+a_(TM_DWINDOW,       mod_ALT+Mk_PAD_DOWN,    0)
 /*
 Aliases for case when WinKey is disabled on the computer (Windows only) - since
 this key alone activates Windows menu even when full-screen application running
@@ -149,19 +161,18 @@ exising text right), depending on the current editing mode:
 */
 k_(LE_CHAR, 0xc1400, 0,                  KxSEL) /* обычный символ           */
 k_(LE_RINS, 0xc1461, mod_CTRL+Mk_INSERT, KxSEL) /* установить режим вставки */
-a_(LE_RINS,          mod_CTRL+Mk_F11,    KxSEL)
+a_(LE_RINS,          mod_CTRL+Mk_F13,    KxSEL) /* - синоним для Mac KB     */
 k_(LE_RREP, 0xc1462, mod_CTRL+Mk_DELETE, KxSEL) /* установить режим замены  */
-a_(LE_RREP,          mod_CTRL+Mk_F12,    KxSEL)
 /*
 Although one can insert spaces into text by tapping space bar (in insert mode),
 that's not how it is usually done in MicroMir, since there are special commands
 for text modification:
-                                               |  +Shift (stronger)
-  ----------+----------------------------------+--------------------------
-  Insert    | insert empty character (space)   | insert empty line
-  Delete    | delete current character         | delete current line
-  Backspace | delete/clear char left of cursor | delete/clear word on left
-  ----------+----------------------------------+--------------------------
+                                                 |  +Shift (stronger)
+  ------------+----------------------------------+--------------------------
+  Insert (F13)| insert empty character (space)   | insert empty line
+  Delete      | delete current character         | delete current line
+  Backspace   | delete/clear char left of cursor | delete/clear word on left
+  ------------+----------------------------------+--------------------------
   Ctrl+D     - delete from cursor to end of line
   Ctrl+U     - delete/clear all characters up to cursor position
   Ctrl+W     - delete word under cursor (and trailing spaces) from the text
@@ -169,13 +180,11 @@ for text modification:
   Esc Ctrl+U - delete everything from the beginning up to cursor (very strong)
 */
 k_(LE_IC,     0xc1501,       Mk_INSERT,     KxSEL) /* вставить пробел        */
-a_(LE_IC,                    Mk_F11,        KxSEL) /* - синоним для Mac KB   */
 k_(LE_DC,     0xc1502,       Mk_DELETE,     KxSEL) /* удалить символ         */
-a_(LE_DC,                    Mk_F12,        KxSEL)
+a_(LE_IC,                    Mk_F13,        KxSEL) /* - синоним для Mac KB   */
 k_(TE_IL,     0xc1521, mod_SHIFT+Mk_INSERT,     0) /* вставить строку        */
-a_(TE_IL,              mod_SHIFT+Mk_F11,        0)
 k_(TE_DL,     0xc1522, mod_SHIFT+Mk_DELETE, KxSEL) /* удалить строку         */
-a_(TE_DL,              mod_SHIFT+Mk_F12,    KxSEL)
+a_(TE_IL,              mod_SHIFT+Mk_F13,        0)
 k_(LE_BS,     0xc1503,           Mk_BACK,   0) /* удалить/очистить символ    */
 k_(LE_DLWORD, 0xc1523, mod_SHIFT+Mk_BACK,   0) /* удалить слово влево        */
 k_(LE_DEOL,   0xc1544, mod_CTRL+'D',        0) /* - конец строки за курсором */
@@ -205,14 +214,17 @@ should be pressed and released before the next key - unlike Shift/Ctrl/Alt/etc)
 */
 k_(TE_BLIN,  0xc160e, mod_HOME+Mk_ENTER,  0) /* разрезать строку в начало    */
 k_(TE_SLIN,  0xc1601, mod_HOME+Mk_INSERT, 0) /* разрезать строку вертикально */
-a_(TE_SLIN,           mod_HOME+Mk_F11,    0)
+a_(TE_SLIN,           mod_HOME+Mk_F13,    0) /* - синоним для Mac KB         */
 k_(TE_NBLIN, 0xc160a, mod_HOME+Mk_BACK,   0) /* склеить строки               */
 k_(TE_NSLIN, 0xc1602, mod_HOME+Mk_DELETE, 0) /* склеить строки вертикально   */
-a_(TE_NSLIN,          mod_HOME+Mk_F12,    0)
 k_(TE_MOVUP,    0xc1631, mod_META+mod_SHIFT+Mk_UP,    KxSEL)
 k_(LE_MOVLEFT,  0xc1632, mod_META+mod_SHIFT+Mk_LEFT,  KxSEL)
 k_(LE_MOVRIGHT, 0xc1633, mod_META+mod_SHIFT+Mk_RIGHT, KxSEL)
 k_(TE_MOVDOWN,  0xc1634, mod_META+mod_SHIFT+Mk_DOWN,  KxSEL)
+a_(TE_MOVUP,          mod_ALT+mod_SHIFT+Mk_PAD_UP,    KxSEL)
+a_(LE_MOVLEFT,        mod_ALT+mod_SHIFT+Mk_PAD_LEFT,  KxSEL)
+a_(LE_MOVRIGHT,       mod_ALT+mod_SHIFT+Mk_PAD_RIGHT, KxSEL)
+a_(TE_MOVDOWN,        mod_ALT+mod_SHIFT+Mk_PAD_DOWN,  KxSEL)
 /*
 Rudimental text formatting:
 
@@ -368,14 +380,10 @@ ones (without selection, current character is converted and cursor moves right)
 
   Alt+Meta+ <up>   - convert current character/selection to uppercase
   Alt+Meta+<down>  - convert current character/selection to lowercase
-  Alt+Meta+<left>  - convert selected number to decimal
-  Alt+Meta+<right> - convert selected number to hexadecimal (or other radix)
   Ctrl+B           - add / clear "bold" attribute
 */
 k_(LE_CCUP,  0xc2201, mod_ALT+mod_META+Mk_UP,    KxSEL) /* буква->прописная */
 k_(LE_CCDWN, 0xc2204, mod_ALT+mod_META+Mk_DOWN,  KxSEL) /* буква->строчная  */
-k_(LE_CCDEC, 0xc2209, mod_ALT+mod_META+Mk_LEFT,  KxSEL) /* число->decimal   */
-k_(LE_CCHEX, 0xc220f, mod_ALT+mod_META+Mk_RIGHT, KxSEL) /* число->hex       */
 k_(LE_CBOLD, 0xc220b, mod_CTRL+'B',              KxSEL) /* сделать жирным   */
 /*
 Third MicroMir principle: instead of relying on sorting capabilites provided by
@@ -428,10 +436,9 @@ unless you insist: edit/view mode may be changed at any time (at your own risk)
   Ctrl+Meta+Ins - set text edit mode (green or blue cursor, can change text)
   Ctrl+Meta+Del - set text view mode (no changes allowed, red cursor)
 */
-k_(TE_SRW,    0xc3051, mod_CTRL+mod_META+Mk_INSERT, 0) /* редактирование  */
-a_(TE_SRW,             mod_CTRL+mod_META+Mk_F11,    0)
-k_(TE_SRO,    0xc3052, mod_CTRL+mod_META+Mk_DELETE, 0) /* просмотр текста */
-a_(TE_SRO,             mod_CTRL+mod_META+Mk_F12,    0)
+k_(TE_SRW, 0xc3051, mod_CTRL+mod_META+Mk_INSERT, 0) /* редактирование       */
+k_(TE_SRO, 0xc3052, mod_CTRL+mod_META+Mk_DELETE, 0) /* просмотр текста      */
+a_(TE_SRW,          mod_CTRL+mod_META+Mk_F13,    0) /* - синоним для Mac KB */
 /*
 REPETITION: Esc N - enter repetition counter (or argument) for the next command
                            where N is either ddd decimal number like   126
@@ -452,16 +459,15 @@ Note: without repetiotion prefix, the last two commands work differently, which
   Meta/Ctrl+E - centers current line in the windows (vertically only)
        Ctrl+H - centers curret position in the windows (horizontally)
 */
-k_(TK_ESC,    0xc0e5c, Mk_ESCAPE,                    0) /* Esc префикс      */
-k_(TK_HOME,   0xc0f10, Mk_HOME,                      0) /* Home префикс     */
-a_(TK_HOME,            Mk_F10,                       0) /* - синоним        */
+k_(TK_ESC,    0xc0e5c, Mk_ESCAPE,                    0) /* Esc префикс       */
+k_(TK_HOME,   0xc0f10, Mk_HOME,                      0) /* Home префикс      */
 k_(LE_CWDEC,  0xc3109, mod_ALT+mod_META+',',     KxSEL)
 k_(LE_CWHEX,  0xc310f, mod_ALT+mod_META+'.',     KxSEL)
-k_(LE_SPCHAR, 0xc3161, mod_CTRL+mod_SHIFT+Mk_INSERT, 0) /* символ с кодом   */
-a_(LE_SPCHAR,          mod_CTRL+mod_SHIFT+Mk_F11,    0)
-k_(TE_CENTR,  0xc3145, mod_CTRL+'E',             KxSEL) /* в середину окна  */
-a_(TE_CENTR,           mod_META+'E',             KxSEL) /* - по вертикали   */
-k_(LE_CENTR,  0xc3148, mod_CTRL+'H',             KxSEL) /* - по горизонтали */
+k_(LE_SPCHAR, 0xc3161, mod_CTRL+mod_SHIFT+Mk_INSERT, 0) /* символ с кодом    */
+a_(LE_SPCHAR,          mod_CTRL+mod_SHIFT+Mk_F13,    0) /* - синоним для Mac */
+k_(TE_CENTR,  0xc3145, mod_CTRL+'E',             KxSEL) /* в середину окна   */
+a_(TE_CENTR,           mod_META+'E',             KxSEL) /* - по вертикали    */
+k_(LE_CENTR,  0xc3148, mod_CTRL+'H',             KxSEL) /* - по горизонтали  */
 /*
    Ctrl+Shift+'=' - Calculator (MacOS X/Linux only), courtesy of /usr/bin/bc,
 
@@ -513,6 +519,9 @@ so a couple of commands added to turn it on/off dynamically (on per-file basis)
   Ctrl+Shift+'9'/'(' - (re-)enable syntax check
   Ctrl+O (letter O)  - toggle "show all brackets not closed in the line" mode
    (sequence Esc 0 Ctrl+O turns off bracket position check, reducing warning)
+
+Note for Windows 7: keyboard shortcut Ctrl+Shift+'0' does not work in default
+   configuration. Refer to http://support.microsoft.com/kb/967893 for the fix.
 */
 k_(TE_BRAK0,  0xc3330, mod_CTRL+mod_SHIFT+'0', 0) /* выключить раскраску */
 a_(TE_BRAK0,           mod_CTRL+mod_SHIFT+')', 0)
@@ -556,8 +565,6 @@ a_((micom_enum)0x2265, mod_ALT+'.',           0) /* ≥ */
 a_((micom_enum)0x00F7, mod_ALT+'/',           0) /* ÷ */
 a_((micom_enum)0x00BF, mod_ALT+mod_SHIFT+'?', 0) /* ¿ */
 #endif
-a_(TK_NONE, mod_ALT+Mk_PAD_PLUS,  0)
-a_(TK_NONE, mod_ALT+Mk_PAD_MINUS, 0)
 /*
 NOT IMPLEMENTED YET:
 */

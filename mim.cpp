@@ -802,6 +802,14 @@ void MiScTwin::keyPressEvent (QKeyEvent *event)
       for (int i=0; i<text.length(); i++) setkbhin(text.at(i).toAscii());
   }
   else {    
+#ifdef Q_OS_MAC
+    if (key == Qt::Key_unknown)            // For some reasons Qt 4.7.2 doesn't
+      switch (event->nativeVirtualKey()) { // convert keys F13…F15 correctly on
+      case 0x69: key = Qt::Key_F13; break; // Apple new solid aluminum keyboard
+      case 0x6b: key = Qt::Key_F14; break; // (model A1243), fixing that, using
+      case 0x71: key = Qt::Key_F15; break; // native virtual key (which is Ok)
+      }
+#endif
     micom *mk = Mk_IsSHIFT(key) ? NULL : key2mimCmd(key | modMask);
     if (MiApp_debugKB) fprintf(stderr, ",micom=%x\n", mk ? mk->ev : 0);
     if ((mk != NULL && mk->ev == TK_NONE) ||

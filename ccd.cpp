@@ -25,6 +25,10 @@
 #define Mk_PAD_SLASH (Qt::KeypadModifier | Qt::Key_Slash)
 #define Mk_PAD_STAR  (Qt::KeypadModifier | Qt::Key_Asterisk)
 #define Mk_PAD_ENTER (Qt::KeypadModifier | Qt::Key_Enter)
+#define Mk_PAD_UP    (Qt::KeypadModifier | '8')
+#define Mk_PAD_DOWN  (Qt::KeypadModifier | '2')
+#define Mk_PAD_LEFT  (Qt::KeypadModifier | '4')
+#define Mk_PAD_RIGHT (Qt::KeypadModifier | '6')
 
 #define Mk_ESCAPE Qt::Key_Escape
 #define Mk_ENTER  Qt::Key_Return // Qt::Key_Enter ?
@@ -50,6 +54,9 @@
 #define Mk_F10    Qt::Key_F10
 #define Mk_F11    Qt::Key_F11
 #define Mk_F12    Qt::Key_F12
+#define Mk_F13    Qt::Key_F13
+#define Mk_F14    Qt::Key_F14
+#define Mk_F15    Qt::Key_F15
 
 #define MAKE_TRANS_TABLE
 #include "ccd.h"

@@ -284,8 +284,6 @@ static void leconvert (int type) /* convert upper <-> lower case for letters */
 }
 void leccup()  { leconvert(cvTO_UPPER);   }
 void leccdwn() { leconvert(cvTO_LOWER);   }
-void leccdec() { leconvert(cvTO_DECIMAL); }
-void lecchex() { leconvert(cvTO_RADIX);   }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static void leconvert_word (int type)
 {
@@ -492,9 +490,7 @@ comdesc lecmds[] =
   { LE_RREP,   lerrep,   0                        }, /* режим замены         */
   { LE_CCUP,   leccup,          CA_CHANGE|CA_NEND }, /* -> прописная         */
   { LE_CCDWN,  leccdwn,         CA_CHANGE|CA_NEND }, /* -> строчная          */
-  { LE_CCDEC,  leccdec,         CA_CHANGE|CA_NEND }, /* -> decimal           */
   { LE_CWDEC,  lecwdec,         CA_CHANGE         }, /* word -> decimal      */
-  { LE_CCHEX,  lecchex,         CA_CHANGE|CA_NEND }, /* -> hex               */
   { LE_CWHEX,  lecwhex,         CA_CHANGE         }, /* word -> hex               */
   { LE_CBOLD,  lecbold,         CA_CHANGE|CA_NEND }, /* сделать жирным       */
   { LE_MOVRIGHT, lemovright,    CA_CHANGE|CA_NEND }, /* сдвинуть вправо      */
