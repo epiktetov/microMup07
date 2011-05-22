@@ -786,10 +786,17 @@ void MiScTwin::keyPressEvent (QKeyEvent *event)
                  ((event->modifiers() & Qt::ControlModifier) ? mod_CTRL : 0)|
                  ((event->modifiers() & Qt::MetaModifier)    ? mod_META : 0);
 #endif
-  if (MiApp_debugKB) fprintf(stderr, "OnKey(%x:%s)mod=%x,native=%x:%x:%x", key,
-                        text.cStr(), modMask >> 24, event->nativeScanCode(),
-                                                    event->nativeModifiers(),
-                                                    event->nativeVirtualKey());
+  if (MiApp_debugKB) {            fprintf(stderr, "OnKey(%x",    key);
+    if (text[0].unicode() > 0x1f) fprintf(stderr, ":%s", text.cStr());
+    else for (int i=0; i<text.length(); i++)
+       fprintf(stderr, ".%04x", text[i].unicode());
+  //
+    fprintf(stderr, ")mods=%c%c%c%c,native=%x:%x:%x",
+       (modMask & mod_META)  ? 'M' : '.', (modMask & mod_ALT)   ? 'a' : '.',
+       (modMask & mod_CTRL)  ? 'c' : '.', (modMask & mod_SHIFT) ? 's' : '.',
+       event->nativeScanCode(),
+       event->nativeModifiers(), event->nativeVirtualKey());
+  }
   if (vipOSmode) {
     switch (key) {
     case Qt::Key_Escape:    setkbhin   (4); return; // ^D = end-of-file
@@ -809,18 +816,41 @@ void MiScTwin::keyPressEvent (QKeyEvent *event)
       case 0x6b: key = Qt::Key_F14; break; // (model A1243), fixing that, using
       case 0x71: key = Qt::Key_F15; break; // native virtual key (which is Ok)
       }
-# endif // Make modified numpad keys work the same redargless of NumLock state
-#else   //                         (not applicble to Mac, which has no NumLock)
+# endif // Make MicroMir numpad commands work the same with any NumLock state
+#else   //                        (not applicble to Mac, which has no NumLock)
   if (key & Qt::KeypadModifier) {
-    if (modMask) {
-      switch (key) {
-      case Qt::KeypadModifier+Qt::Key_Up:    key = Mk_PAD_UP;    break;
-      case Qt::KeypadModifier+Qt::Key_Down:  key = Mk_PAD_DOWN;  break;
-      case Qt::KeypadModifier+Qt::Key_Left:  key = Mk_PAD_LEFT;  break;
-      case Qt::KeypadModifier+Qt::Key_Right: key = Mk_PAD_RIGHT; break;
-    } }
-    else key &= Qt::KeypadModifier; // ..and ignore Qt::KeypadModifier for keys
-  }                                 // without any other modifier, just in case
+# ifdef Q_OS_WIN                    // completely ignore Alt+Numpad keys,
+    if (modMask == mod_ALT) return; // let Windows handle them by itself
+# endif
+    int keyName = (key & ~Qt::KeypadModifier);
+    if (keyName == Qt::Key_Enter) keyName = Mk_PAD_ENTER; // merge numpad Enter
+    switch (modMask + keyName) {                          // to Return/Enter(↵)
+    case mod_CTRL+          Qt::Key_Up:
+    case mod_CTRL+mod_SHIFT+Qt::Key_Up:    key = Mk_PAD_UP;    break;
+    case mod_CTRL+          Qt::Key_Down:
+    case mod_CTRL+mod_SHIFT+Qt::Key_Down:  key = Mk_PAD_DOWN;  break;
+    case mod_CTRL+          Qt::Key_Left:
+    case mod_CTRL+mod_SHIFT+Qt::Key_Left:  key = Mk_PAD_LEFT;  break;
+    case mod_CTRL+          Qt::Key_Right:
+    case mod_CTRL+mod_SHIFT+Qt::Key_Right: key = Mk_PAD_RIGHT; break;
+    case mod_CTRL+'-': //
+    case mod_CTRL+'+': //
+    case mod_CTRL+'/': // these keys are already Ok, leave them alone
+    case mod_CTRL+'*': //
+    case mod_CTRL+Qt::Key_Return: break;
+    default:
+      if (modMask) {       // Force corresponding command with any modifier..
+        switch (keyName) { //
+        case '.': key = Mk_DELETE;   break;
+        case '0': key = Mk_INSERT;   break;   case '5': key = Mk_CLEAR;  break;
+        case '1': key = Mk_END;      break;   case '6': key = Mk_RIGHT;  break;
+        case '2': key = Mk_DOWN;     break;   case '7': key = Mk_HOME;   break;
+        case '3': key = Mk_PAGEDOWN; break;   case '8': key = Mk_UP;     break;
+        case '4': key = Mk_LEFT;     break;   case '9': key = Mk_PAGEUP; break;
+        default:  key = keyName;
+      } }
+      else key = keyName; // ..and ingnore Qt::KeypadModifier otherwise
+  } }
 #endif
   micom *mk = Mk_IsSHIFT(key) ? NULL : key2mimCmd(key | modMask);
   if (MiApp_debugKB) fprintf(stderr, ",micom=%x\n", mk ? mk->ev : 0);

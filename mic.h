@@ -70,22 +70,13 @@ extern BOOL dosEOL; /* - DOS/Windows style for end-of-line (CR/LF вместо C
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #define MAXPATH    400                     /* Некоторые магические константы */
 #define MAXDIRSTK   12
+#define MAXTXRM    360 /* Максимальная ширина текта в редакторе (default)    */
+#define MAXLUP   16384 /* Максимальная длина строки в файле                  */
+#define MAXLPAC   4096 /* Максимальная длина строки в редакторе (le.c, te.c) */
 #define MAXSYNTBUF  42 /* Буфер для synt checker                             */
 #define UBUFSIZ  32780 /* Буфер откатки >= max(2*MAXLUP,2*tchar*MAXLPAC)+eps */
 #define UDHQUOTA 24576 /* Квота откатки (на один файл) только если нет места */
 #define UDLQUOTA  8192
-#define MAXTXRM    360 /* Максимальная ширина текта в редакторе (default)    */
-#define MAXLUP   16384 /* Максимальная длина строки в файле                  */
-#define MAXLPAC   4096 /* Максимальная длина строки в редакторе (le.c, te.c) */
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-#define Mk_IsCHAR(x) (' ' <= x && x < 0x10000) /* only 16bit Unicode allowed */
-#define Mk_IsSHIFT(x) (Qt::Key_Shift <= x && x < Qt::Key_F1)
-#define mod_SHIFT 0x02000000
-#define mod_CTRL  0x04000000
-#define mod_ALT   0x08000000
-#define mod_META  0x10000000   /* NOTE: 0x20000000 is Qt::KeypadModifier */
-#define mod_ESC   0x40000000
-#define mod_HOME  0x80000000
 /*---------------------------------------- Коды ошибок (или событий) --------*/
 #define E_OK         0   /* Все в порядке                           -- Общие */
 #define E_NOCOM      1   /* Неопознанная команда для данного уровня          */

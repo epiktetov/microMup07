@@ -58,6 +58,15 @@ typedef struct {
 #define KxTMP 0x800000 /*  keeps "temporary" selection                       */
 #define KxSEL 0xc00000 /*  keeps any selection                               */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+#define Mk_IsCHAR(x) (' ' <= x && x < 0x10000) /* only 16bit Unicode allowed */
+#define Mk_IsSHIFT(x) (Qt::Key_Shift <= x && x < Qt::Key_F1)
+#define mod_SHIFT 0x02000000
+#define mod_CTRL  0x04000000
+#define mod_ALT   0x08000000
+#define mod_META  0x10000000
+#define mod_ESC   0x40000000 /* NOTE: 0x20000000 is Qt::KeypadModifier */
+#define mod_HOME  0x80000000
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #ifdef Q_OS_MAC
 #  define Mk_UP    (Qt::Key_Up   |Qt::KeypadModifier)
 #  define Mk_DOWN  (Qt::Key_Down |Qt::KeypadModifier)
@@ -78,7 +87,7 @@ typedef struct {
 #define Mk_PAD_MINUS (Qt::KeypadModifier|Qt::Key_Minus)
 #define Mk_PAD_SLASH (Qt::KeypadModifier|Qt::Key_Slash)
 #define Mk_PAD_STAR  (Qt::KeypadModifier|Qt::Key_Asterisk)
-#define Mk_PAD_ENTER (Qt::KeypadModifier|Qt::Key_Enter)
+#define Mk_PAD_ENTER (Qt::KeypadModifier|Qt::Key_Return)
 #define Mk_PAD_UP    (Qt::KeypadModifier|'8') //
 #define Mk_PAD_DOWN  (Qt::KeypadModifier|'2') // cannot use Qt::Key_Up etc here
 #define Mk_PAD_LEFT  (Qt::KeypadModifier|'4') // because arrow keys from Mac KB
@@ -89,6 +98,7 @@ typedef struct {
 #define Mk_TAB    Qt::Key_Tab
 #define Mk_BkTAB  Qt::Key_Backtab
 #define Mk_BACK   Qt::Key_Backspace
+#define Mk_CLEAR  Qt::Key_Clear
 
 #define Mk_McENTER Qt::Key_Enter // Mac-Enter is not "Enter" (that is "Return")
 #ifdef Q_OS_MAC                  // Insert key is called "Help" on Mac keyboard
