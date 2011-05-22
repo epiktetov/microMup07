@@ -814,12 +814,12 @@ void MiScTwin::keyPressEvent (QKeyEvent *event)
   if (key & Qt::KeypadModifier) {
     if (modMask) {
       switch (key) {
-      case Qt::KeypadModifier|Qt::Key_Up:    key = Mk_PAD_UP;    break;
-      case Qt::KeypadModifier|Qt::Key_Down:  key = Mk_PAD_DOWN;  break;
-      case Qt::KeypadModifier|Qt::Key_Left:  key = Mk_PAD_LEFT;  break;
-      case Qt::KeypadModifier|Qt::Key_Right: key = Mk_PAD_RIGHT; break;
+      case Qt::KeypadModifier+Qt::Key_Up:    key = Mk_PAD_UP;    break;
+      case Qt::KeypadModifier+Qt::Key_Down:  key = Mk_PAD_DOWN;  break;
+      case Qt::KeypadModifier+Qt::Key_Left:  key = Mk_PAD_LEFT;  break;
+      case Qt::KeypadModifier+Qt::Key_Right: key = Mk_PAD_RIGHT; break;
     } }
-    else ley &= Qt::KeypadModifier; // ..and ignore Qt::KeypadModifier for keys
+    else key &= Qt::KeypadModifier; // ..and ignore Qt::KeypadModifier for keys
   }                                 // without any other modifier, just in case
 #endif
   micom *mk = Mk_IsSHIFT(key) ? NULL : key2mimCmd(key | modMask);
