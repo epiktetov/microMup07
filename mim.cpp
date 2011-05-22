@@ -493,15 +493,15 @@ void MiConfigDlg::selectFont() // - - - - - - - - - - - - - - - - - - - - - - -
 {
   QFont refont = QFont(MiApp_defaultFont, MiApp_defFontSize);
   bool ok;   
+#ifdef notdef_Q_OS_MAC_hack_not_required
 //
-// Bug in Qt 4.5+ (or in Carbon version?): native (i.e. Cocoa) font selection
-// dialog does not really works. In addition to some funky issues with focus,
-// it does not allow selection of some fonts... like Menlo (which is the best)
+// Because of bug in Carbon-based Qt 4.5+, native (i.e. Cocoa) font selection
+// dialog did not really work -- in addition to some funky issues with focus,
+// it did not allow selection of some fonts... like Menlo (which is the best)
 //
-#ifdef notdef_Q_OS_MAC_does_not_work
-  setModal(false); refont = QFontDialog::getFont(&ok, refont, parentWidget());
-  setModal(true);
-#elif defined(Q_OS_MAC) && (QT_VERSION >= 0x040500)
+// Since the only reason to use Carbon build was inability to get Qt::Key_Help
+// (or Qt::Key_Insert in any form) and that may be fixed by KeyRemap4MacBook,
+//                         swithcing permanently to Qt-recommended Cocoa build
   QString title = "Font";
   refont = QFontDialog::getFont(&ok, refont, parentWidget(),
                               title, QFontDialog::DontUseNativeDialog);
@@ -775,22 +775,21 @@ void MiScTwin::Scroll (int srcx, int ty, int width, int height, int dy)
 //-----------------------------------------------------------------------------
 void MiScTwin::keyPressEvent (QKeyEvent *event)
 {
+  int     key  = event->key() | int(event->modifiers() &  Qt::KeypadModifier);
   QString text = event->text();
-  int key      = event->key() | int(event->modifiers() &  Qt::KeypadModifier);
-  int modMask  = ((event->modifiers() & Qt::ShiftModifier) ? mod_SHIFT : 0)|
+  int  modMask = ((event->modifiers() & Qt::ShiftModifier) ? mod_SHIFT : 0)|
+                 ((event->modifiers() & Qt::AltModifier)   ? mod_ALT   : 0)|
 #ifdef Q_OS_MAC
                  ((event->modifiers() & Qt::MetaModifier)    ? mod_CTRL : 0)|
-                 ((event->modifiers() & Qt::ControlModifier) ? mod_META : 0)|
+                 ((event->modifiers() & Qt::ControlModifier) ? mod_META : 0);
 #else
                  ((event->modifiers() & Qt::ControlModifier) ? mod_CTRL : 0)|
-                 ((event->modifiers() & Qt::MetaModifier)    ? mod_META : 0)|
+                 ((event->modifiers() & Qt::MetaModifier)    ? mod_META : 0);
 #endif
-                 ((event->modifiers() & Qt::AltModifier) ? mod_ALT : 0);
-  if (MiApp_debugKB)
-    fprintf(stderr, "OnKey(%x:%s)mod=%x,native=%x:%x:%x", key,
-       text.cStr(), modMask >> 24, event->nativeScanCode(),
-                                   event->nativeModifiers(),
-                                   event->nativeVirtualKey());
+  if (MiApp_debugKB) fprintf(stderr, "OnKey(%x:%s)mod=%x,native=%x:%x:%x", key,
+                        text.cStr(), modMask >> 24, event->nativeScanCode(),
+                                                    event->nativeModifiers(),
+                                                    event->nativeVirtualKey());
   if (vipOSmode) {
     switch (key) {
     case Qt::Key_Escape:    setkbhin   (4); return; // ^D = end-of-file
@@ -798,35 +797,48 @@ void MiScTwin::keyPressEvent (QKeyEvent *event)
     case Qt::Key_Backspace: setkbhin('\b'); return;
     }
     if ((modMask & mod_CTRL) && 0x40 <= key && key < 0x60) setkbhin(key-0x40);
-    else
-      for (int i=0; i<text.length(); i++) setkbhin(text.at(i).toAscii());
+    else   for (int i=0; i<text.length(); i++) setkbhin(text.at(i).toAscii());
+    return;
   }
-  else {    
-#ifdef Q_OS_MAC
-    if (key == Qt::Key_unknown)            // For some reasons Qt 4.7.2 doesn't
+#ifdef Q_OS_MAC                            // hack for KeyRemap4MacBook 5.1.0,
+  if (key == Mk_McENTER) key = Mk_INSERT;  // which can only remap Fn to Enter
+# if (QT_VERSION < 0x040500)
+    if (key == Qt::Key_unknown)            //- Legacy Qt version 4.3.3 does not
       switch (event->nativeVirtualKey()) { // convert keys F13…F15 correctly on
       case 0x69: key = Qt::Key_F13; break; // Apple new solid aluminum keyboard
       case 0x6b: key = Qt::Key_F14; break; // (model A1243), fixing that, using
       case 0x71: key = Qt::Key_F15; break; // native virtual key (which is Ok)
       }
+# endif // Make modified numpad keys work the same redargless of NumLock state
+#else   //                         (not applicble to Mac, which has no NumLock)
+  if (key & Qt::KeypadModifier) {
+    if (modMask) {
+      switch (key) {
+      case Qt::KeypadModifier|Qt::Key_Up:    key = Mk_PAD_UP;    break;
+      case Qt::KeypadModifier|Qt::Key_Down:  key = Mk_PAD_DOWN;  break;
+      case Qt::KeypadModifier|Qt::Key_Left:  key = Mk_PAD_LEFT;  break;
+      case Qt::KeypadModifier|Qt::Key_Right: key = Mk_PAD_RIGHT; break;
+    } }
+    else ley &= Qt::KeypadModifier; // ..and ignore Qt::KeypadModifier for keys
+  }                                 // without any other modifier, just in case
 #endif
-    micom *mk = Mk_IsSHIFT(key) ? NULL : key2mimCmd(key | modMask);
-    if (MiApp_debugKB) fprintf(stderr, ",micom=%x\n", mk ? mk->ev : 0);
-    if ((mk != NULL && mk->ev == TK_NONE) ||
-        (mk == NULL && text.isEmpty() )) event->ignore();
-    else {                stopTimer();   event->accept();  setkbhin(0);
-      //
-      // Here we have either valid microMir command (mk != NULL), or non-empty
-      // text (otherwise) that should be fed char-by-char into same function:
-      //
-      if (mk) vipOnKeyCode(vp, mk->ev, mk->attr);
-      else {
-        for (int i=0; i<text.length(); i++) {
-          int k = text.at(i).unicode();
-          if (Mk_IsCHAR(k)) vipOnKeyCode(vp, k, KxSEL);
-      } }
-      vipReady();
-} } }
+  micom *mk = Mk_IsSHIFT(key) ? NULL : key2mimCmd(key | modMask);
+  if (MiApp_debugKB) fprintf(stderr, ",micom=%x\n", mk ? mk->ev : 0);
+  if ((mk != NULL && mk->ev == TK_NONE) ||
+      (mk == NULL && text.isEmpty() )) event->ignore();
+  else {                stopTimer();   event->accept();  setkbhin(0);
+    //
+    // Here we have either valid microMir command (mk != NULL), or non-empty
+    // text (otherwise) that should be fed char-by-char into same function:
+    //
+    if (mk) vipOnKeyCode(vp, mk->ev, mk->attr);
+    else {
+      for (int i=0; i<text.length(); i++) {
+        int k = text.at(i).unicode();
+        if (Mk_IsCHAR(k)) vipOnKeyCode(vp, k, KxSEL);
+    } }
+    vipReady();
+} }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiScTwin::timerEvent(QTimerEvent *)
 {

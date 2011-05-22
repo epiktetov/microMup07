@@ -4,60 +4,6 @@
 #include <Qt>
 #include "mic.h"
 #include "ccd.h"
-#ifdef Q_OS_MAC
-#  define Mk_UP    (Qt::Key_Up    | Qt::KeypadModifier)
-#  define Mk_DOWN  (Qt::Key_Down  | Qt::KeypadModifier)
-#  define Mk_LEFT  (Qt::Key_Left  | Qt::KeypadModifier)
-#  define Mk_RIGHT (Qt::Key_Right | Qt::KeypadModifier)
-#else
-#  define Mk_UP     Qt::Key_Up
-#  define Mk_DOWN   Qt::Key_Down
-#  define Mk_LEFT   Qt::Key_Left
-#  define Mk_RIGHT  Qt::Key_Right
-#endif
-#define Mk_HOME     Qt::Key_Home
-#define Mk_END      Qt::Key_End
-#define Mk_PAGEUP   Qt::Key_PageUp
-#define Mk_PAGEDOWN Qt::Key_PageDown
-
-#define Mk_PAD_PLUS  (Qt::KeypadModifier | Qt::Key_Plus)
-#define Mk_PAD_MINUS (Qt::KeypadModifier | Qt::Key_Minus)
-#define Mk_PAD_SLASH (Qt::KeypadModifier | Qt::Key_Slash)
-#define Mk_PAD_STAR  (Qt::KeypadModifier | Qt::Key_Asterisk)
-#define Mk_PAD_ENTER (Qt::KeypadModifier | Qt::Key_Enter)
-#define Mk_PAD_UP    (Qt::KeypadModifier | '8')
-#define Mk_PAD_DOWN  (Qt::KeypadModifier | '2')
-#define Mk_PAD_LEFT  (Qt::KeypadModifier | '4')
-#define Mk_PAD_RIGHT (Qt::KeypadModifier | '6')
-
-#define Mk_ESCAPE Qt::Key_Escape
-#define Mk_ENTER  Qt::Key_Return // Qt::Key_Enter ?
-#define Mk_TAB    Qt::Key_Tab
-#define Mk_BkTAB  Qt::Key_Backtab
-#define Mk_BACK   Qt::Key_Backspace
-
-#ifdef Q_OS_MAC                  // Insert key is called "Help" on Mac keyboard
-#  define Mk_INSERT Qt::Key_Help // and the name sticks even when Microsoft k/b
-#else                            // attached; restore the God-given name here
-#  define Mk_INSERT Qt::Key_Insert
-#endif
-#define Mk_DELETE Qt::Key_Delete
-#define Mk_F1     Qt::Key_F1
-#define Mk_F2     Qt::Key_F2
-#define Mk_F3     Qt::Key_F3
-#define Mk_F4     Qt::Key_F4
-#define Mk_F5     Qt::Key_F5
-#define Mk_F6     Qt::Key_F6
-#define Mk_F7     Qt::Key_F7
-#define Mk_F8     Qt::Key_F8
-#define Mk_F9     Qt::Key_F9
-#define Mk_F10    Qt::Key_F10
-#define Mk_F11    Qt::Key_F11
-#define Mk_F12    Qt::Key_F12
-#define Mk_F13    Qt::Key_F13
-#define Mk_F14    Qt::Key_F14
-#define Mk_F15    Qt::Key_F15
-
 #define MAKE_TRANS_TABLE
 #include "ccd.h"
 micom NoCMD = { TK_NONE, 0, KxSEL };

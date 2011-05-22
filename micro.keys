@@ -7,10 +7,10 @@
 -------------------------------------------------------------------------------
  Insert is "Help" key on MacPro keyboard, missing on A1243, use F13 key instead
  Delele is "Delete⌦" on Mac keyboard ("delete" key is Backspace)
- Enter is either "Enter" or "Return"
+ Enter is either "Enter" or "Return" ("enter" on Mac keyboard used as Insert)
  Alt  == ⌥/option  key on Mac keyboard, Alt key elsewhere
  Meta == ⌘/command key on Mac keyboard, "WinKey" key on Windows-compatible one
-                              (in most cases, Meta+{x} has alias Alt+Numpad{x})
+                             (in most cases, Meta+{x} has alias Ctrl+Numpad{x})
 COMMAND LINE
      PARAMETERS:    µMup07 filename    - start editing given file
                     µMup07 filename:N: - start editing given file at line N
@@ -63,10 +63,6 @@ k_(TW_SCROLUP,  0xc1151, mod_CTRL+mod_META+Mk_UP,        KxBLK)
 k_(TW_SCROLLF,  0xc1152, mod_CTRL+mod_META+Mk_LEFT,      KxBLK)
 k_(TW_SCROLRG,  0xc1153, mod_CTRL+mod_META+Mk_RIGHT,     KxBLK)
 k_(TW_SCROLDN,  0xc1154, mod_CTRL+mod_META+Mk_DOWN,      KxBLK)
-a_(TW_SCROLUP,            mod_CTRL+mod_ALT+Mk_PAD_UP,    KxBLK)
-a_(TW_SCROLLF,            mod_CTRL+mod_ALT+Mk_PAD_LEFT,  KxBLK)
-a_(TW_SCROLRG,            mod_CTRL+mod_ALT+Mk_PAD_RIGHT, KxBLK)
-a_(TW_SCROLDN,            mod_CTRL+mod_ALT+Mk_PAD_DOWN,  KxBLK)
 /*
 For window handling, MicroMir uses concept familiar to UNIX programmers: 'fork'
 (make a copy of the window) and 'replace file' (although this does not actually
@@ -74,19 +70,19 @@ replaces anything, it just pushes current text into stack like Esc <down> does)
 
   Meta+'+'('=')/F12 - open new window with the same contents as in current one
   Meta+'-'          - split the window into two panes, forking the contents
-  Meta+Esc/F11      - ask for filename and enter that file (see FILES below)
+  Meta+Ins/F13      - ask for filename and enter that file (see FILES below)
 
   Meta+<arrow> - move cursor to closest window in given direction
   Meta+Enter   - SyncPos(tm) - open (in upper pane) file mentioned here
 */
 k_(TM_VFORK,   0xc122b, mod_META+'=',        0) /* открыть новое окно с тем  */
 a_(TM_VFORK,            mod_META+Mk_F12,     0) /*       же самым содержимым */
-a_(TM_VFORK,            mod_ALT+Mk_PAD_PLUS, 0) /*                           */
+a_(TM_VFORK,            mod_CTRL+Mk_PAD_PLUS,0) /*                           */
 k_(TM_HFORK,   0xc122d, mod_META+'-',        0) /* поделить окно пополам     */
-a_(TM_HFORK,            mod_ALT+Mk_PAD_MINUS,0) /*                           */
-k_(TM_FENTR,   0xc125c, mod_META+Mk_ESCAPE,  0) /* ввести имя и войти        */
-a_(TM_FENTR,            mod_META+Mk_F11,     0) /*          в указанный файл */
-a_(TM_FENTR,            mod_ALT+Mk_PAD_STAR, 0) /*                           */
+a_(TM_HFORK,         mod_CTRL+Mk_PAD_MINUS,  0) /*                           */
+k_(TM_FENTR,   0xc125c, mod_META+Mk_INSERT,  0) /* ввести имя и войти        */
+a_(TM_FENTR,            mod_META+Mk_F13,     0) /*          в указанный файл */
+a_(TM_FENTR,            mod_CTRL+Mk_PAD_STAR,0) /*                           */
 k_(TM_F1ENTR,  0xc1261, 0,                   0) /* в том же окне:      Enter */
 k_(TM_F2ENTR,  0xc1262, 0,                   0) /* в новом окне: Shift+Enter */
 k_(TM_UWINDOW, 0xc1211, mod_META+Mk_UP,      0) /* перейти к верхнему окну   */
@@ -94,11 +90,11 @@ k_(TM_LWINDOW, 0xc1212, mod_META+Mk_LEFT,    0) /* - к левому окну   
 k_(TM_RWINDOW, 0xc1213, mod_META+Mk_RIGHT,   0) /* - к правому окну          */
 k_(TM_DWINDOW, 0xc1214, mod_META+Mk_DOWN,    0) /* - к нижнему окну          */
 k_(TM_SYNCPOS, 0xc121e, mod_META+Mk_ENTER,   0)
-a_(TM_SYNCPOS,       mod_ALT+Mk_PAD_ENTER,   0)
-a_(TM_UWINDOW,       mod_ALT+Mk_PAD_UP,      0)
-a_(TM_LWINDOW,       mod_ALT+Mk_PAD_LEFT,    0)
-a_(TM_RWINDOW,       mod_ALT+Mk_PAD_RIGHT,   0)
-a_(TM_DWINDOW,       mod_ALT+Mk_PAD_DOWN,    0)
+a_(TM_SYNCPOS,      mod_CTRL+Mk_PAD_ENTER,   0)
+a_(TM_UWINDOW,      mod_CTRL+Mk_PAD_UP,      0)
+a_(TM_LWINDOW,      mod_CTRL+Mk_PAD_LEFT,    0)
+a_(TM_RWINDOW,      mod_CTRL+Mk_PAD_RIGHT,   0)
+a_(TM_DWINDOW,      mod_CTRL+Mk_PAD_DOWN,    0)
 /*
 Aliases for case when WinKey is disabled on the computer (Windows only) - since
 this key alone activates Windows menu even when full-screen application running
@@ -221,10 +217,10 @@ k_(TE_MOVUP,    0xc1631, mod_META+mod_SHIFT+Mk_UP,    KxSEL)
 k_(LE_MOVLEFT,  0xc1632, mod_META+mod_SHIFT+Mk_LEFT,  KxSEL)
 k_(LE_MOVRIGHT, 0xc1633, mod_META+mod_SHIFT+Mk_RIGHT, KxSEL)
 k_(TE_MOVDOWN,  0xc1634, mod_META+mod_SHIFT+Mk_DOWN,  KxSEL)
-a_(TE_MOVUP,          mod_ALT+mod_SHIFT+Mk_PAD_UP,    KxSEL)
-a_(LE_MOVLEFT,        mod_ALT+mod_SHIFT+Mk_PAD_LEFT,  KxSEL)
-a_(LE_MOVRIGHT,       mod_ALT+mod_SHIFT+Mk_PAD_RIGHT, KxSEL)
-a_(TE_MOVDOWN,        mod_ALT+mod_SHIFT+Mk_PAD_DOWN,  KxSEL)
+a_(TE_MOVUP,         mod_CTRL+mod_SHIFT+Mk_PAD_UP,    KxSEL)
+a_(LE_MOVLEFT,       mod_CTRL+mod_SHIFT+Mk_PAD_LEFT,  KxSEL)
+a_(LE_MOVRIGHT,      mod_CTRL+mod_SHIFT+Mk_PAD_RIGHT, KxSEL)
+a_(TE_MOVDOWN,       mod_CTRL+mod_SHIFT+Mk_PAD_DOWN,  KxSEL)
 /*
 Rudimental text formatting:
 
