@@ -427,15 +427,14 @@ void vipOnKeyCode (wnd *vp, int ev, int ca)
   else if (ev == TK_CHARK) vp->sctw->info.updateInfo(MitCHARK);
   else if (ev == TW_CDOWN) { wpos_off(vp);
     if (Lwnd) ExitLEmode();          // set Ty to the last line in the window,
-    tesetxy (Tx, vp->wty+vp->wsh-1); // to avoid scrolling to the empty screen
+    tesetxy (Tx, vp->wty+vp->wsh-1); // to avoid scrolling into an empty screen
     vp->sctw->repeatCmd(TW_SCROLDN); // in case when started with cursor on top
   }
-  else if (ev == TW_CUP) {                        // ^up: if at the top screen,
-    if (vp->wty) vp->sctw->repeatCmd(TW_SCROLUP); // jump to the text beginning
-    else         vipOnMimCmd(vp, TE_TBEG, KxBLK); // otherwise begin continuous
-  }                                               // scroll (stop at vp->wty=0)
-  else {
-    int N;
+  else if (ev == TW_CUP) { wpos_off(vp); // similar things for scrolling up...
+    if (Lwnd) ExitLEmode();              //
+    tesetxy (Tx,  vp->wty); vp->sctw->repeatCmd(TW_SCROLUP);
+  }
+  else {             int N;
     if (enteringMacro) { N = enteringMacro - TK_EM0;
       if ((TK_SM0 <= ev && ev <= TK_SMX) ||
                            ev == enteringMacro) enteringMacro = 0;

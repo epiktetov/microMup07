@@ -24,7 +24,7 @@ struct txt_tag
 #define TXED_YES  0         /* - можно                                       */
 #define TXED_NO   1         /* - нельзя                                      */
 #define TXED_NONO 2         /* - совсем нельзя                               */
-  small clang;              /* Язык для раскрашивания текста ('C','S'hell..) */
+  small clang;              /* Язык для раскрашивания текста (см. synt.h)    */
   deq *clustk, *cldstk;     /* - верхний и нижний стеки для раскрашивания    */
   small txlm,     txrm;     /* Left margin / правая граница текста           */
   small txmarkx[TXT_MARKS]; /* Маркеры (установлены в ноль если не занято),  */

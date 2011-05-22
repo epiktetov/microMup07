@@ -9,6 +9,7 @@
 #include "twm.h"
 #include "vip.h"
 #include "clip.h"
+#include "synt.h"
 extern "C" { extern const char microVERSION[]; }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 BOOL dosEOL = false;                              /* Настраиваемые параметры */
@@ -118,8 +119,13 @@ int main(int argc, char *argv[])
       if (tmStart(param)) return app.exec();
       else                return 1;
   } }
-  if (tmStart(".")) return app.exec();
-  else              return 2;
+#ifdef Q_OS_MAC                 // When file/directory is drag-n-dropped on our
+#define mimNoNAME QfsEMPTY_NAME // application on Mac, the name of the file/dir
+#else                           // is not specified in command line; open empty
+#define mimNoNAME "."           // file to avoid showing unwanted contents
+#endif
+  if (tmStart(mimNoNAME)) return app.exec();
+  else                    return 2;
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void mimExit()
@@ -431,7 +437,8 @@ void MiInfoWin::paintEvent (QPaintEvent *)
                                        dc.drawText(sctw->Tx2qtX(0), Y, info); }
   else {
     info.sprintf("%7d", int((sctw->vp == Twnd) ? Ty : sctw->vp->wcy)+1);
-    if (sctw->vp->wtext && sctw->vp->wtext->lastSynts) {
+    if (sctw->vp->wtext && 0 < sctw->vp->wtext->clang &&
+                               sctw->vp->wtext->clang < CLangMAX) {
       int *Synts = sctw->vp->wtext->lastSynts,
         numSynts = Synts[0] & AT_CHAR;
       for (int i = 0; i < numSynts && i < 3; i++) {
@@ -671,12 +678,13 @@ void MiScTwin::Erase (QPainter& dc, int tx, int ty, int len)
 //
 void MiScTwin::Text (QPainter& dc, int x, int y, int attr, QString text)
 {
-  int len = text.length();    QPen noPen(Qt::NoPen);
-  if (attr & AT_BOLD) dc.setFont(mf->getBoldFont());
-  else                dc.setFont(mf->getTextFont());
+  const QColor *bg_color = &colorWhite, *fg_color;
+  int len = text.length();  QPen noPen(Qt::NoPen);
+  if (attr & AT_BOLD)
+       { dc.setFont(mf->getBoldFont()); fg_color = &colorDarkBrown; }
+  else { dc.setFont(mf->getTextFont()); fg_color = &colorBlack;     }
 
   if (attr & (AT_INVERT|AT_MARKFLG|AT_BG_CLR)) {
-    const QColor *bg_color = &colorWhite, *fg_color = &colorBlack;
     if (attr & AT_INVERT) {
            if ((attr & AT_BG_CLR) == AT_BG_RED) bg_color = &colorDarkRed;
       else if ((attr & AT_BG_CLR) == AT_BG_GRN) bg_color = &colorDarkGreen;
@@ -716,7 +724,7 @@ void MiScTwin::Text (QPainter& dc, int x, int y, int attr, QString text)
     else if (attr & AT_SUPER)   dc.setPen(colorLightBlue);
     else if (attr & AT_BADCHAR) dc.setPen(colorSolidRed);
     else if (attr & AT_COMMENT) dc.setPen(colorDarkGrey); //- testing that last
-    else                        dc.setPen(colorBlack);    // to preserve colors
+    else                        dc.setPen(*fg_color);     // to preserve colors
     Erase(dc, x, y, len);                                 // in comments (jic)
   }
   dc.drawText(Tx2qtX(x), Ty2qtY(y)+fontBaseline, text);
@@ -807,6 +815,11 @@ void MiScTwin::keyPressEvent (QKeyEvent *event)
     else   for (int i=0; i<text.length(); i++) setkbhin(text.at(i).toAscii());
     return;
   }
+  switch (key) {
+  case Qt::Key_F10: key = Mk_HOME;   break; // Pre-defined aliases (compact KB)
+  case Qt::Key_F11: key = Mk_INSERT; break; //
+  case Qt::Key_F12: key = Mk_DELETE; break; // (TODO: replace with user config)
+  }
 #ifdef Q_OS_MAC                            // hack for KeyRemap4MacBook 5.1.0,
   if (key == Mk_McENTER) key = Mk_INSERT;  // which can only remap Fn to Enter
 # if (QT_VERSION < 0x040500)
@@ -825,12 +838,16 @@ void MiScTwin::keyPressEvent (QKeyEvent *event)
     int keyName = (key & ~Qt::KeypadModifier);
     if (keyName == Qt::Key_Enter) keyName = Mk_PAD_ENTER; // merge numpad Enter
     switch (modMask + keyName) {                          // to Return/Enter(↵)
+    case mod_CTRL+'8':
     case mod_CTRL+          Qt::Key_Up:
     case mod_CTRL+mod_SHIFT+Qt::Key_Up:    key = Mk_PAD_UP;    break;
+    case mod_CTRL+'2':
     case mod_CTRL+          Qt::Key_Down:
     case mod_CTRL+mod_SHIFT+Qt::Key_Down:  key = Mk_PAD_DOWN;  break;
+    case mod_CTRL+'4':
     case mod_CTRL+          Qt::Key_Left:
     case mod_CTRL+mod_SHIFT+Qt::Key_Left:  key = Mk_PAD_LEFT;  break;
+    case mod_CTRL+'6':
     case mod_CTRL+          Qt::Key_Right:
     case mod_CTRL+mod_SHIFT+Qt::Key_Right: key = Mk_PAD_RIGHT; break;
     case mod_CTRL+'-': //
@@ -852,7 +869,7 @@ void MiScTwin::keyPressEvent (QKeyEvent *event)
       else key = keyName; // ..and ingnore Qt::KeypadModifier otherwise
   } }
 #endif
-  micom *mk = Mk_IsSHIFT(key) ? NULL : key2mimCmd(key | modMask);
+  micom *mk = (!key || Mk_IsSHIFT(key)) ? NULL : key2mimCmd(key|modMask);
   if (MiApp_debugKB) fprintf(stderr, ",micom=%x\n", mk ? mk->ev : 0);
   if ((mk != NULL && mk->ev == TK_NONE) ||
       (mk == NULL && text.isEmpty() )) event->ignore();
