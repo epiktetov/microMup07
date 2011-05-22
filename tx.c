@@ -69,8 +69,14 @@ void TxDel (txt *t)
   if (t->cldstk) DqDel(t->cldstk); t->cldstk = NIL; t->clang = 0;
 }
 /*---------------------------------------------------------------------------*/
-BOOL qTxTop   (txt *t) { return qDqEmpt(t->txustk); }
 BOOL qTxBottom(txt *t) { return qDqEmpt(t->txdstk); }
+BOOL qTxTop   (txt *t)
+{                           // cleanup prevSynts and upper stack for Synts when
+  if (qDqEmpt(t->txustk)) { // at the top of text - just in case we lost tracks
+    t->prevSynts[0] = 0;
+    if (t->clustk) DqEmpt(t->clustk); return  TRUE;
+  }                              else return FALSE;
+}
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void TxUp (txt *t)                                  /* Перемещения по тексту */
 {
@@ -122,7 +128,9 @@ void TxDL(txt *t)
 {
   if (qTxBottom(t)) exc(E_MOVDOWN);
   else {
-    small len = DqGetB(t->txdstk, txbuf);   tundo1add(t, UT_DL, txbuf, len);
+    small len = DqGetB(t->txdstk, txbuf); tundo1add(t, UT_DL, txbuf, len);
+    if (t->cldstk &&
+      !qDqEmpt(t->cldstk)) DqGetB(t->cldstk, (char*)(t->thisSynts));
     int i;
     for (i=0; i<TXT_MARKS; i++) if (t->txmarky[i] > t->txy) t->txmarky[i]--; 
     t->maxTy--;                                             wndop(TW_DL, t);
@@ -138,6 +146,7 @@ void TxDEL_beg(txt *t)
     t->txy--;
     tundo1add(t, UT_DL, txbuf, len); num_deleted++; t->maxTy--;
   }
+  if (t->clustk && !qDqEmpt(t->clustk)) DqEmpt(t->clustk);
   for (i=0; i<TXT_MARKS; i++) {
     if (t->txmarky[i] > num_deleted) t->txmarky[i] -= num_deleted;
     else                             t->txmarky[i]  = -1;
@@ -151,6 +160,7 @@ void TxDEL_end(txt *t)
     small len = DqGetB(t->txdstk, txbuf);
     tundo1add(t, UT_DL, txbuf, len);
   }
+  if (t->cldstk && !qDqEmpt(t->cldstk)) DqEmpt(t->cldstk);
   for (i=0; i<TXT_MARKS; i++)
     if (t->txmarky[i] > t->txy) t->txmarky[i] = -1; /* deleting end-of-text  */
 }                                                   /* may delete some marks */
@@ -169,9 +179,12 @@ void TxIL(txt *t, char *text, small len)
 {
   DqAddB   (t->txdstk, text, len); t->maxTy++;
   tundo1add(t,  UT_IL, text, len); 
-  int i;
-  for (i=0; i<TXT_MARKS; i++)
-    if (t->txmarky[i] >= t->txy) t->txmarky[i]++;  wndop(TW_IL, t);
+  if (t->cldstk) {
+    int clen = SyntParse(t, text, len, t->thisSynts) * sizeof(int);
+    DqAddB (t->cldstk,         (char*)(t->thisSynts),        clen);
+  }
+  int i; for (i=0; i<TXT_MARKS; i++)
+           if (t->txmarky[i] >= t->txy) t->txmarky[i]++;  wndop(TW_IL, t);
 }
 void TxTIL (txt *t, tchar *tp, small len)
 {

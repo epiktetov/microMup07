@@ -196,12 +196,13 @@ void teformat()
     small wbeg;
     Lleng = TxFRead(Ttxt, Lebuf);
     if (Lleng > x1) {
-      if (tcharIsBlank(Lebuf[x1])) {        // long line, but can split exactly
-        Lx = x1; leNword (NIL, NIL, &wbeg); //   at the right edge of the block
-        Lx = Tx;
-        if (wbeg >= Lleng) { BlockTy++; Ty++; return; }
+      if (tcharIsBlank(Lebuf[x1]) || tcharIsBlank(Lebuf[x1-1])) {
+        Lx = x1-1; leNword (NIL, NIL, &wbeg); // ^
+        Lx = Tx;                              // long line, can split exactly
+        if (wbeg >= Lleng) { BlockTy++;       //    at the right edge of block
+                                  Ty++; return; }
       }
-      else { Lx = x1-1; leNword(&wbeg, NIL, NIL); // cannot, find the beginning
+      else { Lx = x1+1; leNword(&wbeg, NIL, NIL); // cannot, find the beginning
              Lx = Tx;                             //  of word that does not fit
              if (wbeg <= x0) exc(E_FORMAT);
       }
@@ -225,7 +226,7 @@ void teformat()
         Lx = x0+len2fill; leNword (&wbeg, NIL, NIL); // in next line to reamain
         Lx = Tx;      if (wbeg <= x0) exc(E_FORMAT); // (hopefully there's one)
 //
-// TODO: probably, need to squize extra spaces between words in the next line
+// TODO: probably, need to squeeze extra spaces between words in the next line;
 // ortherwise this is quite confusing:
 //
 //   [short-line    ]

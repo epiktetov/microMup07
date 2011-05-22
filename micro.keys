@@ -50,7 +50,8 @@ k_(LE_NWORD, 0xc1083,  mod_ALT+Mk_RIGHT, KxBLK) /* -> следующее сло�
 /*
      PageUp/PageDown - scroll text page up / down
 Ctrl+PageUp/PageDown - move cursor to beginning / end of document
-Ctrl    <up/down>    - move continuously up/down (stop by any key)
+Ctrl+   <up/down>    - move continuously up/down (stop by any key)
+Ctrl+  '[' / ']'     - move cursor to left / right edge of the current window
 Ctrl+Meta+<arrows>   - scroll text in given direction (cursor moves over text,
                        while remaining in the same position relative to window)
 */
@@ -60,6 +61,8 @@ k_(TE_TBEG,     0xc114a, mod_CTRL+Mk_PAGEUP,   KxBLK) /* в начало тек�
 k_(TE_TEND,     0xc114b, mod_CTRL+Mk_PAGEDOWN, KxBLK) /* в конец текста     */
 k_(TW_CUP,      0xc1141, mod_CTRL+Mk_UP,           0) /* непрерывно вверх   */
 k_(TW_CDOWN,    0xc1144, mod_CTRL+Mk_DOWN,         0) /* непрерывно вниз    */
+k_(LE_WLEFT,    0xc1171, mod_CTRL+'[',         KxBLK) /* в самую левую /    */
+k_(LE_WRIGHT,   0xc1172, mod_CTRL+']',         KxBLK) /*   правую поз. окна */
 k_(TW_SCROLUPN, 0xc11fa, 0,                    KxBLK) /* (mouse wheel up)   */
 k_(TW_SCROLDNN, 0xc11fb, 0,                    KxBLK) /* (mouse wheel down) */
 k_(TW_SCROLUP,  0xc1151, mod_CTRL+mod_META+Mk_UP,        KxBLK)

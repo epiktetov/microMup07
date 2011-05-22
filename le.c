@@ -42,7 +42,9 @@ void leend()
 {
   for (Lx = Lxrm; Lx > Lxlm; Lx--) if (! tcharIsBlank(Lebuf[Lx-1])) return;
 }
-void letab () 
+void lewleft()  { Lx = Lwnd->wtx;                 }
+void lewright() { Lx = Lwnd->wtx + Lwnd->wsw - 1; }
+void letab()
 { 
   int x = (Lx + TABsize)/TABsize*TABsize;         Lx = (x < Lxrm) ? x : Lxrm-1;
 }
@@ -202,7 +204,7 @@ BOOL leNword (small *cwbeg, /* Найти (unless ptr=0): начало теку�
 {
   BOOL onWord = TRUE;
   int x = Lx;
-  if (tcharIsBlank(Lebuf[x]))  onWord = FALSE;
+  if (tcharIsBlank(Lebuf[x])) onWord = FALSE;
   else {
     if (cwbeg) {                    // NOTE: logic for cwbeg/cwend is different
       for (x = Lx; x > Lxlm; x--) { //      (despite code looking very similar)
@@ -466,6 +468,8 @@ comdesc lecmds[] =
   { LE_LEFT,   leleft,                    CA_NBEG }, /* курсор влево         */
   { LE_BEG,    lebeg,    CA_RPT                   }, /* - в начало строки    */
   { LE_END,    leend,    CA_RPT                   }, /* - в конец строки     */
+  { LE_WLEFT,  lewleft,  CA_RPT                   }, /* в самую левую/правую */
+  { LE_WRIGHT, lewright, CA_RPT                   }, /*       позицию в окне */
   { LE_TAB,    letab,                     CA_NEND }, /* в следующую TAB      */
   { LE_LTAB,   leltab,                    CA_NBEG }, /* в предыдущую TAB     */
   { LE_CENTR,  lecentr,  0                        }, /* курсор в центр окна  */
