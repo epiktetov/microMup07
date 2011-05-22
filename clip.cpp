@@ -137,8 +137,6 @@ void cpreopen()
   cpopen = true;  
 }                                  
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/          
-#define clipEOL LF
-
 static void toClipboard()
 {
   CSclose();  TxTop(LCtxt); bool add_EOL = false; QString cbData;
@@ -186,9 +184,10 @@ static void pasteFromLCtxt (bool in_Ttxt) /* paste into Ttxt or current line */
        if (Lx <  Lxle) exc(E_EDTBEG);
   else if (Lx >= Lxre) exc(E_EDTEND);
   else {
-    if (in_Ttxt && qTxBottom(Ttxt)) { //  Have to take care of inserting empty
-      if (Lwnd)   ExitLEmode();       // line at the end-of-text (usually this
-      TxSetY(Ttxt, Ty); teIL();       // is done by LeCommand automatically)
+    TxSetY(Ttxt, Ty);                 //  Have to take care of inserting empty
+    if (in_Ttxt && qTxBottom(Ttxt)) { // line at the end-of-text (usually this
+      if (Lwnd)   ExitLEmode();       // is done by LeCommand automatically),
+      TxSetY(Ttxt, Ty); teIL();       // make sure to position in Ttxt first!
     }
     if (Lwnd == NULL) EnterLEmode();                  // inserting one-by-one
     cclen = aftotc(clpos, len, ccbuf);                // to enable slow undo

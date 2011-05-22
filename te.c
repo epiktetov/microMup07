@@ -500,10 +500,11 @@ int TeCommand (comdesc *cp)
     if (qkbhin())                                return E_KBREAK;
     if ((cp->attr & CA_NBEG) && qTxTop   (Ttxt)) return E_MOVUP;
     if ((cp->attr & CA_NEND) && qTxBottom(Ttxt)) return E_MOVDOWN;
-    if ((cp->attr & CA_EXT)  && qTxBottom(Ttxt)) {
-      teIL(); 
-      Ttxt->txstat |= TS_CHANGED; TxSetY(Ttxt, Ty);
-    }
+//
+//  if ((cp->attr & CA_EXT)  && qTxBottom(Ttxt)) { -- not used in te.c anymore
+//    teIL();
+//    Ttxt->txstat |= TS_CHANGED; TxSetY(Ttxt, Ty);
+//  }
     nextexc = excptr; 
               excptr = & teenv; if ((x = setjmp(teenv)) == 0) (*cp->cfunc)();
               excptr = nextexc; if  (x)                             return x;

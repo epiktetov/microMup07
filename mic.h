@@ -19,6 +19,7 @@ typedef int   BOOL;
 #endif
 #define CR      '\015'
 #define LF      '\012'
+#define clipEOL '\012'
 #define TAB     '\011'
 #define EOFchar '\032' /* 'EOF' is reserved somewhere */
 #define ACPR    '\xCA'
