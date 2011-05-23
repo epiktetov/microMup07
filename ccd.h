@@ -1,21 +1,21 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07  Command Codes Definition / transcoding   | (c) Epi MG, 2006-2007
+// МикроМир07  Command Codes Definition / transcoding   | (c) Epi MG, 2006-2011
 //------------------------------------------------------+--------------------*/
 #ifdef MAKE_TRANS_TABLE
 # define k_BEGIN        static micom trans1[] = {
 # define k_(e,v,k,a)      { e, k, a },
-# define a_(e,  k,a)      { e, k, a },
+# define a_(e,v,k,a)      { e, k, a },
 # define k_END_OF_TABLE };
 #else
 # ifdef CCD_H_INCLUDED
 #  define k_BEGIN
 #  define k_(e,v,k,a)
-#  define a_(e,  k,a)
+#  define a_(e,v,k,a)
 #  define k_END_OF_TABLE
 # else
 #  define k_BEGIN        enum micom_enum {
 #  define k_(e,v,k,a)      e = v,
-#  define a_(e,  k,a)
+#  define a_(e,v,k,a)
 #  define k_END_OF_TABLE };
 # endif
 #endif
@@ -28,6 +28,8 @@
 /*---------------------------------------------------------------------------*/
 #ifndef CCD_H_INCLUDED
 #define CCD_H_INCLUDED
+void key2mimStart();
+int key2mimHomeEscMask();
 struct micom {
   enum micom_enum ev; /* keyboard event                    */
   int kcode;          /* key code as reported by Qt        */
@@ -53,19 +55,19 @@ typedef struct {
 #define CA_NBEG   0200 /* указатель не в начале строки/текста                */
 #define CA_LCUT   0400 /* работает с текстом запомненных строк               */
                        /* Keycode attributes:                                */
-#define KxTS 0x1000000 /*  move starts/extends "temporary" selection         */
-#define KxBLK 0x400000 /*  keeps "permanent" selection                       */
-#define KxTMP 0x800000 /*  keeps "temporary" selection                       */
-#define KxSEL 0xc00000 /*  keeps any selection                               */
+#define KxTS   0x0e000 /*  move starts/extends "temporary" selection 0xe0000 */
+#define KxBLK  0x10000 /*  keeps "permanent" selection               0xd0000 */
+#define KxTMP  0x20000 /*  keeps "temporary" selection              not-used */
+#define KxSEL  0x30000 /*  keeps any selection                       0xf0000 */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #define Mk_IsCHAR(x) (' ' <= x && x < 0x10000) /* only 16bit Unicode allowed */
 #define Mk_IsSHIFT(x) (Qt::Key_Shift <= x && x < Qt::Key_F1)
 #define mod_SHIFT 0x02000000
 #define mod_CTRL  0x04000000
 #define mod_ALT   0x08000000
-#define mod_META  0x10000000
-#define mod_ESC   0x40000000 /* NOTE: 0x20000000 is Qt::KeypadModifier */
-#define mod_HOME  0x80000000
+#define mod_META  0x10000000 /* NOTE: 0x20000000 is Qt::KeypadModifier */
+#define mod_HOME  0x00a00000
+#define mod_ESC   0x00e00000
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #ifdef Q_OS_MAC
 #  define Mk_UP    (Qt::Key_Up   |Qt::KeypadModifier)

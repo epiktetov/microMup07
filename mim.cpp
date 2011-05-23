@@ -17,8 +17,10 @@ int TABsize = 4;
 static bool MiApp_debugKB    = false;
 static bool MiApp_timeDELAYS = false;
        bool MiApp_useDIAGRAD = true;
-quint64 last_MiCmd_time;
-QString MiApp_defaultFont, MiApp_defFontAdjH;
+int      last_MiCmd_code;
+quint64  last_MiCmd_time;
+QMap<int,int> MiApp_keyMap;
+QString MiApp_defaultFont, MiApp_defFontAdjH, MiApp_keyMaps;
 int     MiApp_defFontSize;
 int     MiApp_fontAdjOver, MiApp_fontAdjUnder, MiApp_defWidth, MiApp_defHeight;
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -82,6 +84,17 @@ inline int myUnpackAdj2int (QString adj, int ix)
   return (c == '+') ? +1 : (c == '-') ? -1 : 0;
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+static void myParseKeyMap() // parse QString MiApp_keyMaps -> QMap MiApp_keyMap
+{
+  QStringList lines = MiApp_keyMaps.split(QChar('\n'));
+  MiApp_keyMap.clear();
+  for (QStringList::const_iterator it  = lines.constBegin();
+                                   it != lines.constEnd(); it++)
+  { int key, mk;
+    if (sscanf(it->cStr(), "%x:0x%x", &key, &mk) == 2)
+      MiApp_keyMap.insert(key, mk);
+} }
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 int main(int argc, char *argv[])
 {
   QApplication app(argc, argv);
@@ -94,9 +107,12 @@ int main(int argc, char *argv[])
   MiApp_defHeight   = Qs.value("frameHeight", defWinHEIGHT).toInt();
   MiApp_defaultFont = Qs.value("font", QString(mimFONTFACENAME)).toString();
   MiApp_defFontSize = Qs.value("fontSize", mimFONTSIZE).toInt();
-  MiApp_defFontAdjH = Qs.value("fontAdjH", 0).toString();
-  MiApp_fontAdjOver = myUnpackAdj2int(MiApp_defFontAdjH, 0);
+  MiApp_defFontAdjH = Qs.value("fontAdjH", "0/0").toString();
+  MiApp_fontAdjOver = myUnpackAdj2int (MiApp_defFontAdjH, 0);
   MiApp_fontAdjUnder = myUnpackAdj2int(MiApp_defFontAdjH, 2);
+  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  MiApp_keyMaps = Qs.value("keyMaps", "").toString();
+  key2mimStart();                   myParseKeyMap();
 #ifdef Q_OS_MAC
   app.installEventFilter(new MacEvents);
 #else
@@ -159,6 +175,12 @@ MiFrame::MiFrame (MiFrame *base) : tSize(0,0), oldSize(0,0), wrapped(false),
   QMenu *dummy_version_menu = menuBar()->addMenu(short_version);
          dummy_version_menu->setDisabled(true);
 
+  QMenu *help_menu = menuBar()->addMenu("Help");
+  act =  help_menu->addAction("License");
+  connect(act, SIGNAL(triggered()), this, SLOT(ShowLicense()));
+  act =  help_menu->addAction(Utf8("µMup07 help"));
+  connect(act, SIGNAL(triggered()), this, SLOT(ShowHelp()));
+
   sash = new QSplitter(Qt::Vertical, this);
   sashHeight = sash->handleWidth();
   connect(sash, SIGNAL(splitterMoved(int,int)),
@@ -186,6 +208,7 @@ MiFrame::~MiFrame() //- - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   Qs.setValue("font",     MiApp_defaultFont);
   Qs.setValue("fontSize", MiApp_defFontSize);  if (main) delete main;
   Qs.setValue("fontAdjH", MiApp_defFontAdjH);  if (scwin) delete scwin;
+  Qs.setValue("keyMaps",  MiApp_keyMaps);
 }                          
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiFrame::makeFonts() // makes textFont and boldFont from MiApp_defaultFont
@@ -235,6 +258,8 @@ void MiFrame::SaveAs() // - - - - - - - - - - - - - - - - - - - - - - - - - - -
 }
 void MiFrame::SaveAll() { vipFocusOff(Twnd); tmSaveAll();         vipReady(); }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void MiFrame::ShowLicense(void) { twShowFile(":/LICENSE"); }
+void MiFrame::ShowHelp   (void) { twShowFile(":/help");    }
 void MiFrame::Preferences()
 {
   MiConfigDlg dialog;                              // font parameters are saved
@@ -421,7 +446,11 @@ void MiInfoWin::paintEvent (QPaintEvent *)
 {
   QPainter dc(this); int Y = sctw->Ty2qtY(0)+sctw->fontBaseline;
   QString info;                                      int dx, dy;
-  if (infoType == MitCHARK && sctw->vp->cx >= 0) {
+  if (MiApp_debugKB) {
+    info.sprintf("%8x",  last_MiCmd_code);
+    dc.drawText(sctw->Tx2qtX(0), Y, info);
+  }
+  else if (infoType == MitCHARK && sctw->vp->cx >= 0) {
     tchar tc = 0, *textln;
     if (TxSetY(sctw->vp->wtext, sctw->vp->wty+sctw->vp->cy)) {
       textln = TxInfo(sctw->vp, sctw->vp->wty+sctw->vp->cy, &dx);
@@ -455,6 +484,12 @@ void MiInfoWin::updateInfo (MiInfoType mit) { if (mit) infoType = mit;
 //-----------------------------------------------------------------------------
 MiConfigDlg::MiConfigDlg(QWidget *parent) : QDialog(parent)
 {
+  QVBoxLayout *leftLayout = new QVBoxLayout;
+  QLabel *microLabel = new QLabel();
+  QPixmap *microIcon = new QPixmap(":/microMir.png");
+  microLabel->setPixmap(*microIcon);
+  leftLayout->addWidget(microLabel);
+
   fontButton = new QPushButton(tr("Font"));
   fontLabel  = new QLabel();
   fontLabel->setMinimumWidth(150); setFontLabelText();
@@ -473,13 +508,35 @@ MiConfigDlg::MiConfigDlg(QWidget *parent) : QDialog(parent)
   tabSizeBox->setMaximumWidth(40);  QHBoxLayout *botLayout = new QHBoxLayout;
   tabSizeBox->setValue(TABsize);    botLayout->addWidget(tabl);
                                     botLayout->addWidget(tabSizeBox);
-                                    botLayout->addStretch(1);
+  leftLayout->addStretch(1);        botLayout->addStretch(1);
+  leftLayout->addLayout(topLayout);
 
+  static QString fontHelpString("<small>Font height adjustment parameter on "
+    "right alllows adding (+) or removing (-) one pixel on top (first symbol) "
+    "or bottom (second one) of character glyph; use 0/0 to leave the height "
+    "unchanged</small><hr>");
+  QLabel *fontHelpLabel = new QLabel(fontHelpString);
+  fontHelpLabel->setWordWrap(true);
+  leftLayout->addWidget(fontHelpLabel);
+  leftLayout->addLayout(botLayout);
+  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  QVBoxLayout *rightLayout = new QVBoxLayout;
+  keymapLabl = new QLabel("Keycodes mapping (see help):");
+  keymapEdit = new QTextEdit();
+  keymapEdit->setAcceptRichText(false);
+  keymapEdit->setLineWrapMode(QTextEdit::NoWrap);
+  keymapEdit->setPlainText(MiApp_keyMaps);
+  keymapEdit->setMaximumWidth  (250); keymapEdit->setMinimumWidth (250);
+  rightLayout->addWidget(keymapLabl); keymapEdit->setMinimumHeight(320);
+  rightLayout->addWidget(keymapEdit);
+  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  QHBoxLayout *outerLayout = new QHBoxLayout;
+  outerLayout->addLayout(leftLayout);
+  outerLayout->addLayout(rightLayout);
   QDialogButtonBox *okButtonBox = new QDialogButtonBox(QDialogButtonBox::Ok);
   connect(okButtonBox, SIGNAL(accepted()), this, SLOT(accept()));
   QVBoxLayout *mainLayout = new QVBoxLayout;
-  mainLayout->addLayout(topLayout);
-  mainLayout->addLayout(botLayout);
+  mainLayout->addLayout(outerLayout);
   mainLayout->addWidget(okButtonBox); setLayout(mainLayout);
 }
 void MiConfigDlg::setFontLabelText() // - - - - - - - - - - - - - - - - - - - -
@@ -494,7 +551,8 @@ bool MiConfigDlg::Ask()
   TABsize = tabSizeBox->value();
   MiApp_defFontAdjH = fontAdjust->text();
   MiApp_fontAdjOver = myUnpackAdj2int(MiApp_defFontAdjH, 0);
-  MiApp_fontAdjUnder = myUnpackAdj2int(MiApp_defFontAdjH, 2); return true;
+  MiApp_fontAdjUnder = myUnpackAdj2int(MiApp_defFontAdjH, 2);
+  MiApp_keyMaps = keymapEdit->toPlainText(); myParseKeyMap(); return true;
 }
 void MiConfigDlg::selectFont() // - - - - - - - - - - - - - - - - - - - - - - -
 {
@@ -815,11 +873,6 @@ void MiScTwin::keyPressEvent (QKeyEvent *event)
     else   for (int i=0; i<text.length(); i++) setkbhin(text.at(i).toAscii());
     return;
   }
-  switch (key) {
-  case Qt::Key_F10: key = Mk_HOME;   break; // Pre-defined aliases (compact KB)
-  case Qt::Key_F11: key = Mk_INSERT; break; //
-  case Qt::Key_F12: key = Mk_DELETE; break; // (TODO: replace with user config)
-  }
 #ifdef Q_OS_MAC                            // hack for KeyRemap4MacBook 5.1.0,
   if (key == Mk_McENTER) key = Mk_INSERT;  // which can only remap Fn to Enter
 # if (QT_VERSION < 0x040500)
@@ -868,14 +921,29 @@ void MiScTwin::keyPressEvent (QKeyEvent *event)
       } }
       else key = keyName; // ..and ingnore Qt::KeypadModifier otherwise
   } }
-#endif
-  micom *mk = (!key || Mk_IsSHIFT(key)) ? NULL : key2mimCmd(key|modMask);
-  if (MiApp_debugKB) fprintf(stderr, ",micom=%x\n", mk ? mk->ev : 0);
+#endif // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  last_MiCmd_code = key|modMask|key2mimHomeEscMask();
+  int mk_ev = MiApp_keyMap.value(last_MiCmd_code);
+  micom *mk = NULL, userMk;
+  if (mk_ev) {      userMk.ev  = (micom_enum)mk_ev;
+    mk = &userMk;   userMk.kcode = last_MiCmd_code;
+    switch (mk_ev & 0xf0000) {                      // NOTE: text/line editors
+    case 0xc0000: userMk.attr = 0;          break;  // do not care about KxTS,
+    case 0xd0000: userMk.attr =      KxBLK; break;  // thus we must convert it
+    case 0xf0000: userMk.attr =      KxSEL; break;  // to KxBLK (same for all)
+    case 0xe0000: userMk.attr = KxTS|KxSEL;         //
+      userMk.ev = (micom_enum)((userMk.ev & ~KxTMP) | KxBLK);
+  } }
+  else if (key && !Mk_IsSHIFT(key)) mk = key2mimCmd(key|modMask);
+  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  if (MiApp_debugKB) {                                  info.updateInfo();
+    fprintf(stderr, ",micom=%x:0x%x\n", last_MiCmd_code, mk ? mk->ev : 0);
+  }
   if ((mk != NULL && mk->ev == TK_NONE) ||
       (mk == NULL && text.isEmpty() )) event->ignore();
   else {                stopTimer();   event->accept();  setkbhin(0);
     //
-    // Here we have either valid microMir command (mk != NULL), or non-empty
+    // Here we have either valid microMir command (mk != NULL) or non-empty
     // text (otherwise) that should be fed char-by-char into same function:
     //
     if (mk) vipOnKeyCode(vp, mk->ev, mk->attr);

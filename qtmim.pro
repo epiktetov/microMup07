@@ -29,6 +29,7 @@ SOURCES += vip.cpp te.c le.c tx.c dq.c ud.c rt.c
 DEPENDPATH += .
 INCLUDEPATH += .
 OBJECTS_DIR = obj
+RESOURCES = qtmim.qrc
 
 version.target = version.h
 version.depends = .git $$HEADERS $$SOURCES
@@ -39,22 +40,20 @@ macx {
   MimEXECUTABLE = µMup07.app/Contents/MacOS/µMup07
   MimRESOURCES = µMup07.app/Contents/Resources
   icns.target = $$MimRESOURCES/micros.icns
-  keys.target = $$MimRESOURCES/micro.keys
   icns.depends = micros.icns
-  keys.depends = micro.keys
   icns.commands = @mkdir -p $$MimRESOURCES; cp $$icns.depends $$icns.target
-  keys.commands = @mkdir -p $$MimRESOURCES; cp $$keys.depends $$keys.target
   symlink.target = mim
   symlink.commands = ln -sf $$MimEXECUTABLE $$symlink.target
-  QMAKE_EXTRA_TARGETS += icns keys symlink
-  POST_TARGETDEPS += $$icns.target $$keys.target $$symlink.target
+  QMAKE_EXTRA_TARGETS += icns symlink
+  POST_TARGETDEPS += $$icns.target $$symlink.target
 }
-MimFILES  = micros.dir qtmim.pro qtmim.desktop qtmim.rc mim.Info.plist
-MimFILES += micons.psd qtmim.ico qtmim.png keywords.txt Qt.bundle.sh
-MimFILES += abc LICENSE
+MimFILES  = LICENSE    micros.dir microMir.icns micros.icns mim.Info.plist
+MimFILES += micro.keys micons.psd microMir.png
+MimFILES +=              qtmim.pro qtmim.desktop qtmim.rc abc
+MimFILES += Qt.bundle.sh qtmim.ico qtmim.png keywords.txt test.txt
 zip.target  = zip
 zip.depends = Qtmim.zip
 zipfile.target = Qtmim.zip
-zipfile.depends = $$MimFILES $$HEADERS $$SOURCES
+zipfile.depends = $$MimFILES $$HEADERS $$SOURCES $$RESOURCES
 zipfile.commands = rm -f $$zipfile.target; zip $$zipfile.target $$zipfile.depends
 QMAKE_EXTRA_TARGETS += zip zipfile

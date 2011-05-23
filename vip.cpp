@@ -314,34 +314,80 @@ void vipGotoXY (int x, int y)           /* click in the active window (Twnd) */
   vipOnFocus (Twnd);
 }
 /*---------------------------------------------------------------------------*/
-int vipOnRegCmd (wnd *vp, int kcode)
-{
-  int rc =  E_OK; comdesc *cp; wpos_off(vp);
-  KbCode = kcode;
-  while (KbCode) {
-    if (Lwnd) {
-      if ((cp = Ldecode(KbCode)) == NULL) { ExitLEmode(); continue; }
-      switch (rc = LeCommand(cp)) {
-      case E_LEXIT: continue; // <-- re-try the command on TE and/or TM level
-      case E_OK:   break; //
-      default: vipBell(); //
-      }            break; // we're done here, sucessfully or not (break loop)
-    }
-    else if ((cp = Tdecode(KbCode)) != NULL) rc = TeCommand(cp);
-    else if ((cp = Ldecode(KbCode)) == NULL) rc = TmCommand(KbCode);
-    else {                     // ^
-      EnterLEmode(); continue; // this LE-level command, entering LE mode here
-    }
-    switch (rc) {                    // TE/TM command return codes:
-    case E_LENTER: rc = E_OK; break; // - LenterARG called
-    case E_OK:                break; // - everything all right
-    default: vipBell();              // - some error encountered
-    }                       
-    KbCode  = 0; // cleanup KbStuff (and force end-of-loop as well)
-  } KbCount = 1; //
-    KbRadix = 0; return rc;
-}
+struct KeyTuple { int ev, ca, count, radix; };          /*                   */
+KeyTuple *pMacro,     macroBuf[TK_SMX-TK_SM0][MAXTXRM]; /*  ʁK E Y B O A R Dʀ  */
+int enterinMacro = 0, macroLen[TK_SMX-TK_SM0] ={ 0,0 }; /*                   */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+void vipOnKeyCode (wnd *vp, int ev, int ca)  /* from MiScTwin::keyPressEvent */
+{
+       if (ev == TK_LINFO) vp->sctw->info.updateInfo(MitLINE_BLOCK);
+  else if (ev == TK_CHARK) vp->sctw->info.updateInfo(MitCHARK);
+  else if (ev == TW_CDOWN) { wpos_off(vp);
+    if (Lwnd) ExitLEmode();          // set Ty to the last line in the window,
+    tesetxy (Tx, vp->wty+vp->wsh-1); // to avoid scrolling into an empty screen
+    vp->sctw->repeatCmd(TW_SCROLDN); // in case when started with cursor on top
+  }
+  else if (ev == TW_CUP) { wpos_off(vp); // similar things for scrolling up...
+    if (Lwnd) ExitLEmode();              //
+    tesetxy (Tx,  vp->wty); vp->sctw->repeatCmd(TW_SCROLUP);
+  }
+  else {            int N;
+    if (enterinMacro) { N = enterinMacro - TK_EM0;
+      if ((TK_SM0 <= ev && ev <= TK_SMX) ||
+                           ev == enterinMacro) enterinMacro = 0;
+      else {
+        pMacro->ev = ev; pMacro->count = KbCount;
+        pMacro->ca = ca; pMacro->radix = KbRadix;
+        pMacro++;
+        if (++macroLen[N] >= MAXTXRM) { vipBell(); enterinMacro = 0; }
+        else vipOnMimCmd(vp, ev, ca);
+    } }
+    else if (TK_SM0 <= ev && ev <= TK_SMX) { N = ev - TK_SM0;
+      macroLen[N] = 0;
+      pMacro = macroBuf[N]; enterinMacro = TK_EM0 + N;
+    }
+    else vipOnMimCmd(vp, ev, ca);
+} }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+static int vipExecuteMacro (wnd *vp, int N)
+{
+  int count = KbCount, rc;
+  while (count--) {
+    KeyTuple *pM = macroBuf[N];
+    int       nM = macroLen[N];
+    while (nM-- && !qkbhin()) {
+      int ev = pM->ev, ca = pM->ca; KbCount = pM->count;
+                                    KbRadix = pM->radix;
+      pM++;
+      if ((rc = vipOnMimCmd(vp, ev, ca)) != E_OK) return   rc;
+  } }                                             return E_OK;
+} 
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+int vipOnMimCmd (wnd *vp, int ev, int ca)        /* handling block selection */
+{                                                /* and macro execution      */
+  last_MiCmd_time = pgtime();
+  switch (20*BlockMark+BlockTemp) {
+  case 21:
+    if (ev == TX_MCBLOCK) { BlockTemp = FALSE;
+                            BlockMark_repaint(Twnd); return E_OK; }
+    else {                   //    ^
+      if (ca & KxTMP) break; // "temporary" block converted to permanent one by
+      scblkoff();     break; // TX_MCBLOCK (bound to F5 by default) and cleared
+    }                        // by any command without KxBLK/TMP/SEL bits
+  case 20:
+    if (ca & KxBLK) break; scblkoff(); // NOTE: TX_MCBLOCK by itself should not
+    if (ev == TX_MCBLOCK) return E_OK; // have any Kx bits (F5..F5 = clear blk)
+    break;
+  default: if (ca &  KxTS)         scblkon(TRUE);
+      else if (ev == TX_MCBLOCK) { scblkon(FALSE); return E_OK; }
+  }
+  if (TK_EM0 <= ev && ev <= TK_EMX) { int N = ev - TK_EM0;
+    if (macroLen[N] > 0) return vipExecuteMacro(vp, N);
+    else { vipBell();    return E_FINISHED; }
+  }
+  return vipOnTwxCmd(vp, ev);
+}
+/*---------------------------------------------------------------------------*/
 inline int vip1sixth (wnd *vp)  /* calculate medium jump size (1/6th of wsh) */
 {
   int N = (vp->wsh + 2) / 6; return (N > 0) ? N : 1;
@@ -358,7 +404,7 @@ static int vipCmdScroll (wnd *vp, int kcode, int dx, int dy)
   else {       vipBell();     return E_SETY; }   return E_OK;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-int vipOnTwxCmd (wnd *vp, int kcode)
+int vipOnTwxCmd (wnd *vp, int kcode)                    /* various scrolling */
 {
   switch (kcode) {
   case TW_SCROLLF: return vipCmdScroll(vp, LE_LEFT, -KbCount, 0);
@@ -379,78 +425,34 @@ int vipOnTwxCmd (wnd *vp, int kcode)
   }
   return vipCmdScroll(vp, kcode, 0, (kcode==TE_UP) ? -KbCount : KbCount);
 }
-/*---------------------------------------------------------------------------*/
-struct KeyTuple { int ev, ca, count, radix; };
-KeyTuple *pMacro,      macroBuf[TK_SMX-TK_SM0][MAXTXRM];
-int enteringMacro = 0, macroLen[TK_SMX-TK_SM0] ={ 0,0 };
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-static int vipExecuteMacro (wnd *vp, int N)
+int vipOnRegCmd (wnd *vp, int kcode)                     /* regular commands */
 {
-  int count = KbCount, rc;
-  while (count--) {
-    KeyTuple *pM = macroBuf[N];
-    int       nM = macroLen[N];
-    while (nM-- && !qkbhin()) {
-      int ev = pM->ev, ca = pM->ca; KbCount = pM->count;
-                                    KbRadix = pM->radix;
-      pM++;
-      if ((rc = vipOnMimCmd(vp, ev, ca)) != E_OK) return   rc;
-  } }                                             return E_OK;
-} 
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-int vipOnMimCmd (wnd *vp, int ev, int ca) // temp block converted to permanent
-{                                         // by F5 and cleared by keys without
-  last_MiCmd_time = pgtime();             // KxBLK/TMP/SEL bits (TODO: fix bit)
-  if (BlockMark) {
-    if (BlockTemp) { 
-      if (ev == TX_MCBLOCK) { BlockTemp = FALSE;
-                              BlockMark_repaint(Twnd); return E_OK;
-      }
-      else if (!(ca & KxTMP)) scblkoff();
+  int rc =  E_OK; comdesc *cp; wpos_off(vp);
+  KbCode = kcode;
+  while (KbCode) {
+    if (Lwnd) {
+      if ((cp = Ldecode(KbCode)) == NULL) { ExitLEmode(); continue; }
+      switch (rc = LeCommand(cp)) {
+      case E_LEXIT: continue; // <-- re-try the command on TE and/or TM level
+      case E_OK:   break; //
+      default: vipBell(); //
+      }            break; // we're done here, sucessfully or not (break loop)
     }
-    else { if (!(ca & KxBLK)) scblkoff();
-           if (  ev == TX_MCBLOCK) return E_OK; }
-  }
-  else { if (ca &  KxTS)         scblkon(TRUE);
-    else if (ev == TX_MCBLOCK) { scblkon(FALSE); return E_OK; }
-  }
-  if (TK_EM0 <= ev && ev <= TK_EMX) { int N = ev - TK_EM0;
-    if (macroLen[N] > 0) return vipExecuteMacro(vp, N);
-    else { vipBell();    return E_FINISHED; }
-  }
-  return vipOnTwxCmd(vp, ev);
+    else if ((cp = Tdecode(KbCode)) != NULL) rc = TeCommand(cp);
+    else if ((cp = Ldecode(KbCode)) == NULL) rc = TmCommand(KbCode);
+    else {                     // ^
+      EnterLEmode(); continue; // if this is a LE-level command, enter LE mode
+    }
+    switch (rc) {                    // TE/TM command return codes:
+    case E_LENTER: rc = E_OK; break; // - LenterARG called
+    case E_OK:                break; // - everything all right
+    default: vipBell();              // - some error encountered
+    }                       
+    KbCode  = 0; // cleanup KbStuff (and force end-of-loop as well)
+  } KbCount = 1; //
+    KbRadix = 0; return rc;
 }
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void vipOnKeyCode (wnd *vp, int ev, int ca)
-{
-       if (ev == TK_LINFO) vp->sctw->info.updateInfo(MitLINE_BLOCK);
-  else if (ev == TK_CHARK) vp->sctw->info.updateInfo(MitCHARK);
-  else if (ev == TW_CDOWN) { wpos_off(vp);
-    if (Lwnd) ExitLEmode();          // set Ty to the last line in the window,
-    tesetxy (Tx, vp->wty+vp->wsh-1); // to avoid scrolling into an empty screen
-    vp->sctw->repeatCmd(TW_SCROLDN); // in case when started with cursor on top
-  }
-  else if (ev == TW_CUP) { wpos_off(vp); // similar things for scrolling up...
-    if (Lwnd) ExitLEmode();              //
-    tesetxy (Tx,  vp->wty); vp->sctw->repeatCmd(TW_SCROLUP);
-  }
-  else {             int N;
-    if (enteringMacro) { N = enteringMacro - TK_EM0;
-      if ((TK_SM0 <= ev && ev <= TK_SMX) ||
-                           ev == enteringMacro) enteringMacro = 0;
-      else {
-        pMacro->ev = ev; pMacro->count = KbCount;
-        pMacro->ca = ca; pMacro->radix = KbRadix;
-        pMacro++;
-        if (++macroLen[N] >= MAXTXRM) { vipBell(); enteringMacro = 0; }
-        else vipOnMimCmd(vp, ev, ca);
-    } }
-    else if (TK_SM0 <= ev && ev <= TK_SMX) { N = ev - TK_SM0;
-      macroLen[N] = 0;
-      pMacro = macroBuf[N]; enteringMacro = TK_EM0 + N; 
-    }
-    else vipOnMimCmd(vp, ev, ca);
-} }
 /*---------------------------------------------------------------------------*/
 static QRegExp Qspre; /* Qt presentation of search pattern (regexp/wildcard) */
 static QString Qsstr; /* Qt search string                                    */

@@ -1,0 +1,8 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+  <file alias="help">micro.keys</file>
+  <file>abc</file>
+  <file>LICENSE</file>
+  <file>microMir.png</file>
+</qresource>
+</RCC>

@@ -109,11 +109,7 @@ bool tmSaveAs(txt *t, QString  filename); // rename to given name && force save
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 bool twSave     (txt *t, wnd *vp, bool saveBackup); /* either Save or SaveAs */
 bool twSafeClose(txt *t, wnd *vp);                  /* close if not changed  */
-#ifdef notdef
-void tmReconfig(void);
-void tmReconf2 (void);
-void tmConfParse(char *p);   /* parses NULL-terminated string into mimParams */
-#endif
+void twShowFile(QString filename);
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 extern "C" {
 #endif

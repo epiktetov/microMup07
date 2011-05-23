@@ -12,7 +12,7 @@ class MiScTwin;
 class QLabel;
 class QMessageBox; class QSpinBox;
 class QPushButton; class QSplitter;
-class QLineEdit;
+class QLineEdit;   class QTextEdit;
 extern bool MiApp_useDIAGRAD; 
 extern int  MiApp_defWidth, MiApp_defHeight;
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -42,8 +42,8 @@ protected:
   void makeFonts(); // makes textFont and boldFont from MiApp_defaultFont etc
 public slots:
   void OpenFile();  void SaveAs (); void Preferences();
-  void OpenDir ();  void SaveAll();
-  void finishClose(int qtStandBtn);
+  void OpenDir ();  void SaveAll(); void ShowLicense();
+  void finishClose(int qtStandBtn); void ShowHelp();
   void shrinkwrap();    
   void fallbackSize(); 
   void splitterMoved(int pos);
@@ -72,9 +72,9 @@ public:    MiInfoWin(MiScTwin *parent, const QColor *bgnd);
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 class MiConfigDlg : public QDialog
 {
-  Q_OBJECT QPushButton *fontButton;
-           QLabel      *fontLabel;
-           QLineEdit   *fontAdjust; QSpinBox *tabSizeBox;
+  Q_OBJECT QPushButton *fontButton; QTextEdit *keymapEdit;
+           QLabel      *fontLabel,            *keymapLabl;
+           QLineEdit   *fontAdjust; QSpinBox  *tabSizeBox;
 protected:
   void setFontLabelText();
 public slots:

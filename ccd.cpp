@@ -18,6 +18,13 @@ static micom *translate_by_tbl (int key)
   for (micom *pt = trans1; pt->ev; pt++) if (pt->kcode == key) return   pt;
                                                                return NULL;
 }
+void key2mimStart()
+{
+  for (micom *pt = trans1; pt->ev; pt++)
+    if (( pt->attr = (pt->ev & KxSEL) ) == KxTMP) pt->attr = KxTS|KxSEL;
+}
+int key2mimHomeEscMask() { return (kbMode == TK_HOME ? mod_HOME :
+                                   kbMode == TK_ESC  ? mod_ESC  : 0); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static micom *key_translate (int key_mask)
 {

@@ -184,15 +184,6 @@ txt *tmDesc (QString filename, bool needUndo, txt *referer)
   small force_txstat = 0;
   small force_clang  = 0;
        if (filename.compare(":clip") == 0) filename = QString(SAVFILNAM);
-  else if (filename.compare(":help") == 0) {
-    filename = QCoreApplication::arguments().at(0);
-#ifdef Q_OS_MAC
-    filename.replace(QRegExp("/MacOS/[^/]+$"), "/Resources/micro.keys");
-#else
-    filename.replace(QRegExp("[^/]+$"), "micro.keys");
-#endif
-    force_txstat = TS_RDONLY;
-  }
   else if (ptn.exactMatch(filename)) {
     for (cmdmap *p = vcs_commands; p->key; p++)
       if (ptn.cap(2) == p->key) {
@@ -429,6 +420,8 @@ void tmDoFentr2 (void)
     if (wind) twEdit(wind, tcs2qstr(filebuf   +LFPROMPT,
                                     filebuflen-LFPROMPT), NULL, true);
 } }
+void twShowFile(QString name) { wnd *wind = vipSplitWindow(Twnd, TM_VFORK);
+                                if  (wind)  twEdit(wind, name, NULL, true); }
 /*---------------------------------------------------------------------------*/
 static void tmExtractIncs (txt *mcd, QStringList& incList)
 {
