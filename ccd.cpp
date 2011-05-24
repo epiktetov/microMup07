@@ -21,7 +21,7 @@ static micom *translate_by_tbl (int key)
 void key2mimStart()
 {
   for (micom *pt = trans1; pt->ev; pt++)
-    if (( pt->attr = (pt->ev & KxSEL) ) == KxTMP) pt->attr = KxTS|KxSEL;
+    if (( pt->attr &= KxSEL ) == KxTMP) pt->attr = KxTS|KxSEL;
 }
 int key2mimHomeEscMask() { return (kbMode == TK_HOME ? mod_HOME :
                                    kbMode == TK_ESC  ? mod_ESC  : 0); }

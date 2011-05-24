@@ -4,7 +4,7 @@
 #ifdef MAKE_TRANS_TABLE
 # define k_BEGIN        static micom trans1[] = {
 # define k_(e,v,k,a)      { e, k, a },
-# define a_(e,v,k,a)      { e, k, a },
+# define a_(e,v,k,a)      { e, k, v },
 # define k_END_OF_TABLE };
 #else
 # ifdef CCD_H_INCLUDED

@@ -936,8 +936,10 @@ void MiScTwin::keyPressEvent (QKeyEvent *event)
   } }
   else if (key && !Mk_IsSHIFT(key)) mk = key2mimCmd(key|modMask);
   //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  if (MiApp_debugKB) {                                  info.updateInfo();
-    fprintf(stderr, ",micom=%x:0x%x\n", last_MiCmd_code, mk ? mk->ev : 0);
+  if (MiApp_debugKB) {
+            fprintf(stderr, ",micom=%x",            last_MiCmd_code);
+    if (mk) fprintf(stderr, ":0x%x[%02x]\n", mk->ev, mk->attr >> 12);
+    else    fprintf(stderr, "\n");                 info.updateInfo();
   }
   if ((mk != NULL && mk->ev == TK_NONE) ||
       (mk == NULL && text.isEmpty() )) event->ignore();
