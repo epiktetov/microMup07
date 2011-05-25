@@ -3,19 +3,19 @@
 //------------------------------------------------------+--------------------*/
 #ifdef MAKE_TRANS_TABLE
 # define k_BEGIN        static micom trans1[] = {
-# define k_(e,v,k,a)      { e, k, a },
-# define a_(e,v,k,a)      { e, k, v },
+# define k_(e,k,v)        { e, k, v },
+# define a_(e,k,v)        { e, k, v },
 # define k_END_OF_TABLE };
 #else
 # ifdef CCD_H_INCLUDED
 #  define k_BEGIN
-#  define k_(e,v,k,a)
-#  define a_(e,v,k,a)
+#  define k_(e,k,v)
+#  define a_(e,k,v)
 #  define k_END_OF_TABLE
 # else
 #  define k_BEGIN        enum micom_enum {
-#  define k_(e,v,k,a)      e = v,
-#  define a_(e,v,k,a)
+#  define k_(e,k,v)        e = v,
+#  define a_(e,k,v)
 #  define k_END_OF_TABLE };
 # endif
 #endif

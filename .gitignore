@@ -1,6 +1,7 @@
 Makefile*
 version.h
 moc_*.cpp
+qrc_*.cpp
 obj/
 object_script.mim.*
 mim
