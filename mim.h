@@ -13,7 +13,6 @@ class QLabel;
 class QMessageBox; class QSpinBox;
 class QPushButton; class QSplitter;
 class QLineEdit;   class QTextEdit;
-extern bool MiApp_useDIAGRAD; 
 extern int  MiApp_defWidth, MiApp_defHeight;
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #define defWinWIDTH  80 // default window width (in characters)
@@ -52,6 +51,7 @@ public:
   void resizeEvent(QResizeEvent *ev);   QString saveAsDialog(txt *t);
 };
 void mimExit();
+void mimSetNamedColor(QColor& color, const QString descr);
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #ifdef Q_OS_MAC
 class MacEvents : public QObject { Q_OBJECT 
@@ -63,9 +63,9 @@ class MiInfoWin : public QWidget
 {
   MiInfoType infoType;
   MiScTwin *sctw;
-public:    MiInfoWin(MiScTwin *parent, const QColor *bgnd);
+public:    MiInfoWin(MiScTwin *parent);
   virtual ~MiInfoWin() { }
-  void vpResize();
+  void SetPalette(QColor bgnd, QColor text); void vpResize();
   void paintEvent(QPaintEvent *ev);
   void updateInfo(MiInfoType mit = MitUSE_CURRENT);
 };
@@ -75,6 +75,7 @@ class MiConfigDlg : public QDialog
   Q_OBJECT QPushButton *fontButton; QTextEdit *keymapEdit;
            QLabel      *fontLabel,            *keymapLabl;
            QLineEdit   *fontAdjust; QSpinBox  *tabSizeBox;
+           QLineEdit   *gradDescr;
 protected:
   void setFontLabelText();
 public slots:
@@ -85,22 +86,22 @@ public:
 //--------------------------------------//-------------------------------------
 class MiScTwin : public QWidget         //   MicroMir Scrollable Text Window
 {
-public: MiScTwin(MiFrame *frame, const QColor *prim,
-                                 const QColor *bgnd, wnd *vp);
+public: MiScTwin(MiFrame *frame, const QString bgndGrad, wnd *vp);
   virtual ~MiScTwin();
   void vpResize();                      // resize based on vp->wsh/wsw info
   void vpResize(int width, int height); // resize to given dimensions
 private:
-  QColor gradColor, bgColor;
-  quint64 gotFocus;
+  QColor gradColor, bgColor, tabColor, keyColor;
+  qreal gradStart, gradStop;
+  int              gradTilt; quint64 gotFocus;
 public:
   wnd     *vp; // ViewPort (interface between Qt/C++ and legacy C code)
   MiFrame *mf;
-  MiInfoWin info;
-  int fontBaseline, fontHeight, fontWidth;
+  MiInfoWin info;   int fontBaseline, fontHeight, fontWidth;
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  void SetGradient(const QString grad);
+  void UpdateGradientPixmap();
   void UpdateMetrics();
-  void UpdateGradient(); 
   void resizeEvent(QResizeEvent *ev);
 protected:
   int gradPixSize, gradPixHeight;

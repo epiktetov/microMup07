@@ -42,7 +42,7 @@ k_(LE_END,  mod_CTRL+Mk_RIGHT, 0xd0414) /* - в конец, за последн�
 k_(TW_UP,    mod_ALT+Mk_UP,    0xd0813) /* на несколько строк вверх (1/6 от  */
 k_(TW_DOWN,  mod_ALT+Mk_DOWN,  0xd0815) /* на несколько строк вниз     окна) */
 k_(LE_PWORD, mod_ALT+Mk_LEFT,  0xd0812) /* -> предыдущее слово               */
-k_(LE_NWORD, mod_ALT+Mk_RIGHT, 0xd0815) /* -> следующее слово                */
+k_(LE_NWORD, mod_ALT+Mk_RIGHT, 0xd0814) /* -> следующее слово                */
 /*
      PageUp/PageDown - scroll text one page (= windows height - 1) up / down
 Ctrl+PageUp/PageDown - move cursor to very beginning / end of the document
@@ -412,7 +412,7 @@ Special ʁFILESʀ (MacOS X/Linux only):
   filename:hg:rev                   - file revision from 'rev' Mercurial commit
   «shell-command»                   - the result of specific shell command
   (double angle quotations mark can be entered by Alt+'\' and Alt+Shift+'\';
-   when starting MicroMir from command promt, these mark may be replaced with
+   when starting MicroMir in command prompt, these marks may be replaced with
    single quote before the parameter: ʈ>ʀ mim \''git log' -- will open git log)
 
 MicroMir automatically detects read-only files and don't allow changing them...

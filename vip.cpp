@@ -208,19 +208,14 @@ void scblkoff()
 /*---------------------------------------------------------------------------*/
 void vipRoll (wnd *vp, int wymin, int wymax, int dy) /* rolls region up/down */
 {
-  int rollH = wymax-wymin-my_abs(dy); vp->sctw->RepaintVpPB();
-  if (MiApp_useDIAGRAD || rollH < 3)  vp->sctw->Repaint(0, wymin,
-                                                  vp->wsw, wymax-wymin);
-  else { // ^ scrolling is only possible
-         // with horizontal gradient (not diagonal one), avoid scrolling small
-         // regions (because of interference with MiInfoWin, see mim.cpp file)
-         //
-    if (dy > 0) { vp->sctw->Scroll (0, wymin, vp->wsw, rollH, dy);
-                  vp->sctw->Repaint(0, wymin, vp->wsw,        dy); }
-    else {
-      vp->sctw->Scroll (0, wymin-dy, vp->wsw, rollH, dy);
-      vp->sctw->Repaint(0, wymax+dy, vp->wsw,       -dy);
-} } }
+  int rollH = wymax - wymin - my_abs(dy);        vp->sctw->RepaintVpPB();
+  if (rollH < 1)     vp->sctw->Repaint(0, wymin, vp->wsw, wymax - wymin);
+  else if (dy > 0) { vp->sctw->Scroll (0, wymin, vp->wsw, rollH,     dy);
+                     vp->sctw->Repaint(0, wymin, vp->wsw,            dy); }
+  else {
+    vp->sctw->Scroll (0, wymin-dy, vp->wsw, rollH, dy);
+    vp->sctw->Repaint(0, wymax+dy, vp->wsw,       -dy);
+} }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 //  Переизобразим текст после модификации на всех прикрепленных к нему окнах
 //
