@@ -18,6 +18,7 @@ static QString MimVersion()
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 BOOL dosEOL = false;                              /* Настраиваемые параметры */
 int TABsize = 4;
+QSize MiFrameSize;
 static bool MiApp_debugKB    = false;
 static bool MiApp_timeDELAYS = false;
 int      last_MiCmd_code;
@@ -115,9 +116,9 @@ int main(int argc, char *argv[])
   MiApp_defFontAdjH = Qs.value("fontAdjH", "0/0").toString();
   MiApp_fontAdjOver = myUnpackAdj2int (MiApp_defFontAdjH, 0);
   MiApp_fontAdjUnder = myUnpackAdj2int(MiApp_defFontAdjH, 2);
-  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  MiApp_keyMaps = Qs.value("keyMaps", "").toString();
-  key2mimStart();                   myParseKeyMap();
+  MiApp_keyMaps  =  Qs.value("keyMaps", "").toString();
+  key2mimStart();                      myParseKeyMap();
+  MiFrameSize = QSize(MiApp_defWidth, MiApp_defHeight);
 #ifdef Q_OS_MAC
   app.installEventFilter(new MacEvents);
 #else
@@ -152,8 +153,8 @@ void mimExit()
   cpsave(); QCoreApplication::quit();
 }
 //-----------------------------------------------------------------------------
-MiFrame::MiFrame (MiFrame *base) : tSize(0,0), oldSize(0,0), wrapped(false),
-                                   mbox(0),         main(0), scwin(0)
+MiFrame::MiFrame (MiFrame *base) : tSize(0,0), wrapped(false),
+                                   mbox(0), main(0), scwin(0)
 {
 #ifndef Q_OS_MAC
   QMenu *dummy_menu = menuBar()->addMenu(Utf8("µMup07"));
@@ -207,12 +208,8 @@ MiFrame::~MiFrame() //- - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #endif
   Qs.setValue("frameWidth",  MiApp_defWidth  = tSize.width());
   Qs.setValue("frameHeight", MiApp_defHeight = tSize.height());
-  MiApp_defFontAdjH = myPackAdj2string(MiApp_fontAdjOver, MiApp_fontAdjUnder);
-  Qs.setValue("font",     MiApp_defaultFont);
-  Qs.setValue("fontSize", MiApp_defFontSize);  if (main) delete main;
-  Qs.setValue("fontAdjH", MiApp_defFontAdjH);  if (scwin) delete scwin;
-  Qs.setValue("keyMaps",  MiApp_keyMaps);
-  Qs.setValue("bgndGrad", MiApp_gradDescr);
+  if (main) delete main;         MiFrameSize = tSize;
+  if (scwin) delete scwin;
 }                          
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiFrame::makeFonts() // makes textFont and boldFont from MiApp_defaultFont
@@ -278,10 +275,15 @@ void MiFrame::ShowLicense(void) { twShowFile(":/LICENSE"); }
 void MiFrame::ShowHelp   (void) { twShowFile(":/help");    }
 void MiFrame::Preferences()
 {
-  MiConfigDlg dialog;                              // font parameters are saved
-  if (dialog.Ask()) {                              // in frame destructor along
-    QSettings Qs; Qs.setValue("TABsize", TABsize); //< with current window size
-    makeFonts();
+  MiConfigDlg dialog;
+  if (dialog.Ask()) {
+    QSettings Qs;                              Qs.setValue("TABsize", TABsize);
+    MiApp_defFontAdjH = myPackAdj2string(MiApp_fontAdjOver,MiApp_fontAdjUnder);
+    Qs.setValue("font",     MiApp_defaultFont);
+    Qs.setValue("fontSize", MiApp_defFontSize);
+    Qs.setValue("fontAdjH", MiApp_defFontAdjH); makeFonts();
+    Qs.setValue("keyMaps",  MiApp_keyMaps);
+    Qs.setValue("bgndGrad", MiApp_gradDescr);
     if (main) main->SetGradient(MiApp_gradDescr);
     if (main)  {  main->UpdateMetrics();  main->vpResize(); }
     if (scwin) { scwin->UpdateMetrics(); scwin->vpResize(); } shrinkwrap();
@@ -363,7 +365,7 @@ void MiFrame::updateWinTitle(void)
   setWindowTitle(title);
 }
 //-----------------------------------------------------------------------------
-inline QString myQSize2string (QSize& size)
+inline QString myQSize2txt (QSize& size)
 {
   return QString("%1x%2").arg(size.width()).arg(size.height());
 }
@@ -379,11 +381,10 @@ void MiFrame::shrinkwrap()
       sash->setSizes(sizes);
       mxSz.rheight() += sashHeight + sxSz.height();
     } 
-    tSize.rwidth() = main->vp->wsw; size_menu->setTitle(myQSize2string(tSize));
-    if (oldSize.isNull()) {
-      if (tSize == defWinSize) size_act->setText(myQSize2string(altWinSize));
-      else                     size_act->setText(myQSize2string(defWinSize));
-    } else                     size_act->setText(myQSize2string(oldSize));
+    tSize.rwidth() = main->vp->wsw;    size_menu->setTitle(myQSize2txt(tSize));
+         if (tSize != MiFrameSize) size_act->setText(myQSize2txt(MiFrameSize));
+    else if (tSize != defWinSize)  size_act->setText(myQSize2txt(defWinSize));
+    else                           size_act->setText(myQSize2txt(altWinSize));
 #ifndef Q_OS_MAC
     if (menuBarHeight < 0) menuBarHeight = menuBar()->height();
     mxSz.rheight() += menuBarHeight;
@@ -400,12 +401,9 @@ void MiFrame::shrinkwrap()
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiFrame::fallbackSize()
 {
-  QSize tmp = tSize;
-  if (oldSize.isNull()) {
-    if (tSize == defWinSize) tSize = altWinSize;
-    else                     tSize = defWinSize;
-  } else                     tSize = oldSize;
-  oldSize = tmp;
+       if (tSize != MiFrameSize) tSize = MiFrameSize;
+  else if (tSize != defWinSize)  tSize = defWinSize;
+  else                           tSize = altWinSize;
   if (main) {  int maH = tSize.height();
     if (scwin) { scwin->vp->wsh = maH/2;         maH = maH - maH/2;
                  scwin->vp->wsw = tSize.width(); scwin->vpResize(); 
@@ -441,11 +439,9 @@ void MiFrame::resizeEvent (QResizeEvent*)
     }
     else main->vpResize(fcw, fch);
   }
-  if (wrapped) wrapped = false;
-  else {
-    if (oldSize.isNull()) oldSize = tSize;
-    QTimer::singleShot(0, this, SLOT(shrinkwrap()));
-} }
+  if (wrapped)                         wrapped = false;
+  else QTimer::singleShot(0, this, SLOT(shrinkwrap()));
+}
 //=============================================================================
 MiInfoWin::MiInfoWin (MiScTwin *parent)  :  QWidget(parent),
                       infoType(MitLINE_BLOCK), sctw(parent)

@@ -27,7 +27,7 @@ extern int  MiApp_defWidth, MiApp_defHeight;
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 class MiFrame : public QMainWindow
 {
-  Q_OBJECT QAction *size_act; QSize tSize, oldSize; bool wrapped;
+  Q_OBJECT QAction *size_act; QSize tSize; bool wrapped;
            QMessageBox *mbox; QSplitter *sash;
            QMenu  *size_menu; int  sashHeight; QFont textFont, boldFont;
   MiScTwin *main, *scwin;
