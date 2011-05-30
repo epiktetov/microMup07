@@ -27,6 +27,8 @@ QMap<int,int> MiApp_keyMap;
 QString MiApp_defaultFont, MiApp_defFontAdjH, MiApp_keyMaps, MiApp_gradDescr;
 int     MiApp_defFontSize;
 int     MiApp_fontAdjOver, MiApp_fontAdjUnder, MiApp_defWidth, MiApp_defHeight;
+//~
+//int MiApp_smooth = 1;
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 inline bool isNoRealText (txt *t) // == text with no name, which is not changed
 {                                 // (as if µMup is started without parameters)
@@ -78,51 +80,14 @@ QColor colorSolidRed  (255,  0,  0); // solid red
 QColor colorSolidGreen(  0,166,  0); // - green | for numbered marks (used for
 QColor colorSolidBlue (  0, 85,215); // - blue  |          gradient background)
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-inline QString myPackAdj2string (int X, int Y)
-{
-  return QString("%1/%2").arg(QChar((X > 0) ? '+' : (X < 0) ? '-' : '0'))
-                         .arg(QChar((Y > 0) ? '+' : (Y < 0) ? '-' : '0'));
-}
-inline int myUnpackAdj2int (QString adj, int ix)
-{
-  const char c = adj[ix].toAscii();
-  return (c == '+') ? +1 : (c == '-') ? -1 : 0;
-}
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-static void myParseKeyMap() // parse QString MiApp_keyMaps -> QMap MiApp_keyMap
-{
-  QStringList lines = MiApp_keyMaps.split(QChar('\n'));
-  MiApp_keyMap.clear();
-  for (QStringList::const_iterator it  = lines.constBegin();
-                                   it != lines.constEnd(); it++)
-  { int key, mk;
-    if (sscanf(it->cStr(), "%x:0x%x", &key, &mk) == 2)
-      MiApp_keyMap.insert(key, mk);
-} }
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 int main(int argc, char *argv[])
 {
   QApplication app(argc, argv);
-  QCoreApplication::setOrganizationDomain("epiktetov.com");
+  QCoreApplication::setOrganizationDomain("epiktetov.com"); tmInitialize();
   QCoreApplication::setOrganizationName("EpiMG");
-  QCoreApplication::setApplicationName("micro7"); tmInitialize();
-  QSettings Qs;
-  TABsize = Qs.value("TABsize", 4).toInt();
-  MiApp_gradDescr = Qs.value("bgndGrad", defWinGRADIENT).toString();
-  MiApp_defHeight = Qs.value("frameHeight", defWinHEIGHT).toInt();
-  MiApp_defWidth   =  Qs.value("frameWidth", defWinWIDTH).toInt();
-  MiApp_defaultFont = Qs.value("font", QString(mimFONTFACENAME)).toString();
-  MiApp_defFontSize = Qs.value("fontSize", mimFONTSIZE).toInt();
-  MiApp_defFontAdjH = Qs.value("fontAdjH", "0/0").toString();
-  MiApp_fontAdjOver = myUnpackAdj2int (MiApp_defFontAdjH, 0);
-  MiApp_fontAdjUnder = myUnpackAdj2int(MiApp_defFontAdjH, 2);
-  MiApp_keyMaps  =  Qs.value("keyMaps", "").toString();
-  key2mimStart();                      myParseKeyMap();
-  MiFrameSize = QSize(MiApp_defWidth, MiApp_defHeight);
+  QCoreApplication::setApplicationName("micro7");     mimReadPreferences();
 #ifdef Q_OS_MAC
   app.installEventFilter(new MacEvents);
-#else
-  menuBarHeight = Qs.value("private/menuBarHeight", -1).toInt();
 #endif
   for (int i = 1; i < argc; i++) {
     QString param = Utf8(argv[i]);
@@ -217,28 +182,10 @@ void MiFrame::makeFonts() // makes textFont and boldFont from MiApp_defaultFont
   textFont = QFont(MiApp_defaultFont, MiApp_defFontSize);
 #if QT_VERSION >= 0x040700
   textFont.setStyleHint(QFont::AnyStyle, QFont::ForceIntegerMetrics);
-#endif
-//+
-//  QFontMetrics fm = textFont;
-//  int wi1 = fm.width("X"),
-//    wi100 = fm.width("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-//                     "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
-//  fprintf(stderr, "width=%d,x100=%d\n", wi1, wi100);
-//-
-  boldFont = QFont(textFont);  boldFont.setBold(true);
-}
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-void mimSetNamedColor (QColor& color, const QString descr)
-{
-  QRegExp Hue(Utf8("([0-9]+)°"));
-  if (Hue.exactMatch(descr)) { qreal H = Hue.cap(1).toFloat()/360.0;
-                               color.setHsvF(H, 0.16, 1.0);       }
-  else                         color.setNamedColor (descr);
-//+
-// qreal x,y,z;                                     color.getHsvF(&x,&y,&z);
-// fprintf(stderr,"color=%s,HSV=(%.3f,%.2f,%.2f)\n",color.name().cStr(),x,y,z);
-//-
-}
+#endif                        //                ^
+  boldFont = QFont(textFont); // Older Qt versions ALWAYS used integer metrics;
+  boldFont.setBold(true);     // sub-pixel glyphs may look better, but MicroMir
+}                             // cannot handle them correctly: cursor position?
 //-----------------------------------------------------------------------------
 #define MiFrameOPEN_XXX(XXX,XXXtext,getMETHOD)                        \
 void MiFrame::Open##XXX()                                             \
@@ -273,21 +220,6 @@ void MiFrame::SaveAll() { vipFocusOff(Twnd); tmSaveAll();         vipReady(); }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiFrame::ShowLicense(void) { twShowFile(":/LICENSE"); }
 void MiFrame::ShowHelp   (void) { twShowFile(":/help");    }
-void MiFrame::Preferences()
-{
-  MiConfigDlg dialog;
-  if (dialog.Ask()) {
-    QSettings Qs;                              Qs.setValue("TABsize", TABsize);
-    MiApp_defFontAdjH = myPackAdj2string(MiApp_fontAdjOver,MiApp_fontAdjUnder);
-    Qs.setValue("font",     MiApp_defaultFont);
-    Qs.setValue("fontSize", MiApp_defFontSize);
-    Qs.setValue("fontAdjH", MiApp_defFontAdjH); makeFonts();
-    Qs.setValue("keyMaps",  MiApp_keyMaps);
-    Qs.setValue("bgndGrad", MiApp_gradDescr);
-    if (main) main->SetGradient(MiApp_gradDescr);
-    if (main)  {  main->UpdateMetrics();  main->vpResize(); }
-    if (scwin) { scwin->UpdateMetrics(); scwin->vpResize(); } shrinkwrap();
-} }
 //-----------------------------------------------------------------------------
 void MiFrame::closeEvent (QCloseEvent *ev)
 {
@@ -443,165 +375,11 @@ void MiFrame::resizeEvent (QResizeEvent*)
   else QTimer::singleShot(0, this, SLOT(shrinkwrap()));
 }
 //=============================================================================
-MiInfoWin::MiInfoWin (MiScTwin *parent)  :  QWidget(parent),
-                      infoType(MitLINE_BLOCK), sctw(parent)
-{
-  setFocusPolicy(Qt::NoFocus);
-  setAutoFillBackground(true); setFont(sctw->mf->getTextFont());
-}
-void MiInfoWin::SetPalette (QColor bgnd, QColor text)
-{
-  QPalette palette(bgnd);
-  palette.setColor(QPalette::WindowText, text); setPalette(palette);
-}
-void MiInfoWin::vpResize() { resize(2 * mimBORDER + sctw->Tw2qtW(9),
-                                    2 * mimBORDER + sctw->Th2qtH(1)); }
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-void MiInfoWin::paintEvent (QPaintEvent *)
-{
-  QPainter dc(this); int Y = sctw->Ty2qtY(0)+sctw->fontBaseline;
-  QString info;                                      int dx, dy;
-  if (MiApp_debugKB) {
-    info.sprintf("%8x",  last_MiCmd_code);
-    dc.drawText(sctw->Tx2qtX(0), Y, info);
-  }
-  else if (infoType == MitCHARK && sctw->vp->cx >= 0) {
-    tchar tc = 0, *textln;
-    if (TxSetY(sctw->vp->wtext, sctw->vp->wty+sctw->vp->cy)) {
-      textln = TxInfo(sctw->vp, sctw->vp->wty+sctw->vp->cy, &dx);
-      tc = textln[sctw->vp->wtx+sctw->vp->cx]; // ^
-    }                                          // assuming end of textln string
-    info.sprintf("U+%X",(uint)(tc & AT_CHAR)); // cleared with spaces after EOL
-    dc.drawText(sctw->Tx2qtX(0), Y, info);
-  }
-  else if (BlockXYsize(&dx ,&dy)) { info.sprintf ("%dx%d",      dx,   dy);
-                                    dc.drawText(sctw->Tx2qtX(0), Y, info); }
-  else if (MiApp_timeDELAYS &&
-     (dx = (int)(pgtime()-last_MiCmd_time)) > 1) { info.sprintf("%4dms", dx);
-                                       dc.drawText(sctw->Tx2qtX(0), Y, info); }
-  else {
-    info.sprintf("%7d", int((sctw->vp == Twnd) ? Ty : sctw->vp->wcy)+1);
-    if (sctw->vp->wtext && 0 < sctw->vp->wtext->clang &&
-                               sctw->vp->wtext->clang < CLangMAX) {
-      int *Synts = sctw->vp->wtext->lastSynts,
-        numSynts = Synts[0] & AT_CHAR;
-      for (int i = 0; i < numSynts && i < 3; i++) {
-        if (info[i] > ' ') info[i+1] = QChar(0x2026);
-                           info[i]   = QChar(Synts[i+1] & 0xFF);
-    } }
-    dc.drawText(sctw->Tx2qtX(0),                     Y, info.mid(0, 4));
-    dc.drawText(sctw->Tx2qtX(4) + sctw->fontWidth/2, Y, info.mid(4, 3));
-  }
-  dc.drawText(sctw->Tx2qtX(8), Y, clipStatus());
-}
-void MiInfoWin::updateInfo (MiInfoType mit) { if (mit) infoType = mit;
-                                                            repaint(); }
-//-----------------------------------------------------------------------------
-MiConfigDlg::MiConfigDlg(QWidget *parent) : QDialog(parent)
-{
-  QVBoxLayout *leftLayout = new QVBoxLayout; setWindowTitle(MimVersion());
-  QLabel *microLabel = new QLabel();
-  QPixmap *microIcon = new QPixmap(":/microMir.png");
-  microLabel->setPixmap(*microIcon);
-  leftLayout->addWidget(microLabel); leftLayout->addStretch(1);
-  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  gradDescr = new QLineEdit(MiApp_gradDescr);
-  QLabel *grad = new QLabel(tr("Gradient:")); grad->setBuddy(gradDescr);
-  QHBoxLayout *layoutH1 = new QHBoxLayout;
-  layoutH1->addWidget(grad);
-  layoutH1->addWidget(gradDescr);  leftLayout->addLayout(layoutH1);
-  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  fontButton = new QPushButton(tr("Font"));
-  fontLabel  = new QLabel();
-  fontLabel->setMinimumWidth(150);              setFontLabelText();
-  connect(fontButton, SIGNAL(clicked()), this, SLOT(selectFont()));
-  fontAdjust = new QLineEdit();
-  fontAdjust->setMaximumWidth(32);
-  fontAdjust->setText(myPackAdj2string(MiApp_fontAdjOver, MiApp_fontAdjUnder));
-  QHBoxLayout *layoutH2 = new QHBoxLayout;
-  layoutH2->addWidget(fontButton);
-  layoutH2->addWidget(fontLabel);
-  layoutH2->addWidget(fontAdjust); leftLayout->addLayout(layoutH2);
-  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  static QString fontHelpString("<small>Font height adjustment parameter on "
-    "right alllows adding (+) or removing (-) one pixel on top (first symbol) "
-    "or bottom (second one) of character glyph; use 0/0 to leave the height "
-    "unchanged</small><hr>");
-  QLabel *fontHelpLabel = new QLabel(fontHelpString);
-  fontHelpLabel->setWordWrap(true);  leftLayout->addWidget(fontHelpLabel);
-  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  tabSizeBox = new QSpinBox(); QLabel *tabl = new QLabel(tr("TAB size:"));
-  tabSizeBox->setRange(2, 8);          tabl->setBuddy(tabSizeBox);
-  tabSizeBox->setMaximumWidth(40);
-  tabSizeBox->setValue(TABsize);
-  QHBoxLayout *layoutH3 = new QHBoxLayout;
-  layoutH3->addWidget(tabl);
-  layoutH3->addWidget(tabSizeBox);
-  layoutH3->addStretch(1);    leftLayout->addLayout(layoutH3);
-  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  QVBoxLayout *rightLayout = new QVBoxLayout;
-  keymapLabl = new QLabel(tr("Keycodes mapping (see help):"));
-  keymapEdit = new QTextEdit();
-  keymapEdit->setAcceptRichText(false);
-  keymapEdit->setLineWrapMode(QTextEdit::NoWrap);
-  keymapEdit->setPlainText(MiApp_keyMaps);
-  keymapEdit->setMaximumWidth  (250); keymapEdit->setMinimumWidth (250);
-  rightLayout->addWidget(keymapLabl); keymapEdit->setMinimumHeight(320);
-  rightLayout->addWidget(keymapEdit);
-  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  QHBoxLayout *outerLayout = new QHBoxLayout;
-  outerLayout->addLayout(leftLayout);
-  outerLayout->addLayout(rightLayout);
-  QDialogButtonBox *okButtonBox = new QDialogButtonBox(QDialogButtonBox::Ok);
-  connect(okButtonBox, SIGNAL(accepted()), this, SLOT(accept()));
-  QVBoxLayout *mainLayout = new QVBoxLayout;
-  mainLayout->addLayout(outerLayout);
-  mainLayout->addWidget(okButtonBox); setLayout(mainLayout);
-}
-void MiConfigDlg::setFontLabelText() // - - - - - - - - - - - - - - - - - - - -
-{
-  fontLabel->setText(QString("%1, %2pt").arg(MiApp_defaultFont)
-                                        .arg(MiApp_defFontSize));
-}
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-bool MiConfigDlg::Ask()
-{
-  if (exec() != QDialog::Accepted) return false;
-  TABsize = tabSizeBox->value();
-  MiApp_gradDescr = gradDescr->text();
-  MiApp_defFontAdjH = fontAdjust->text();
-  MiApp_fontAdjOver = myUnpackAdj2int(MiApp_defFontAdjH, 0);
-  MiApp_fontAdjUnder = myUnpackAdj2int(MiApp_defFontAdjH, 2);
-  MiApp_keyMaps = keymapEdit->toPlainText(); myParseKeyMap(); return true;
-}
-void MiConfigDlg::selectFont() // - - - - - - - - - - - - - - - - - - - - - - -
-{
-  QFont refont = QFont(MiApp_defaultFont, MiApp_defFontSize);
-  bool ok;   
-#ifdef notdef_Q_OS_MAC_hack_not_required
-//
-// Because of bug in Carbon-based Qt 4.5+, native (i.e. Cocoa) font selection
-// dialog did not really work -- in addition to some funky issues with focus,
-// it did not allow selection of some fonts... like Menlo (which is the best)
-//
-// Since the only reason to use Carbon build was inability to get Qt::Key_Help
-// (or Qt::Key_Insert in any form) and that may be fixed by KeyRemap4MacBook,
-//                          switched permanently to Qt-recommended Cocoa build
-  QString title = "Font";
-  refont = QFontDialog::getFont(&ok, refont, parentWidget(),
-                              title, QFontDialog::DontUseNativeDialog);
-#else
-  refont = QFontDialog::getFont(&ok, refont, parentWidget());
-#endif
-  if (ok) { MiApp_defaultFont = refont.family();
-            MiApp_defFontSize = refont.pointSize(); setFontLabelText(); }
-}
-//=============================================================================
 MiScTwin::MiScTwin (MiFrame *frame, const QString bgndGrad, wnd *win)
   : gotFocus(0), vp(win), mf(frame),
     info (this),
     gradPixSize(0), gradPixHeight(0),
-    gradPixmap(NULL),  cmd2repeat(0), timerID(0)
+    gradPixmap(NULL),  cmd2repeat(0), timerID(0) //~ , sctY(0)
 {
   vp->sctw = this;       setFocusPolicy(Qt::ClickFocus);
   UpdateMetrics();       setAttribute(Qt::WA_OpaquePaintEvent);
@@ -629,6 +407,14 @@ void MiScTwin::resizeEvent(QResizeEvent*) // using fontWidth as vertical offset
             height() - info.height() - fontWidth); UpdateGradientPixmap();
 }                    
 //-----------------------------------------------------------------------------
+void mimSetNamedColor (QColor& color, const QString descr)
+{
+  QRegExp Hue(Utf8("([0-9]+)°"));
+  if (Hue.exactMatch(descr)) { qreal H = Hue.cap(1).toFloat()/360.0;
+                               color.setHsvF(H, 0.16, 1.0);       }
+  else                         color.setNamedColor (descr);
+}
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiScTwin::SetGradient(const QString grad)
 {
   QRegExp gf("([^/;,]+)(?:/([^/;,]+))?(?:,([0-9.]+)-([0-9.]+))?(?:;([0-4]))?");
@@ -699,12 +485,66 @@ void MiScTwin::UpdateMetrics()          // NOTE: assuming fixed-width font with
   fontHeight += MiApp_fontAdjUnder;                  info.vpResize();
 }
 //-----------------------------------------------------------------------------
+void MiScTwin::Repaint (int x, int y, int width, int height, bool NOW)
+{
+// fprintf(stderr, "Repaint(%d,%d,%dx%d,sctY=%d)\n", x,y,width,height,sctY);
+//-
+  if (NOW) repaint(Tx2qtX(x), Ty2qtY(y), Tw2qtW(width), Th2qtH(height));
+  else     update (Tx2qtX(x), Ty2qtY(y), Tw2qtW(width), Th2qtH(height));
+}
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void MiScTwin::Scroll (int srcx, int ty, int width, int height, int dy)
+{
+  if (gradTilt || height < 3) Repaint(srcx, ty+dy, width, height);
+  else {
+//
+// Unfortunately, when "info" window intersects with scrolling rectangle (which
+// will be "always" -- as otherwise this function is not used), Qt 4.x does not
+// behave very good. It either forces redraw of everything or leaves ugly marks
+// (depending on scrolling direction).  To work around, adjust scrolling region
+// to exclude last two lines (and invalidate exclusion to be repainted over).
+//
+    scrollRect = QRect(Tx2qtX(srcx), Ty2qtY(ty), Tw2qtW(width),
+                                                 Th2qtH(height-2));
+//~
+//    fprintf(stderr, "Scroll(%d,%dx%d,%d)\n", ty, width, height, dy);
+//    if (MiApp_smooth && my_abs(dy) == 1 && cmd2repeat == 0) {
+//      sctY = -Th2qtH(dy);
+//      scrollApixel();
+//      scrpUp   = 0;              scrpUpH   = 1;
+//      scrpDown = ty+height+dy-2; scrpDownH = 3; scrpWidth = width;
+//      QTimer::singleShot(0, this, SLOT(scrollTimer()));
+//    }
+//    else
+//-
+    scroll(0, Th2qtH(dy), scrollRect);
+    Repaint(srcx, ty+height+dy-2, width, 2, false);
+} }
+//~
+//void MiScTwin::scrollApixel()
+//{
+//  int dy;
+//  if (sctY > 0) dy = -my_min( sctY, MiApp_smooth);
+//  else          dy =  my_min(-sctY, MiApp_smooth);
+//  fprintf(stderr, "  scroll(%d,dy=%d)\n", sctY, dy);
+//
+//  scroll(0,  dy, scrollRect); sctY += dy;
+//  scrollRect.moveTop(scrollRect.top()+dy);
+//}
+//void MiScTwin::scrollTimer()
+//{
+//  scrollApixel();
+//  if (scrpUpH > 0)   Repaint(0, scrpUp,   scrpWidth, scrpUpH);
+//  if (scrpDownH > 0) Repaint(0, scrpDown, scrpWidth, scrpDownH);
+//  if (sctY != 0)
+//    QTimer::singleShot(10, this, SLOT(scrollTimer()));
+//}
+//-----------------------------------------------------------------------------
 void MiScTwin::paintEvent (QPaintEvent *ev) // main PaintEvent (called from Qt)
 {
   QPainter dc(this);                            QVector<QRect> rlist;
   QRegion paintArea = ev->region();             QVector<QRect>::iterator it;
   QRegion textArea(mimTxtLEFT, mimTxtTOP, Tw2qtW(vp->wsw), Th2qtH(vp->wsh));
-
   QRegion border   = paintArea.subtracted (textArea);
   for (rlist = border.rects(), it  = rlist.begin(); it != rlist.end(); ++it)
     Erase(dc, *it);
@@ -879,28 +719,6 @@ void MiScTwin::Text (QPainter& dc, int x, int y, tchar *tp, int len)
     len = tp - tpbeg;
     Text(dc, x, y, attr, QString(str, len)); x += len;
 } }
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-void MiScTwin::Repaint (int x, int y, int width, int height, bool NOW)
-{
-  if (NOW) repaint(Tx2qtX(x), Ty2qtY(y), Tw2qtW(width), Th2qtH(height));
-  else     update (Tx2qtX(x), Ty2qtY(y), Tw2qtW(width), Th2qtH(height));
-}
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-void MiScTwin::Scroll (int srcx, int ty, int width, int height, int dy)
-{
-  if (gradTilt > 0 || height < 3) Repaint(srcx, ty+dy, width, height);
-  else {
-//
-// Unfortunately, when "info" window intersects with scrolling rectangle (which
-// will be "always" -- as otherwise this function is not used), Qt 4.x does not
-// behave very good. It either forces redraw of everything or leaves ugly marks
-// (depending on scrolling direction).  To work around, adjust scrolling region
-// to exclude last two lines (and invalidate exclusion to be repainted over).
-//
-    QRect rect(Tx2qtX(srcx), Ty2qtY(ty+dy), Tw2qtW(width), Th2qtH(height-2));
-    scroll (0, Th2qtH(dy), rect);
-    Repaint(srcx, ty+height+dy-2, width, 2, false);
-} }
 //-----------------------------------------------------------------------------
 void MiScTwin::keyPressEvent (QKeyEvent *event)
 {
@@ -1063,6 +881,227 @@ void MiScTwin::wheelEvent (QWheelEvent *ev)
     vipOnKeyCode(vp, (delta > 0) ? (fast ? TW_SCROLUPN : TW_SCROLUP) :
                                    (fast ? TW_SCROLDNN : TW_SCROLDN), KxBLK);
     vipReady(); ev->accept();
+} }
+//=============================================================================
+MiInfoWin::MiInfoWin (MiScTwin *parent)  :  QWidget(parent),
+                      infoType(MitLINE_BLOCK), sctw(parent)
+{
+  setFocusPolicy(Qt::NoFocus);
+  setAutoFillBackground(true); setFont(sctw->mf->getTextFont());
+}
+void MiInfoWin::SetPalette (QColor bgnd, QColor text)
+{
+  QPalette palette(bgnd);
+  palette.setColor(QPalette::WindowText, text); setPalette(palette);
+}
+void MiInfoWin::vpResize() { resize(2 * mimBORDER + sctw->Tw2qtW(9),
+                                    2 * mimBORDER + sctw->Th2qtH(1)); }
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void MiInfoWin::paintEvent (QPaintEvent *)
+{
+  QPainter dc(this); int Y = sctw->Ty2qtY(0)+sctw->fontBaseline;
+  QString info;                                      int dx, dy;
+  if (MiApp_debugKB) {
+    info.sprintf("%8x",  last_MiCmd_code);
+    dc.drawText(sctw->Tx2qtX(0), Y, info);
+  }
+  else if (infoType == MitCHARK && sctw->vp->cx >= 0) {
+    tchar tc = 0, *textln;
+    if (TxSetY(sctw->vp->wtext, sctw->vp->wty+sctw->vp->cy)) {
+      textln = TxInfo(sctw->vp, sctw->vp->wty+sctw->vp->cy, &dx);
+      tc = textln[sctw->vp->wtx+sctw->vp->cx]; // ^
+    }                                          // assuming end of textln string
+    info.sprintf("U+%X",(uint)(tc & AT_CHAR)); // cleared with spaces after EOL
+    dc.drawText(sctw->Tx2qtX(0), Y, info);
+  }
+  else if (BlockXYsize(&dx ,&dy)) { info.sprintf ("%dx%d",      dx,   dy);
+                                    dc.drawText(sctw->Tx2qtX(0), Y, info); }
+  else if (MiApp_timeDELAYS &&
+     (dx = (int)(pgtime()-last_MiCmd_time)) > 1) { info.sprintf("%4dms", dx);
+                                       dc.drawText(sctw->Tx2qtX(0), Y, info); }
+  else {
+    info.sprintf("%7d", int((sctw->vp == Twnd) ? Ty : sctw->vp->wcy)+1);
+    if (sctw->vp->wtext && 0 < sctw->vp->wtext->clang &&
+                               sctw->vp->wtext->clang < CLangMAX) {
+      int *Synts = sctw->vp->wtext->lastSynts,
+        numSynts = Synts[0] & AT_CHAR;
+      for (int i = 0; i < numSynts && i < 3; i++) {
+        if (info[i] > ' ') info[i+1] = QChar(0x2026);
+                           info[i]   = QChar(Synts[i+1] & 0xFF);
+    } }
+    dc.drawText(sctw->Tx2qtX(0),                     Y, info.mid(0, 4));
+    dc.drawText(sctw->Tx2qtX(4) + sctw->fontWidth/2, Y, info.mid(4, 3));
+  }
+  dc.drawText(sctw->Tx2qtX(8), Y, clipStatus());
+}
+void MiInfoWin::updateInfo (MiInfoType mit) { if (mit) infoType = mit;
+                                                            repaint(); }
+//-----------------------------------------------------------------------------
+static void myParseKeyMap() // parse QString MiApp_keyMaps -> QMap MiApp_keyMap
+{
+  QStringList lines = MiApp_keyMaps.split(QChar('\n'));
+  MiApp_keyMap.clear();
+  for (QStringList::const_iterator it  = lines.constBegin();
+                                   it != lines.constEnd(); it++)
+  { int key, mk;
+    if (sscanf(it->cStr(), "%x:0x%x", &key, &mk) == 2)
+      MiApp_keyMap.insert(key, mk);
+} }
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+inline QString myPackAdj2string (int X, int Y)
+{
+  return QString("%1/%2").arg(QChar((X > 0) ? '+' : (X < 0) ? '-' : '0'))
+                         .arg(QChar((Y > 0) ? '+' : (Y < 0) ? '-' : '0'));
+}
+inline int myUnpackAdj2int (QString adj, int ix) // - - - - - - - - - - - - - -
+{
+  const char c = adj[ix].toAscii();
+  return (c == '+') ? +1 : (c == '-') ? -1 : 0;
+}
+//-----------------------------------------------------------------------------
+MiConfigDlg::MiConfigDlg(QWidget *parent) : QDialog(parent)
+{
+  QVBoxLayout *leftLayout = new QVBoxLayout; setWindowTitle(MimVersion());
+  QLabel *microLabel = new QLabel();
+  QPixmap *microIcon = new QPixmap(":/microMir.png");
+  microLabel->setPixmap(*microIcon);
+  leftLayout->addWidget(microLabel); leftLayout->addStretch(1);
+  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  gradDescr = new QLineEdit(MiApp_gradDescr);
+  QLabel *grad = new QLabel(tr("Gradient:")); grad->setBuddy(gradDescr);
+  QHBoxLayout *layoutH1 = new QHBoxLayout;
+  layoutH1->addWidget(grad);
+  layoutH1->addWidget(gradDescr);  leftLayout->addLayout(layoutH1);
+//~
+//  smoothEdit = new QLineEdit(QString::number(MiApp_smooth))
+//  QLabel *smoothLabel = new QLabel(tr("Smooth scroll")); grad->setBuddy(smoothEdit);
+//  layoutH1 = new QHBoxLayout;
+//  layoutH1->addWidget(smoothEdit);
+//  layoutH1->addWidget(smoothLabel); leftLayout->addLayout(layoutH1);
+  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  fontButton = new QPushButton(tr("Font"));
+  fontLabel  = new QLabel();
+  fontLabel->setMinimumWidth(150);              setFontLabelText();
+  connect(fontButton, SIGNAL(clicked()), this, SLOT(selectFont()));
+  fontAdjust = new QLineEdit();
+  fontAdjust->setMaximumWidth(32);
+  fontAdjust->setText(myPackAdj2string(MiApp_fontAdjOver, MiApp_fontAdjUnder));
+  QHBoxLayout *layoutH2 = new QHBoxLayout;
+  layoutH2->addWidget(fontButton);
+  layoutH2->addWidget(fontLabel);
+  layoutH2->addWidget(fontAdjust); leftLayout->addLayout(layoutH2);
+  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  static QString fontHelpString("<small>Font height adjustment parameter on "
+    "right alllows adding (+) or removing (-) one pixel on top (first symbol) "
+    "or bottom (second one) of character glyph; use 0/0 to leave the height "
+    "unchanged</small><hr>");
+  QLabel *fontHelpLabel = new QLabel(fontHelpString);
+  fontHelpLabel->setWordWrap(true);  leftLayout->addWidget(fontHelpLabel);
+  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  tabSizeBox = new QSpinBox(); QLabel *tabl = new QLabel(tr("TAB size:"));
+  tabSizeBox->setRange(2, 8);          tabl->setBuddy(tabSizeBox);
+  tabSizeBox->setMaximumWidth(40);
+  tabSizeBox->setValue(TABsize);
+  QHBoxLayout *layoutH3 = new QHBoxLayout;
+  layoutH3->addWidget(tabl);
+  layoutH3->addWidget(tabSizeBox);
+  layoutH3->addStretch(1);    leftLayout->addLayout(layoutH3);
+  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  QVBoxLayout *rightLayout = new QVBoxLayout;
+  keymapLabl = new QLabel(tr("Keycodes mapping (see help):"));
+  keymapEdit = new QTextEdit();
+  keymapEdit->setAcceptRichText(false);
+  keymapEdit->setLineWrapMode(QTextEdit::NoWrap);
+  keymapEdit->setPlainText(MiApp_keyMaps);
+  keymapEdit->setMaximumWidth  (250); keymapEdit->setMinimumWidth (250);
+  rightLayout->addWidget(keymapLabl); keymapEdit->setMinimumHeight(320);
+  rightLayout->addWidget(keymapEdit);
+  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  QHBoxLayout *outerLayout = new QHBoxLayout;
+  outerLayout->addLayout(leftLayout);
+  outerLayout->addLayout(rightLayout);
+  QDialogButtonBox *okButtonBox = new QDialogButtonBox(QDialogButtonBox::Ok);
+  connect(okButtonBox, SIGNAL(accepted()), this, SLOT(accept()));
+  QVBoxLayout *mainLayout = new QVBoxLayout;
+  mainLayout->addLayout(outerLayout);
+  mainLayout->addWidget(okButtonBox); setLayout(mainLayout);
+}
+void MiConfigDlg::setFontLabelText() // - - - - - - - - - - - - - - - - - - - -
+{
+  fontLabel->setText(QString("%1, %2pt").arg(MiApp_defaultFont)
+                                        .arg(MiApp_defFontSize));
+}
+//-----------------------------------------------------------------------------
+bool MiConfigDlg::Ask()
+{
+  if (exec() != QDialog::Accepted) return false;
+  TABsize = tabSizeBox->value();
+//~
+//  MiApp_smooth = smoothEdit->text().toInt();
+//-
+  MiApp_gradDescr = gradDescr->text();
+  MiApp_defFontAdjH = fontAdjust->text();
+  MiApp_fontAdjOver = myUnpackAdj2int(MiApp_defFontAdjH, 0);
+  MiApp_fontAdjUnder = myUnpackAdj2int(MiApp_defFontAdjH, 2);
+  MiApp_keyMaps = keymapEdit->toPlainText(); myParseKeyMap(); return true;
+}
+void MiConfigDlg::selectFont() // - - - - - - - - - - - - - - - - - - - - - - -
+{
+  QFont refont = QFont(MiApp_defaultFont, MiApp_defFontSize);
+  bool ok;   
+#ifdef notdef_Q_OS_MAC_hack_not_required
+//
+// Because of bug in Carbon-based Qt 4.5+, native (i.e. Cocoa) font selection
+// dialog did not really work -- in addition to some funky issues with focus,
+// it did not allow selection of some fonts... like Menlo (which is the best)
+//
+// Since the only reason to use Carbon build was inability to get Qt::Key_Help
+// (or Qt::Key_Insert in any form) and that may be fixed by KeyRemap4MacBook,
+//                          switched permanently to Qt-recommended Cocoa build
+  QString title = "Font";
+  refont = QFontDialog::getFont(&ok, refont, parentWidget(),
+                              title, QFontDialog::DontUseNativeDialog);
+#else
+  refont = QFontDialog::getFont(&ok, refont, parentWidget());
+#endif
+  if (ok) { MiApp_defaultFont = refont.family();
+            MiApp_defFontSize = refont.pointSize(); setFontLabelText(); }
+}
+//-----------------------------------------------------------------------------
+void mimReadPreferences()
+{
+  QSettings Qs;
+  TABsize = Qs.value("TABsize", 4).toInt();
+  MiApp_gradDescr = Qs.value("bgndGrad", defWinGRADIENT).toString();
+  MiApp_defHeight = Qs.value("frameHeight", defWinHEIGHT).toInt();
+  MiApp_defWidth   =  Qs.value("frameWidth", defWinWIDTH).toInt();
+  MiApp_defaultFont = Qs.value("font", QString(mimFONTFACENAME)).toString();
+  MiApp_defFontSize = Qs.value("fontSize", mimFONTSIZE).toInt();
+  MiApp_defFontAdjH = Qs.value("fontAdjH", "0/0").toString();
+  MiApp_fontAdjOver = myUnpackAdj2int (MiApp_defFontAdjH, 0);
+  MiApp_fontAdjUnder = myUnpackAdj2int(MiApp_defFontAdjH, 2);
+  MiApp_keyMaps  =  Qs.value("keyMaps", "").toString();
+  key2mimStart();                      myParseKeyMap();
+  MiFrameSize = QSize(MiApp_defWidth, MiApp_defHeight);
+#ifndef Q_OS_MAC
+  menuBarHeight = Qs.value("private/menuBarHeight", -1).toInt();
+#endif
+}
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void MiFrame::Preferences()
+{
+  MiConfigDlg dialog;
+  if (dialog.Ask()) {
+    QSettings Qs;                              Qs.setValue("TABsize", TABsize);
+    MiApp_defFontAdjH = myPackAdj2string(MiApp_fontAdjOver,MiApp_fontAdjUnder);
+    Qs.setValue("font",     MiApp_defaultFont);
+    Qs.setValue("fontSize", MiApp_defFontSize);
+    Qs.setValue("fontAdjH", MiApp_defFontAdjH); makeFonts();
+    Qs.setValue("keyMaps",  MiApp_keyMaps);
+    Qs.setValue("bgndGrad", MiApp_gradDescr);
+    if (main) main->SetGradient(MiApp_gradDescr);
+    if (main)  {  main->UpdateMetrics();  main->vpResize(); }
+    if (scwin) { scwin->UpdateMetrics(); scwin->vpResize(); } shrinkwrap();
 } }
 //=============================================================================
 #include <time.h>
