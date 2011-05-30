@@ -29,7 +29,7 @@ typedef int   BOOL;
 #define NIL      ((void*)0) /* указатель (same as standard NULL but shorter) */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 typedef long tchar;                           /* Unicode символ с атрибутами */
-#define AT_ALL     0x7FFF0000
+#define tATTR(x)(x&0x7FFF0000)
 #define AT_CHAR    0x0000FFFF /* собственно Unicode символ (use only 16-bit) */
 #define AT_BOLD    0x00010000 /* Bold                               == KxTS  */
 #define AT_PROMPT  0x00020000 /* prompts text (def. dark blue text) == KxBLK */

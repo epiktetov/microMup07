@@ -45,7 +45,7 @@ void LenterARG(tchar *buf, int *bufLen, /* buffer for argument & its length  */
 #define LeARG_IGNORECASE 8 /* Ctrl+I i ignore case toggle (default is 'yes') */
 extern int leOptMode; /* options corresponding to final result is found here */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-#define tcharIsBlank(tc) ((tc & ~AT_ALL) == (tchar)' ')
+#define tcharIsBlank(tc) ((short)(tc & AT_CHAR) == ' ')
 
 extern int  char2tcharsX(const  char *orig, tchar *buffer, tchar attr);
 extern int  char2tchars (const  char *orig, tchar *buffer);

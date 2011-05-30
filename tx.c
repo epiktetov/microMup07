@@ -277,9 +277,10 @@ small aftotc (const char *orig, int len, tchar *dest_buf)
       *dest_buf++ = ((tchar)y << 6) | z | attr;
     }
     else if ((c & 0x80) != 0)
-     { if (c & 0x40) { *dest_buf++ = (ctotc(c) + 0x350) | attr | AT_BADCHAR; }
-       else          { *dest_buf++ = (ctotc(c) +  0x60) | attr | AT_BADCHAR; }}
-    else             { *dest_buf++ =  ctotc(c)          | attr;               }
+     { if (c & 0x40)  { *dest_buf++ = (ctotc(c)+0x350) | attr | AT_BADCHAR; }
+       else           { *dest_buf++ = (ctotc(c)+ 0x60) | attr | AT_BADCHAR; }}
+    else if (c < ' ') { *dest_buf++ = (ctotc(c)+ '@' ) | attr | AT_TAB;      }
+    else              { *dest_buf++ =  ctotc(c)        | attr;               }
     ltc++;
   }
   return ltc;
@@ -289,7 +290,7 @@ small aftotc (const char *orig, int len, tchar *dest_buf)
 small tctoaf (tchar *orig, int len, char *dest_buf)
 {
   char attr = 0, cattr; int laf, itc, j;
-  tchar  c, cna;
+  tchar  c, csa;
   for (itc = laf = 0; itc < len && laf < MAXLUP; itc++, laf++) {
     c = orig[itc];
     if ((cattr = (char)((c & AT_IN_FILE) >> 16)) != attr) {
@@ -297,43 +298,40 @@ small tctoaf (tchar *orig, int len, char *dest_buf)
       if (laf < MAXLUP-2) { *dest_buf++ = ACPR;
                             *dest_buf++ = ACPR2 | attr; laf += 2; }
     }
-    cna = c & AT_CHAR; /* = character sans attributes */
+    csa = c & AT_CHAR; /* = character sans attributes */
     if (c & AT_TAB) { 
-      for (j = itc+1; j < len && (j % TABsize) != 0; j++)
-        if ((char)orig[j] != ' ') goto vanilla_char;
-      /*  ^
-       * Replacing space with AT_TAB back to TAB only works if all tchars up to
-       *  the next tab-stop are spaces, otherwise attribute is silently ignored
-       */
-      *dest_buf++ = TAB; itc = j - 1; continue;
+      if (csa != ' ') *dest_buf++ = (char)(csa - '@');  /* control character */
+      else {
+        for (j = itc+1; j < len && (j % TABsize) != 0
+                                && (char)orig[j] == ' '; j++) ;
+        *dest_buf++ = TAB;
+        itc = j-1; /* skip all spaces up to next TAB stop or first non-space */
+    } }
+    else if (c & AT_BADCHAR) {
+           if ( 0xE0 <= csa && csa <= 0x11F) *dest_buf++ = (char)(csa -  0x60);
+      else if (0x410 <= csa && csa <= 0x44F) *dest_buf++ = (char)(csa - 0x350);
     }
-    if (c & AT_BADCHAR) {
-           if ( 0xE0 <= cna && cna <= 0x11F) *dest_buf++ = (char)(cna -  0x60);
-      else if (0x410 <= cna && cna <= 0x44F) *dest_buf++ = (char)(cna - 0x350);
-      else goto vanilla_char;                                         continue;
-    }
-vanilla_char: 
 #ifdef notdef
-    if (cna > 0xFFFF && laf < MAXLUP-3) {     /* 000wwwxx xxxxyyyy yyzzzzzz */
+    if (csa > 0xFFFF && laf < MAXLUP-3) {     /* 000wwwxx xxxxyyyy yyzzzzzz */
       laf += 3;                                              /* plus 3 byte */ 
-      *dest_buf++ = (char)(0xF0 | ((cna & 0x1C0000) >> 18)); /* -> 11110www */
-      *dest_buf++ = (char)(0x80 | ((cna & 0x03F000) >> 12)); /*    10xxxxxx */
-      *dest_buf++ = (char)(0x80 | ((cna & 0x000FC0) >>  6)); /*    10yyyyyy */
-      *dest_buf++ = (char)(0x80 |  (cna & 0x00003F)       ); /*    10zzzzzz */
+      *dest_buf++ = (char)(0xF0 | ((csa & 0x1C0000) >> 18)); /* -> 11110www */
+      *dest_buf++ = (char)(0x80 | ((csa & 0x03F000) >> 12)); /*    10xxxxxx */
+      *dest_buf++ = (char)(0x80 | ((csa & 0x000FC0) >>  6)); /*    10yyyyyy */
+      *dest_buf++ = (char)(0x80 |  (csa & 0x00003F)       ); /*    10zzzzzz */
     }
 #endif
-    if (cna > 0x7FF && laf < MAXLUP-2) {          /* 0000 xxxxyyyy yyzzzzzz */
+    else if (csa > 0x7FF && laf < MAXLUP-2) {     /* 0000 xxxxyyyy yyzzzzzz */
       laf += 2;                                              /* plus 2 byte */ 
-      *dest_buf++ = (char)(0xE0 | ((cna & 0x00F000) >> 12)); /* -> 1110xxxx */
-      *dest_buf++ = (char)(0x80 | ((cna & 0x000FC0) >>  6)); /*    10yyyyyy */
-      *dest_buf++ = (char)(0x80 |  (cna & 0x00003F)       ); /*    10zzzzzz */
+      *dest_buf++ = (char)(0xE0 | ((csa & 0x00F000) >> 12)); /* -> 1110xxxx */
+      *dest_buf++ = (char)(0x80 | ((csa & 0x000FC0) >>  6)); /*    10yyyyyy */
+      *dest_buf++ = (char)(0x80 |  (csa & 0x00003F)       ); /*    10zzzzzz */
     }
-    else if (cna > 0x7F && laf < MAXLUP-1) {           /* 00000yyy yyzzzzzz */
+    else if (csa > 0x7F && laf < MAXLUP-1) {           /* 00000yyy yyzzzzzz */
       laf += 1;                                              /* plus 1 byte */ 
-      *dest_buf++ = (char)(0xC0 | ((cna & 0x0007C0) >>  6)); /* -> 110yyyyy */
-      *dest_buf++ = (char)(0x80 |  (cna & 0x00003F)       ); /*    10zzzzzz */
+      *dest_buf++ = (char)(0xC0 | ((csa & 0x0007C0) >>  6)); /* -> 110yyyyy */
+      *dest_buf++ = (char)(0x80 |  (csa & 0x00003F)       ); /*    10zzzzzz */
     }
-    else *dest_buf++ = (char)cna;
+    else *dest_buf++ = (char)csa;
   }
   while (laf && *(--dest_buf) == ' ') laf--; /* remove trailing spaces */
   return laf;
@@ -358,8 +356,8 @@ tchar *TxInfo (wnd *w, large y, int *pl)      /* used for repaint in vip.cpp */
       for (i = 0; i < TXT_TempMARK; i++) {
         if (t->txmarky[i] == y) {
           if (len < w->wsw-1) tcbuf[len++] = ' ';
-                              tcbuf[len++] =      txFlags[i];
-                              tcbuf[len++] = ' '|(txFlags[i] & AT_ALL); break;
+                              tcbuf[len++] =           txFlags[i];
+                              tcbuf[len++] = ' '|tATTR(txFlags[i]); break;
   } } } }
   if (len < tcbuflen) blktspac(tcbuf+len, tcbuflen - len);
   *pl = tcbuflen = len;                      return tcbuf;

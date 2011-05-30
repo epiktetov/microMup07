@@ -688,37 +688,37 @@ void MiScTwin::Text (QPainter& dc, int x, int y, int attr, QString text)
   dc.drawText(Tx2qtX(x), Ty2qtY(y)+fontBaseline, text);
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-inline QChar vChar (tchar tc) // convert chars below space into printable ones
-{ 
-  if (tc & AT_QUOTE) {
-    switch (tc & (AT_CHAR|AT_QOPEN|AT_QCLOSE)) {
-    case AT_QOPEN |'\'': return QChar(0x2018); // ‘
-    case AT_QCLOSE|'\'': return QChar(0x2019); // ’
-    case AT_QOPEN | '"': return QChar(0x201C); // “
-    case AT_QCLOSE| '"': return QChar(0x201D); // ”
-    default:             return int(tc & AT_CHAR);
-  } }
-  else {
-    tchar tcc = (tc & AT_CHAR);  if (tcc  >  ' ') return int(tcc);
-                            else if (tcc  <  ' ') return int(tcc)+'@';
-                            else if (tc & AT_TAB) return QChar(0x0BB); // »
-                            else                  return ' ';
-} }
-inline tchar vAttr (tchar tc) 
-{ 
-  tchar attr = tc & AT_ALL; return ((tc & AT_CHAR) < ' ') ? AT_TAB|attr : attr;
-}
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiScTwin::Text (QPainter& dc, int x, int y, tchar *tp, int len)
 {
-  tchar *tpbeg, *tpend = tp + len, attr;
-  QChar str[MAXLPAC], *p;
-  for (tpbeg = tp; tp < tpend; tpbeg = tp) {  attr = vAttr(*tp);
-    p = str;
-    do { *p++ = vChar(*tp++); } while (tp < tpend && vAttr(*tp) == attr);
-    len = tp - tpbeg;
-    Text(dc, x, y, attr, QString(str, len)); x += len;
-} }
+  static QChar str [MAXLPAC]; tchar *tpend = tp + len, tc, tcc;
+         QChar *sf = str, qc; tchar tA = 1, tC;
+  while (tp < tpend) {
+    tc = *tp++;
+    tC = tATTR(tc);
+    tcc = (tc & AT_CHAR);
+    if (tc & AT_QUOTE) { tC &= ~(AT_QOPEN|AT_QCLOSE);
+           switch (tc & (AT_CHAR|AT_QOPEN|AT_QCLOSE)) {
+           case AT_QOPEN |'\'': qc.unicode() = 0x2018; break; // ‘
+           case AT_QCLOSE|'\'': qc.unicode() = 0x2019; break; // ’
+           case AT_QOPEN | '"': qc.unicode() = 0x201C; break; // “
+           case AT_QCLOSE| '"': qc.unicode() = 0x201D; break; // ”
+           default:             qc.unicode() = ushort(tc & AT_CHAR);
+    }      }
+    else if (tcc  >  ' ') qc.unicode() = ushort(tcc);
+    else if (tcc  <  ' ') qc.unicode() = ushort(tcc)+'@';
+    else if (tc & AT_TAB) qc.unicode() = 0x0BB; // »
+    else {                qc.unicode() = ' ';
+      if (((tA^tC) & (AT_INVERT|AT_MARKFLG|AT_BG_CLR)) == 0) tC = tA;
+    }
+    if (tC == tA) *sf++ = qc;
+    else {
+      if ((len = sf-str) > 0) {
+        Text(dc, x, y, tA, QString(str,len)); x += len;
+      }
+      sf = str; *sf++ = qc; tA = tC;
+  } }
+  if ((len = sf-str) > 0) Text(dc, x, y, tA, QString(str,len));
+}
 //-----------------------------------------------------------------------------
 void MiScTwin::keyPressEvent (QKeyEvent *event)
 {

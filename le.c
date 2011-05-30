@@ -347,12 +347,12 @@ static void laSetOption (int option)
     if (leOptMode & LeARG_IGNORECASE) imode = "cs";
     else                              imode = "ic";
     leOptMode ^= LeARG_IGNORECASE;
-    Lebuf[4] = (Lebuf[4] & AT_ALL) + imode[0];
-    Lebuf[5] = (Lebuf[5] & AT_ALL) + imode[1]; return;
+    Lebuf[4] = tATTR(Lebuf[4]) + imode[0];
+    Lebuf[5] = tATTR(Lebuf[5]) + imode[1]; return;
   }
   leOptMode = option | (leOptMode & LeARG_IGNORECASE);
-  Lebuf[1] = (Lebuf[1] & AT_ALL) + smode[0];
-  Lebuf[2] = (Lebuf[2] & AT_ALL) + smode[1];
+  Lebuf[1] = tATTR(Lebuf[1]) + smode[0];
+  Lebuf[2] = tATTR(Lebuf[2]) + smode[1];
   for (i = Lxlm; i < Lleng; i++)
     if (!(Lebuf[i] & AT_SUPER))
       Lebuf[i] = Lattr | (Lebuf[i] & ~(AT_PROMPT|AT_REGEX));
