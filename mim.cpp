@@ -86,6 +86,8 @@ int main(int argc, char *argv[])
   QCoreApplication::setApplicationName("micro7");     mimReadPreferences();
 #ifdef Q_OS_MAC
   app.installEventFilter(new MacEvents);
+#elif defined(UNIX)
+  app.setWindowIcon(QIcon(":/qtmim.png"));
 #endif
   for (int i = 1; i < argc; i++) {
     QString param = Utf8(argv[i]);

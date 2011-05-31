@@ -3,6 +3,7 @@
   <file alias="help">micro.keys</file>
   <file>abc</file>
   <file>LICENSE</file>
+  <file>qtmim.png</file>
   <file>microMir.png</file>
 </qresource>
 </RCC>
