@@ -27,8 +27,6 @@ QMap<int,int> MiApp_keyMap;
 QString MiApp_defaultFont, MiApp_defFontAdjH, MiApp_keyMaps, MiApp_gradDescr;
 int     MiApp_defFontSize;
 int     MiApp_fontAdjOver, MiApp_fontAdjUnder, MiApp_defWidth, MiApp_defHeight;
-//~
-//int MiApp_smooth = 1;
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 inline bool isNoRealText (txt *t) // == text with no name, which is not changed
 {                                 // (as if µMup is started without parameters)
@@ -379,7 +377,7 @@ MiScTwin::MiScTwin (MiFrame *frame, const QString bgndGrad, wnd *win)
   : gotFocus(0), vp(win), mf(frame),
     info (this),
     gradPixSize(0), gradPixHeight(0),
-    gradPixmap(NULL),  cmd2repeat(0), timerID(0) //~ , sctY(0)
+    gradPixmap(NULL),  cmd2repeat(0), timerID(0)
 {
   vp->sctw = this;       setFocusPolicy(Qt::ClickFocus);
   UpdateMetrics();       setAttribute(Qt::WA_OpaquePaintEvent);
@@ -458,22 +456,38 @@ void MiScTwin::UpdateGradientPixmap()
     gradPixSize  = winSize; /* gradient pixmap depends only */
     gradPixWidth = winSize; /* on win size, not proportions */
   }
+  upperNoScroll = 0; // first, assume it's safe to scroll (except for infoWin)
+  lowerNoScroll = 2; //
   if (gradPixmap) delete gradPixmap;
   gradPixmap = new QPixmap(gradPixWidth, gradPixHeight  =  fontHeight);
   QPainter    dc(gradPixmap);      QRect gradRect = gradPixmap->rect();
   dc.setPen(QPen(Qt::NoPen));
   if (my_abs(gradStart-gradStop) > 0.01) {
-    qreal X = qreal(width() + gradTilt * height())/
-                        qreal(gradTilt * gradTilt + 1),   Y = X * gradTilt;
+    qreal X = winSize / qreal(gradTilt * gradTilt + 1),   Y = X * gradTilt;
     QLinearGradient grad(gradStart*X, gradStart*Y, gradStop*X, gradStop*Y);
+    grad = QLinearGradient(gradStart*X, gradStart*Y, gradStop*X, gradStop*Y);
     grad.setColorAt(0, gradColor);
     grad.setColorAt(1,   bgColor); dc.setBrush(QBrush(grad));
                                    dc.drawRect(gradRect);
-  }
+    if (gradTilt) {
+      if (gradStart < 0.5 && gradStop < 0.5) { // gradient in upper-left corner
+        X *= my_max(gradStart, gradStop);      // some lines on top unscrolable
+        Y *= my_max(gradStart, gradStop);
+        upperNoScroll = int((X/gradTilt + Y)/fontHeight + 0.99);
+      }
+      else if (gradStart > 0.5 && gradStop > 0.5) { // gradient in lower-right
+        X *= my_min(gradStart, gradStop);           // corner...
+        Y *= my_min(gradStart, gradStop);
+        qreal Yref = (X + gradTilt*Y - width())/gradTilt;
+        lowerNoScroll = int((height() - Yref)/fontHeight + 0.99);
+        if (lowerNoScroll < 2) lowerNoScroll = 2;
+      }
+      else upperNoScroll = MiSc_NO_SCROLL_AT_ALL;
+  } }
   else { if (gradStart > 0.01) dc.setBrush(QBrush(gradColor));
          else                  dc.setBrush(QBrush(  bgColor));
-                               dc.drawRect(gradRect);
-} }
+                               dc.drawRect(gradRect); // solid background
+} }                                                   // (safe to scroll)
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiScTwin::UpdateMetrics()          // NOTE: assuming fixed-width font with
 {                                       // adjustments: MiApp_fontAdjOver/Under
@@ -487,58 +501,37 @@ void MiScTwin::UpdateMetrics()          // NOTE: assuming fixed-width font with
 //-----------------------------------------------------------------------------
 void MiScTwin::Repaint (int x, int y, int width, int height, bool NOW)
 {
-// fprintf(stderr, "Repaint(%d,%d,%dx%d,sctY=%d)\n", x,y,width,height,sctY);
-//-
+//  fprintf(stderr, "Repaint(%d,%d,%dx%d%s)\n", x, y, width,height,
+//                                              NOW ? ",NOW" : "");
+//+
   if (NOW) repaint(Tx2qtX(x), Ty2qtY(y), Tw2qtW(width), Th2qtH(height));
   else     update (Tx2qtX(x), Ty2qtY(y), Tw2qtW(width), Th2qtH(height));
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiScTwin::Scroll (int srcx, int ty, int width, int height, int dy)
 {
-  if (gradTilt || height < 3) Repaint(srcx, ty+dy, width, height);
-  else {
+#ifndef Q_OS_MAC
+  int scTy = ty, scH = height + my_abs(dy), scTop = my_min(ty,ty+dy);
+  int over = (upperNoScroll - scTop);
+  if (over > 0) { scTop = upperNoScroll; scTy -= over;
+                                         scH  -= over; }
 //
-// Unfortunately, when "info" window intersects with scrolling rectangle (which
-// will be "always" -- as otherwise this function is not used), Qt 4.x does not
-// behave very good. It either forces redraw of everything or leaves ugly marks
-// (depending on scrolling direction).  To work around, adjust scrolling region
-// to exclude last two lines (and invalidate exclusion to be repainted over).
+// NOTE: using the fact that Scroll is always called for a region at the bottom
+// of the window (which holds for both "true" scrolling and line insert/delete)
 //
-    scrollRect = QRect(Tx2qtX(srcx), Ty2qtY(ty), Tw2qtW(width),
-                                                 Th2qtH(height-2));
-//~
-//    fprintf(stderr, "Scroll(%d,%dx%d,%d)\n", ty, width, height, dy);
-//    if (MiApp_smooth && my_abs(dy) == 1 && cmd2repeat == 0) {
-//      sctY = -Th2qtH(dy);
-//      scrollApixel();
-//      scrpUp   = 0;              scrpUpH   = 1;
-//      scrpDown = ty+height+dy-2; scrpDownH = 3; scrpWidth = width;
-//      QTimer::singleShot(0, this, SLOT(scrollTimer()));
-//    }
-//    else
-//-
-    scroll(0, Th2qtH(dy), scrollRect);
-    Repaint(srcx, ty+height+dy-2, width, 2, false);
-} }
-//~
-//void MiScTwin::scrollApixel()
-//{
-//  int dy;
-//  if (sctY > 0) dy = -my_min( sctY, MiApp_smooth);
-//  else          dy =  my_min(-sctY, MiApp_smooth);
-//  fprintf(stderr, "  scroll(%d,dy=%d)\n", sctY, dy);
-//
-//  scroll(0,  dy, scrollRect); sctY += dy;
-//  scrollRect.moveTop(scrollRect.top()+dy);
-//}
-//void MiScTwin::scrollTimer()
-//{
-//  scrollApixel();
-//  if (scrpUpH > 0)   Repaint(0, scrpUp,   scrpWidth, scrpUpH);
-//  if (scrpDownH > 0) Repaint(0, scrpDown, scrpWidth, scrpDownH);
-//  if (sctY != 0)
-//    QTimer::singleShot(10, this, SLOT(scrollTimer()));
-//}
+  scTy -= lowerNoScroll; // ..and, because of MiInfoWin, there are always some
+  scH  -= lowerNoScroll; // unscrollable area at the bottom (even without grad)
+  if (scH > 0) {
+    QRect scrollArea = QRect(Tx2qtX(srcx), Ty2qtY(scTop), Tw2qtW(width),
+                                                          Th2qtH(scH) );
+    scroll(0, Th2qtH(dy), scrollArea);
+    if (over > 0) Repaint(srcx, my_min(ty,ty+dy), width,          over);
+    Repaint(srcx, ty+height + dy - lowerNoScroll, width, lowerNoScroll);
+  }
+  else                                 // Unfortunately, scroll does not really
+#endif                                 // work on Mac with Qt 4.7 (which fires
+  Repaint(srcx, ty+dy, width, height); // "repaint all" event after any scroll,
+}                                      // could not disable / work around it)
 //-----------------------------------------------------------------------------
 void MiScTwin::paintEvent (QPaintEvent *ev) // main PaintEvent (called from Qt)
 {
@@ -972,12 +965,6 @@ MiConfigDlg::MiConfigDlg(QWidget *parent) : QDialog(parent)
   QHBoxLayout *layoutH1 = new QHBoxLayout;
   layoutH1->addWidget(grad);
   layoutH1->addWidget(gradDescr);  leftLayout->addLayout(layoutH1);
-//~
-//  smoothEdit = new QLineEdit(QString::number(MiApp_smooth))
-//  QLabel *smoothLabel = new QLabel(tr("Smooth scroll")); grad->setBuddy(smoothEdit);
-//  layoutH1 = new QHBoxLayout;
-//  layoutH1->addWidget(smoothEdit);
-//  layoutH1->addWidget(smoothLabel); leftLayout->addLayout(layoutH1);
   //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   fontButton = new QPushButton(tr("Font"));
   fontLabel  = new QLabel();
@@ -1036,9 +1023,6 @@ bool MiConfigDlg::Ask()
 {
   if (exec() != QDialog::Accepted) return false;
   TABsize = tabSizeBox->value();
-//~
-//  MiApp_smooth = smoothEdit->text().toInt();
-//-
   MiApp_gradDescr = gradDescr->text();
   MiApp_defFontAdjH = fontAdjust->text();
   MiApp_fontAdjOver = myUnpackAdj2int(MiApp_defFontAdjH, 0);

@@ -77,7 +77,6 @@ class MiConfigDlg : public QDialog
            QLabel      *fontLabel,            *keymapLabl;
            QLineEdit   *fontAdjust; QSpinBox  *tabSizeBox;
            QLineEdit   *gradDescr;
-//~        QLineEdit   *smoothEdit;
 protected:
   void setFontLabelText();
 public slots:
@@ -108,9 +107,10 @@ public:
   void Repaint(int     tx, int ty, int width, int height, bool NOW = false);
   void Scroll (int src_tx, int ty, int width, int height, int dy);
 protected:
-  int gradPixSize, gradPixHeight;
-  QPixmap *gradPixmap;
-  QRect scrollRect;
+  int gradPixSize,gradPixHeight; // painting pre-calculated bitmap works faster
+  QPixmap *gradPixmap;           //      even on Mac (and much faster on Linux)
+  int upperNoScroll, lowerNoScroll;
+#define MiSc_NO_SCROLL_AT_ALL 65539
 public:
   int Tw2qtW(int tw) const { return fontWidth  * tw; }
   int Th2qtH(int th) const { return fontHeight * th; }
@@ -119,8 +119,6 @@ public:
 
   int Tx2qtX(int tx) const { return mimTxtLEFT + Tw2qtW(tx); }
   int Ty2qtY(int ty) const { return mimTxtTOP  + Th2qtH(ty); }
-//int Ty2qtY(int ty) const { return mimTxtTOP  + Th2qtH(ty) + sctY; }
-//~
   int Qx2txX(int  X) const { return Qw2txW (X - mimTxtLEFT); }
   int Qy2txY(int  Y) const { return Qh2txH (Y - mimTxtTOP ); }
 
@@ -140,17 +138,6 @@ public:
   void stopTimer();
   void focusInEvent (QFocusEvent *ev);  void mousePressEvent(QMouseEvent *ev);
   void focusOutEvent(QFocusEvent *ev);  void wheelEvent     (QWheelEvent *ev);
-//
-// Smooth (vertical) scroll prototype:
-//
-//~ Q_OBJECT
-//public slots:
-//  void scrollTimer();
-//protected:
-//  void scrollApixel();
-//  int scrpUp, scrpUpH, scrpDown, scrpDownH, scrpWidth;
-//  int sctY;
-//-
 protected:
   int cmd2repeat, timerID;
 };
