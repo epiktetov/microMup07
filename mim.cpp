@@ -407,7 +407,7 @@ void MiScTwin::resizeEvent(QResizeEvent*) // using fontWidth as vertical offset
 //-----------------------------------------------------------------------------
 void mimSetNamedColor (QColor& color, const QString descr)
 {
-  QRegExp Hue(Utf8("([0-9]+)°"));
+  QRegExp Hue(Utf8("([0-9]+)(°|\\*)"));
   if (Hue.exactMatch(descr)) { qreal H = Hue.cap(1).toFloat()/360.0;
                                color.setHsvF(H, 0.16, 1.0);       }
   else                         color.setNamedColor (descr);
@@ -415,11 +415,16 @@ void mimSetNamedColor (QColor& color, const QString descr)
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiScTwin::SetGradient(const QString grad)
 {
-  QRegExp gf("([^/;,]+)(?:/([^/;,]+))?(?:,([0-9.]+)-([0-9.]+))?(?:;([0-4]))?");
-  if (gf.exactMatch(grad)) {
-    QString bgnd = gf.cap(2); mimSetNamedColor(gradColor, gf.cap(1));
-          if (bgnd.isEmpty()) mimSetNamedColor(  bgColor,   "white");
-                              mimSetNamedColor(  bgColor, gf.cap(2));
+  mimSetNamedColor(gradPool[0], Utf8( "40°")); // ≈ SVG papaywhip (Hue=40°)
+  mimSetNamedColor(gradPool[1], Utf8( "80°")); // very light green
+  mimSetNamedColor(gradPool[2], Utf8("200°")); // very light sky blue
+  mimSetNamedColor(gradPool[3], "mistyrose" );
+  QRegExp gf("([^/;,]+)(?:/([^/;,]+))?(?:,([0-9.]+)-([0-9.]+))?(?:;([0-4]))?"
+             "(?:,2nd:([^/;,]+))?(?:,3rd:([^/;,]+))?(?:,4th:([^/;,]+))?");
+//
+  if (gf.exactMatch(grad)) { mimSetNamedColor(gradColor, gf.cap(1));
+    if (gf.cap(2).isEmpty()) mimSetNamedColor(  bgColor,   "white");
+    else                     mimSetNamedColor(  bgColor, gf.cap(2));
 //
     gradTilt = gf.cap(5).toInt();
     if (gf.cap(3).isEmpty() && gradTilt > 0) { gradStart = 0.0;
@@ -427,24 +432,21 @@ void MiScTwin::SetGradient(const QString grad)
     else {
       gradStart = gf.cap(3).toFloat();
       gradStop  = gf.cap(4).toFloat();
-  } }
+    }                                          gradPool[0] = gradColor;
+    if (!gf.cap(6).isEmpty()) mimSetNamedColor(gradPool[1], gf.cap(6));
+    if (!gf.cap(7).isEmpty()) mimSetNamedColor(gradPool[2], gf.cap(7));
+    if (!gf.cap(8).isEmpty()) mimSetNamedColor(gradPool[3], gf.cap(8));
+  }
   else { gradTilt = 1; gradStart = 0.0; gradColor = colorWinGrad;
                        gradStop  = 1.0;   bgColor = colorWinBgnd; }
   gradPixSize = 0;
-  UpdateGradientPixmap(); update();
-//
-// Calculate "tab" color (used for TAB mark and non-printable characters before
-// space, and for info text) and "key" color (used for keywords and bold text):
-//
-  qreal H,S,V; gradColor.getHsvF(&H,&S,&V);
-  if (H < 0) { tabColor = colorDarkWheat;
-               keyColor = colorDarkBrown; }
-  else {
-    tabColor.setHsvF(H, 0.83, 0.84*V);
-    keyColor.setHsvF(H, 1.00, 0.42*V);
-  }
-  if (gradStart < gradStop) info.SetPalette(gradColor, tabColor);
-  else                      info.SetPalette(  bgColor, tabColor);
+  UpdateGradientPixmap(); UpdatePrimeColors(); update();
+}
+void MiScTwin::SetGradFromPool(int N)
+{
+  gradColor = gradPool[N];
+  gradPixSize = 0;
+  UpdateGradientPixmap(); UpdatePrimeColors(); update();
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiScTwin::UpdateGradientPixmap()
@@ -488,6 +490,19 @@ void MiScTwin::UpdateGradientPixmap()
          else                  dc.setBrush(QBrush(  bgColor));
                                dc.drawRect(gradRect); // solid background
 } }                                                   // (safe to scroll)
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void MiScTwin::UpdatePrimeColors()          // Calculate "tab" color  (used for
+{                                           // TAB mark and non-printable chars
+  qreal H,S,V; gradColor.getHsvF(&H,&S,&V); // before space, and for info text)
+  if (H < 0) { tabColor = colorDarkWheat;   // && "key" color (that is used for
+               keyColor = colorDarkBrown; } // keywords and bold text)
+  else {
+    tabColor.setHsvF(H, 0.83, 0.84*V); // preserving Hue, fixed Saturation and
+    keyColor.setHsvF(H, 1.00, 0.42*V); // value in percentage of the original
+  }
+  if (gradStart < gradStop) info.SetPalette(gradColor, tabColor);
+  else                      info.SetPalette(  bgColor, tabColor);
+}
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiScTwin::UpdateMetrics()          // NOTE: assuming fixed-width font with
 {                                       // adjustments: MiApp_fontAdjOver/Under

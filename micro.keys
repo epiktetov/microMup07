@@ -498,6 +498,33 @@ k_(TE_BRAK9,  mod_CTRL+mod_SHIFT+'9', 0xce639) /* включить раскра�
 a_(TE_BRAK9,  mod_CTRL+mod_SHIFT+'(', 0xce639)
 k_(TE_SHBRAK, mod_CTRL+'O',           0xce44f) /* переключить режим   */
 /*
+ʁGRADIENTS:ʀ By default MicroMir07 fills background with linear gradient (because
+solid background is just too boring), which may be configured using Preferences
+dialog. Full format of gradient specification is the following (square brackets
+mark optional parts):
+
+  primColor[/offColor][,start-stop][;tilt][,2nd:prim2][,3rd:prim3][4th:prim4]
+
+where primColor - primary gradient color for first (default) color palette
+       offColor - off-color (default "white")
+     start/stop - start/stop points from 0.0 (top left) to 1.0 (bottom right)
+           tilt - from 0 (horizontal) to 1 (diagonal) to 4 (even more tilted)
+          primX - primary color for Xth color palette
+Color:
+  #rrggbb 24-bit hexadecimal RGB value                for example:    #ffefd5
+  SVG color names (see http://www.w3.org/TR/SVG/types.html)        papayawhip
+  Hue degrees (in that case Sat=16% and Val=100% is forced)        40° or 40*
+
+  Ctrl+Alt+'1' - switch to first / default palette in current window
+  Ctrl+Alt+'2' - switch to palette 2 (if not confiured, set to 80° light green)
+  Ctrl+Alt+'3' - switch to palette 3 (default is 200° sky blue)
+  Ctrl+Alt+'4' - switch to palette 4 (default is "mistyrose")
+*/
+k_(TW_GRAD1, mod_CTRL+mod_ALT+'1', 0xcfc31) /* включить палитру 1 в текущем  */
+k_(TW_GRAD2, mod_CTRL+mod_ALT+'2', 0xcfc32) /* - палитру 2 (зеленая)    окне */
+k_(TW_GRAD3, mod_CTRL+mod_ALT+'3', 0xcfc33) /* - палитру 3 (голубая)         */
+k_(TW_GRAD4, mod_CTRL+mod_ALT+'4', 0xcfc34) /* - палитру 4 (розовая)         */
+/*
 ʁMISCELLANEOUS.
 
   Ctrl+A - abandon (cancel) current command (e.g. stop entering search pattern)

@@ -575,6 +575,9 @@ int TmCommand (int kcode)
   case TM_GREP2:   return (tmGrep(kcode) < 0) ? E_SFAIL : E_OK;
   case TM_SYNCPOS: return (tmSyncPos()   < 0) ? E_SFAIL : E_OK;
 #endif
+  case TW_GRAD1: case TW_GRAD3:
+  case TW_GRAD2: case TW_GRAD4: Twnd->sctw->SetGradFromPool(kcode - TW_GRAD1);
+    break;
   default:
     return E_NOCOM;
   } return E_OK;

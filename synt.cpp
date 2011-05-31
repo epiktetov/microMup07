@@ -497,13 +497,13 @@ void SyntColorize (txt *text, tchar *tcp, int& len)
         }                       // next loop iteration, as begin_comment cannot
         break;                  // be less than two characters long
       case '`':
-        for (i = N, tcp[i++] |= AT_QOPEN; i < len; i++) {
+        for (i = N+1; i < len; i++) {
                if ((char)tcp[i] == '\\') i++;
           else if ((tcp[i] & AT_CHAR) == tc) goto quoted;
         }
         tcp[N]     |= (in_le_mode ? AT_MARKOK : AT_ERROR); break;
-quoted: tcp[N = i] |= AT_QCLOSE;
-        break;
+quoted: tcp[N]     |= AT_QOPEN;         //
+        tcp[N = i] |= AT_QCLOSE; break; // either mark "good" quotes or bad one
       case '(':
         if (brx < MAXTXRM) { brakp[brx] = N;
                              brakt[brx] = tc; brx++; } break;
