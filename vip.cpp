@@ -385,7 +385,7 @@ int vipOnMimCmd (wnd *vp, int ev, int ca)        /* handling block selection */
 /*---------------------------------------------------------------------------*/
 inline int vip1sixth (wnd *vp)  /* calculate medium jump size (1/6th of wsh) */
 {
-  int N = (vp->wsh + 2) / 6; return (N > 0) ? N : 1;
+  int N = vp->wsh / 6; return (N > 0) ? N : 1;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static int vipCmdScroll (wnd *vp, int kcode, int dx, int dy)
@@ -406,20 +406,33 @@ int vipOnTwxCmd (wnd *vp, int kcode)                    /* various scrolling */
   case TW_SCROLRG: return vipCmdScroll(vp, LE_RIGHT, KbCount, 0);
   }
   if (leARGmode) return vipOnRegCmd(vp, kcode); // no vert.scroll in leARGmode
-  switch (kcode) {
-  case TW_SCROLUPN: KbCount = vip1sixth(vp); kcode = TE_UP;   break;
-  case TW_SCROLDNN: KbCount = vip1sixth(vp); kcode = TE_DOWN; break;
-  case TE_PPAGE:    KbCount = vp->wsh-1;     kcode = TE_UP;   break;
-  case TE_NPAGE:    KbCount = vp->wsh-1;     kcode = TE_DOWN; break;
-  case TW_SCROLUP:                           kcode = TE_UP;   break;
-  case TW_SCROLDN:                           kcode = TE_DOWN; break;
+  int dy;
+  switch (kcode) {  // NOTE: scoll up/down key codes differs in 2nd LSB:
+  case TW_SCROLUPN: //                   ..1. (0xd00fa or 0xd1413) scroll up
+  case TW_SCROLDNN: //                   ..0. (0xd00fd or 0xd1415) scroll down
+    KbCount = vip1sixth(vp);
+  case TW_SCROLUP:
+  case TW_SCROLDN:
+    if (kcode & 2) { kcode = TE_UP;   dy = -KbCount; }
+    else           { kcode = TE_DOWN; dy =  KbCount; }
+    return vipCmdScroll(vp, kcode, 0, dy);
+  case TW_UP:
+    dy = vip1sixth(vp);
+    if (vp->wty < dy) { vp->sctw->repeatCmd(TE_UP,dy); return E_OK; }
+    else { KbCount = dy; return vipOnRegCmd(vp,TE_UP);              }
   case TW_DOWN:
-              KbCount = vip1sixth(vp);  return vipOnRegCmd(vp, TE_DOWN);
-  case TW_UP: KbCount = vip1sixth(vp);  return vipOnRegCmd(vp, TE_UP);
-  default:                              return vipOnRegCmd(vp, kcode);
-  }
-  return vipCmdScroll(vp, kcode, 0, (kcode==TE_UP) ? -KbCount : KbCount);
-}
+    dy = vip1sixth(vp);
+    if (vp->wty+dy > vp->wsh) { vp->sctw->repeatCmd(TE_DOWN,dy); return E_OK; }
+    else         { KbCount = dy; return vipOnRegCmd(vp,TE_DOWN);              }
+  case TE_PPAGE:
+  case TE_NPAGE:
+    dy = vip1sixth(vp);
+    if (dy < 2)             kcode = (kcode & 1) ? TW_SCROLDN  : TW_SCROLUP;
+    else { dy = vp->wsh/dy; kcode = (kcode & 1) ? TW_SCROLDNN : TW_SCROLUPN; }
+    vp->sctw->repeatCmd(kcode, dy);
+    return E_OK;
+  default: return vipOnRegCmd(vp, kcode);
+} }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 int vipOnRegCmd (wnd *vp, int kcode)                     /* regular commands */
 {

@@ -51,8 +51,8 @@ Ctrl+  '[' / ']'     - move cursor to left / right edge of the current window
 Ctrl+Meta+<arrows>   - scroll text in given direction (cursor moves over text,
                        while remaining in the same position relative to window)
 */
-k_(TE_PPAGE,           Mk_PAGEUP,   0xd0016) /* на страницу вверх            */
-k_(TE_NPAGE,           Mk_PAGEDOWN, 0xd0017) /* на страницу вниз             */
+k_(TE_PPAGE,           Mk_PAGEUP,   0xd0016) /* на страницу вверх        ..0 */
+k_(TE_NPAGE,           Mk_PAGEDOWN, 0xd0017) /* на страницу вниз         ..1 */
 k_(TE_TBEG,   mod_CTRL+Mk_PAGEUP,   0xd0416) /* в самое начало текста        */
 k_(TE_TEND,   mod_CTRL+Mk_PAGEDOWN, 0xd0417) /* в самый конец текста         */
 k_(TW_CUP,    mod_CTRL+Mk_UP,       0xc0413) /* непрерывно вверх             */
@@ -62,9 +62,9 @@ k_(LE_WRIGHT, mod_CTRL+']',         0xd045d) /*                 позицию �
 k_(TW_SCROLUPN,          0,         0xd00fa) /* (mouse wheel                 */
 k_(TW_SCROLDNN,          0,         0xd00fd) /*        scrolling)            */
 k_(TW_SCROLLF, mod_CTRL+mod_META+Mk_LEFT,  0xd1412)
-k_(TW_SCROLUP, mod_CTRL+mod_META+Mk_UP,    0xd1413)
-k_(TW_SCROLRG, mod_CTRL+mod_META+Mk_RIGHT, 0xd1414)
-k_(TW_SCROLDN, mod_CTRL+mod_META+Mk_DOWN,  0xd1415)
+k_(TW_SCROLUP, mod_CTRL+mod_META+Mk_UP,    0xd1413) /* NOTE: scoll up/down   */
+k_(TW_SCROLRG, mod_CTRL+mod_META+Mk_RIGHT, 0xd1414) /*  differs in 2nd LSB:  */
+k_(TW_SCROLDN, mod_CTRL+mod_META+Mk_DOWN,  0xd1415) /*    ..1. up, ..0. down */
 /*
 For window handling, MicroMir uses concept familiar to UNIX programmers: 'fork'
 (make a copy of the window) and 'replace file' (although this does not actually

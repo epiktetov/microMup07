@@ -847,20 +847,36 @@ void MiScTwin::keyPressEvent (QKeyEvent *event)
     } }
     vipReady();
 } }
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-void MiScTwin::timerEvent(QTimerEvent *)
+//-----------------------------------------------------------------------------
+#define MiRPT_TIME 10
+//
+void MiScTwin::repeatCmd (int kcode, int count)
 {
-  if (vipOnMimCmd(vp, cmd2repeat, 0)) { stopTimer(); vipReady(); }
-  else {
-    info.updateInfo(MitLINE_BLOCK);
-    QApplication::syncX();   // only for X11 (does nothing on other platforms)
+  if (vipOnMimCmd(vp, kcode, 0)) return; // <- sets initial last_MiCmd_time
+  if (count > 1) {
+    repeatCount = count - 1;
+    cmd2repeat = kcode;
+    timerID = startTimer(10); pastDue = 0;
 } }
-void MiScTwin::repeatCmd (int kcode) { cmd2repeat = kcode;
-                                       timerID = startTimer(10); }
 void MiScTwin::stopTimer()
 {
   if (cmd2repeat) { cmd2repeat = 0; killTimer(timerID); }
 }
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void MiScTwin::timerEvent(QTimerEvent *)
+{
+  quint64 now = pgtime(), elapsed = (now - last_MiCmd_time) + pastDue;
+  if (elapsed < MiRPT_TIME) pastDue = 0;
+  else {
+    KbCount = elapsed / MiRPT_TIME;
+    pastDue = elapsed - MiRPT_TIME*KbCount;
+  }
+  if (vipOnMimCmd(vp, cmd2repeat, 0) ||
+      (repeatCount -= KbCount) <= 0) { stopTimer(); vipReady(); }
+  else {
+    info.updateInfo(MitLINE_BLOCK);
+    QApplication::syncX();   // only for X11 (does nothing on other platforms)
+} }
 //-----------------------------------------------------------------------------
 void MiScTwin::focusInEvent(QFocusEvent *) 
 { 

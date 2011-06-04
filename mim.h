@@ -134,13 +134,14 @@ public:
   void Text (QPainter& dc, int tx, int ty, int tattr, QString text);
   void Text (QPainter& dc, int tx, int ty, tchar *tp, int len);
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  void keyPressEvent(QKeyEvent *ev);    void repeatCmd(int kcode);
-  void timerEvent (QTimerEvent *ev);
+  void keyPressEvent(QKeyEvent *ev);
+  void repeatCmd(int kcode, int count = 2147483647);
   void stopTimer();
+  void timerEvent   (QTimerEvent *ev);
   void focusInEvent (QFocusEvent *ev);  void mousePressEvent(QMouseEvent *ev);
   void focusOutEvent(QFocusEvent *ev);  void wheelEvent     (QWheelEvent *ev);
 protected:
-  int cmd2repeat, timerID;
+  int cmd2repeat, repeatCount, timerID, pastDue;
 };
 //-----------------------------------------------------------------------------
 extern quint64 last_MiCmd_time;
