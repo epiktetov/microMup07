@@ -477,9 +477,9 @@ void vipPrepareSearch()             /* prepare Qspre/Qsstr for the vipFind() */
       (find_Mode & LeARG_WILDCARD)   ? QRegExp::Wildcard   : QRegExp::RegExp);
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-int vipFind (tchar *str, int st_len, int from_pos, BOOL backward)
+int vipFind (char *str, int st_len, int from_pos, BOOL backward)
 {
-  QString line = tcs2qstr(str, st_len);
+  QString line = QString::fromUtf8(str, st_len);
   Qt::CaseSensitivity cs = (find_Mode & LeARG_IGNORECASE) ? Qt::CaseInsensitive
                                                           : Qt::CaseSensitive;
   if (backward) {

@@ -91,7 +91,7 @@ BOOL   TxSetY(txt *t, large y);
 tchar *TxInfo(wnd *w, large y, int *len);                 /* defined in tx.c */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void vipPrepareSearch(); /* using patterns prepared by tesParse() - see te.h */
-int  vipFind(tchar *str,
+int  vipFind(char  *str,
              int st_len, int from_pos, BOOL backward);
 /*
  *  Next function verifies that 'str' matches previously set pattern at given

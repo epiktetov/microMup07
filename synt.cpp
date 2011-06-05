@@ -30,9 +30,10 @@ small SyntKnownLang (QString filename)
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 small SyntSniffText (txt *text)
 {
-  TxTop(text);            if (qTxBottom(text)) return CLangNONE;
-  Lleng = TxTRead(text, Lebuf); if (Lleng < 3) return CLangNONE;
-  QString firstLine = tcs2qstr (Lebuf, Lleng);
+
+  int len;   TxTop(text); if (qTxBottom(text)) return CLangNONE;
+  char *tp = TxGetLn(text, &len); if (len < 3) return CLangNONE;
+  QString firstLine = QString::fromUtf8(tp, len);
   QRegExp binSpec("#!(?:/usr)?(?:/local)?(?:/bin/)?(\\w+)\\s*(.*)");
   QRegExp bash("(ba)?sh");
   if (!binSpec.exactMatch(firstLine)) return CLangNONE;

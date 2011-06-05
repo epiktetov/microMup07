@@ -204,6 +204,7 @@ void TxTRep (txt *t, tchar *tp, small len)
 }
 void TxFRep (txt *t, tchar *tp) { TxTRep(t, tp, lstrlen(MAXLPAC, tp)); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+char *TxGetLn(txt *t, int *len) { return DqLookupForw(t->txdstk,0, len,0); }
 small TxRead (txt *t, char *tp)
 {
   return qTxBottom(t) ? 0 : DqCopyForward(t->txdstk,0, tp,0);

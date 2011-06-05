@@ -369,6 +369,10 @@ ones (without selection, current character is converted and cursor moves right)
   Alt+Meta+ <up>   - convert current character/selection to uppercase
   Alt+Meta+<down>  - convert current character/selection to lowercase
   Ctrl+B           - add / clear "bold" attribute
+
+NOTE: "bold" attribute is marked by Unicode chars U+281 / U+280 (which are very
+unlikely to appear in regular text) and not compatible with anything.. not even
+with build-in MicroMir search engine. Use at your own risk, you've been warned!
 */
 k_(LE_CCUP,  mod_ALT+mod_META+Mk_UP,   0xf8913) /* буква -> прописная */
 k_(LE_CCDWN, mod_ALT+mod_META+Mk_DOWN, 0xf8915) /* буква -> строчная  */

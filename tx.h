@@ -15,6 +15,7 @@ void TxEnableSynt(txt *t, small clang);
 small aftotc (const char *orig, int len, tchar *dest_buf);
 small tctoaf (tchar      *orig, int len, char  *dest_buf);
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+char *TxGetLn(txt *t, int *len);     /* get top (raw) line from upper stack  */
 small TxRead (txt *t,  char *p);     /* read text line into specified buffer */
 small TxTRead(txt *t, tchar *p);     /*                                      */
 small TxFRead(txt *t, tchar *p);     /* <- fill with spaces up to MAXLPAC    */

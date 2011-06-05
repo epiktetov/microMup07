@@ -139,12 +139,12 @@ void cpreopen()
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/          
 static void toClipboard()
 {
-  CSclose();  TxTop(LCtxt); bool add_EOL = false; QString cbData;
+  CSclose();  TxTop(LCtxt); bool add_EOL = false; QString cbData; int len;
   while (!qTxBottom(LCtxt)) {
     if (add_EOL) cbData += (QChar)clipEOL;
-    Lleng = TxTRead(LCtxt, Lebuf); 
-    int dx = (Lebuf[0] == (tchar)CpSCH_NEW_LINE) ? 1 : 0;
-    cbData += tcs2qstr(Lebuf+dx, Lleng-dx); 
+    char *tp = TxGetLn(LCtxt, &len);
+    int dx = (*tp == CpSCH_NEW_LINE) ? 1 : 0;
+    cbData += QString::fromUtf8(tp+dx, len-dx);
     if (dx) cbData += (QChar)clipEOL;
     else              add_EOL = true; TxDown(LCtxt);
   }

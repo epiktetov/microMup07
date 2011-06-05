@@ -410,18 +410,20 @@ void tmFentr (void)                   /* file name ENTeR -- ввести имя 
   LenterARG(filebuf, &filebuflen, LFPROMPT, fileHistory,
                      &filebufFlag, TM_F1ENTR, TM_F2ENTR, 0);
 }
-void tmDoFentr (void) { if (filebuflen > LFPROMPT)
-                          twDirPush(tcs2qstr(filebuf   +LFPROMPT,
-                                             filebuflen-LFPROMPT)); }
-void tmDoFentr2 (void)
-{ 
-  if (filebuflen > LFPROMPT) {
-    wnd *wind = vipSplitWindow(Twnd, TM_VFORK);
-    if (wind) twEdit(wind, tcs2qstr(filebuf   +LFPROMPT,
-                                    filebuflen-LFPROMPT), NULL, true);
-} }
-void twShowFile(QString name) { wnd *wind = vipSplitWindow(Twnd, TM_VFORK);
-                                if  (wind)  twEdit(wind, name, NULL, true); }
+QString tmFentrFN (void)
+{
+  QString fn = tcs2qstr(filebuf+LFPROMPT, filebuflen-LFPROMPT);
+  fn.replace(QString::fromUtf8("•"), Ttxt->file->name);
+  return fn; //                 ^
+}            // attrs stripped already, but this char not common in filenames
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+void tmDoFentr (void) { if (filebuflen > LFPROMPT)  twDirPush(tmFentrFN()); }
+void tmDoFentr2(void) { if (filebuflen > LFPROMPT) twShowFile(tmFentrFN()); }
+void twShowFile(QString name)
+{
+  wnd *wind = vipSplitWindow(Twnd, TM_VFORK);
+  if  (wind)  twEdit(wind, name, NULL, true);
+}
 /*---------------------------------------------------------------------------*/
 static void tmExtractIncs (txt *mcd, QStringList& incList)
 {
