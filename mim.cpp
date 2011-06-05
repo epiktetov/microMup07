@@ -80,6 +80,15 @@ QColor colorSolidBlue (  0, 85,215); // - blue  |          gradient background)
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 int main(int argc, char *argv[])
 {
+#if defined(Q_OS_MAC) && QT_VERSION >= 0x040500
+  QApplication::setGraphicsSystem("raster");
+#endif  //                         ^
+// when using "native" graphics, scroll() posts update requeston on all widgets
+// (comments says "This is a hack around Apple's missing functionality, pending
+// the toolbox team fix. --Sam"), resulting in full window update and rendering
+// our efforts to optimize repaint useless; setting "raster" system explicitly
+// seems to fix that (must be called before QApplication constructor)
+//
   QApplication app(argc, argv);
   QCoreApplication::setOrganizationDomain("epiktetov.com"); tmInitialize();
   QCoreApplication::setOrganizationName("EpiMG");
@@ -527,7 +536,6 @@ void MiScTwin::Repaint (int x, int y, int width, int height, bool NOW)
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiScTwin::Scroll (int srcx, int ty, int width, int height, int dy)
 {
-#ifndef Q_OS_MAC
   int scTy = ty, scH = height + my_abs(dy), scTop = my_min(ty,ty+dy);
   int over = (upperNoScroll - scTop);
   if (over > 0) { scTop = upperNoScroll; scTy -= over;
@@ -545,10 +553,8 @@ void MiScTwin::Scroll (int srcx, int ty, int width, int height, int dy)
     if (over > 0) Repaint(srcx, my_min(ty,ty+dy), width,          over);
     Repaint(srcx, ty+height + dy - lowerNoScroll, width, lowerNoScroll);
   }
-  else                                 // Unfortunately, scroll does not really
-#endif                                 // work on Mac with Qt 4.7 (which fires
-  Repaint(srcx, ty+dy, width, height); // "repaint all" event after any scroll,
-}                                      // could not disable / work around it)
+  else Repaint(srcx, ty+dy, width, height);
+}
 //-----------------------------------------------------------------------------
 void MiScTwin::paintEvent (QPaintEvent *ev) // main PaintEvent (called from Qt)
 {
@@ -693,18 +699,17 @@ void MiScTwin::Text (QPainter& dc, int x, int y, int attr, QString text)
     else if (attr & AT_BADCHAR) dc.setPen(colorSolidRed);
     else if (attr & AT_COMMENT) dc.setPen(colorDarkGrey); //- testing that last
     else                        dc.setPen(*fg_color);     // to preserve colors
-    Erase(dc, x, y, len);                                 // in comments (jic)
-  }
+  }                                                       // in comments (jic)
   dc.drawText(Tx2qtX(x), Ty2qtY(y)+fontBaseline, text);
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiScTwin::Text (QPainter& dc, int x, int y, tchar *tp, int len)
 {
   static QChar str [MAXLPAC]; tchar *tpend = tp + len, tc, tcc;
-         QChar *sf = str, qc; tchar tA = 1, tC;
-  while (tp < tpend) {
-    tc = *tp++;
-    tC = tATTR(tc);
+         QChar *sf = str, qc; tchar tA = 1, tC;  Erase(dc, x,y, len);
+  while (tp < tpend) {                           // ^
+    tc = *tp++;                                  // erase the entire text area
+    tC = tATTR(tc);                              // first to reduce dc switches
     tcc = (tc & AT_CHAR);
     if (tc & AT_QUOTE) { tC &= ~(AT_QOPEN|AT_QCLOSE);
            switch (tc & (AT_CHAR|AT_QOPEN|AT_QCLOSE)) {

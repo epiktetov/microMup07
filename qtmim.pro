@@ -1,8 +1,8 @@
 #!qmake -- Qt project file for µMup07
 TEMPLATE = app
+CONFIG += release
 unix:QtPLATF = unix# must be the first (as 'unix' condition's true on macx too)
 macx {
-  CONFIG += x86
   TARGET = µMup07
   ICON = microMir.icns
   QtPLATF = macx
@@ -11,7 +11,6 @@ macx {
 }
 !macx:TARGET = mim
 win32 {
-  CONFIG += release
   RC_FILE = qtmim.rc
   QtPLATF = win32
 }
@@ -46,6 +45,16 @@ macx {
   symlink.commands = ln -sf $$MimEXECUTABLE $$symlink.target
   QMAKE_EXTRA_TARGETS += icns symlink
   POST_TARGETDEPS += $$icns.target $$symlink.target
+#
+# For some reason, QtCreator cannot handle qt_menu.nib by itself, when building
+# with debug library (which are not available in framework format), assisting..
+#
+  qt_menu.target = $$MimRESOURCES/qt_menu.nib
+  qt_menu.depends = ../installs/Qt-sources-git/src/gui/mac/qt_menu.nib
+  qt_menu.commands = cp -R $$qt_menu.depends $$MimRESOURCES
+  qt_menu_ext.target = qt_menu
+  qt_menu_ext.depends = $$qt_menu.target
+  QMAKE_EXTRA_TARGETS += qt_menu qt_menu_ext
 }
 MimFILES  = LICENSE    micros.dir microMir.icns micros.icns mim.Info.plist
 MimFILES += micro.keys micons.psd microMir.png
