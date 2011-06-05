@@ -2,7 +2,6 @@
 // МикроМир07              Откатка - Undo               | (c) Epi MG, 2007,2011
 //------------------------------------------------------+--------------------*/
 #include "mic.h"                  /* Old ud.c (c) Attic 1989, (c) EpiMG 1998 */
-#include "ccd.h"
 #include "twm.h"
 #include "vip.h" /* uses Lwd, Ltxt and Ttxt */
 #include "dq.h"
@@ -15,34 +14,34 @@
 /*                 Undo буфер - дек, растущий только с конца.                */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 typedef struct { /* UT_LOAD -- загрузка редактора строки */
- small    utyp;
- small _unused;
- large  uytext;
+ short    utyp;
+ short _unused;
+ long   uytext;
 } textlundo;
 
 typedef struct { /* UT_IL / UT_DL -- добавленные / удаленные строки (ascii) */
- small utyp;
- small uslen;
- large uytext;
+ short utyp;
+ short uslen;
+ long uytext;
 /* old/new string */
 } text1undo;
 
 typedef struct { /* UT_REP -- измененные строки (ascii) */
- small utyp;
- small unslen;
- small uoslen;
- large uytext;
- small udindex;
+ short utyp;
+ short unslen;
+ short uoslen;
+ long  uytext;
+ short udindex;
 /* new string */
 /* old string */
 } text2undo;
 
 typedef struct { /* UL_InLE -- замена внутри строки (tchar) */
- small utyp;
- small ulnsl, ulosl;
- small ulx;
- small ulxl, ulxr, uldx;
- small _unused;
+ short utyp;
+ short ulnsl, ulosl;
+ short ulx;
+ short ulxl, ulxr, uldx;
+ short _unused;
  /* Новая  подстрока */
  /* Старая подстрока */
 } lineundo;
@@ -53,10 +52,10 @@ BOOL UdMark = FALSE;
 /*-----------------------------------------------------------------------------
  *               Добавить сформированную запись откатки к файлу
  */
-static void undogadd (txt *t, small typ)
+static void undogadd (txt *t, short typ)
 {
   ((text1undo *)ubuf)->utyp = ( UdMark ? typ|U_MARK : typ ); UdMark = FALSE;
-  large len = t->txudcptr;
+  long len = t->txudcptr;
   if (typ <= UT_LOAD) {                       /* началось изменение текста - */
     if (t->txudlptr < len) len = t->txudlptr; /*     удалим строчную откатку */
                            t->txudlptr = len;
@@ -84,13 +83,13 @@ void tundounload (txt *t)                                /* Покидание �
  *                       Учесть операцию внутри строки
  */
 void lundoadd (txt *t,
-             small xl, small xr, /* Измененная или ролируемая подстрока      */
-             small dx,           /* Величина сдвига, REPLACE в случае замены */
+             short xl, short xr, /* Измененная или ролируемая подстрока      */
+             short dx,           /* Величина сдвига, REPLACE в случае замены */
              tchar *os,
              tchar *ns) /* Старая и новая подстроки (NIL для одних пробелов) */
 {
   if (undo_blocked || !t || t->txudeq == NULL) return;
-  small slen = (dx == REPLACE) ? xr-xl : my_abs(dx);
+  short slen = (dx == REPLACE) ? xr-xl : my_abs(dx);
   char *p = ubuf;
   lineundo *pl = (lineundo*)p;
   pl->ulx  = Lx;
@@ -106,8 +105,8 @@ void lundoadd (txt *t,
 /*-----------------------------------------------------------------------------
  *                   Учесть удаление/вставку строки в текст
  */
-void tundo1add (txt  *t, small typ, /* Тип записи - UT_IL или UT_DL */
-                char *a, small len) /* Строка и ее длина            */
+void tundo1add (txt  *t, short typ, /* Тип записи - UT_IL или UT_DL */
+                char *a, short len) /* Строка и ее длина            */
 {
   if (undo_blocked || t->txudeq == NULL) return;
   text1undo *pt = (text1undo*)ubuf;
@@ -120,10 +119,10 @@ void tundo1add (txt  *t, small typ, /* Тип записи - UT_IL или UT_DL 
  * вых: индекс подстрок, *plo - длина первой подстроки, *pln - длина второй
  *      0,0,0 если строки равны
  */
-static small midind (char *ao, small *plo, char *an, small *pln)
+static short midind (char *ao, short *plo, char *an, short *pln)
 {
   char *p1, *p2;
-  small i, j;
+  short i, j;
   for (p1 = ao, p2 = an, j = my_min(*plo, *pln); j; j--)
     if (*p1++ != *p2++) { p1--; break; }
 
@@ -141,11 +140,11 @@ static small midind (char *ao, small *plo, char *an, small *pln)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  *                       Учесть замену строки в тексте
  */
-void tundo2add (txt *t, char *ao, small lo, /* Старая строка */
-                        char *an, small ln) /* Новая  строка */
+void tundo2add (txt *t, char *ao, short lo, /* Старая строка */
+                        char *an, short ln) /* Новая  строка */
 {
   if (undo_blocked || t->txudeq == NULL) return;
-  small k = midind(ao, &lo, an, &ln);
+  short k = midind(ao, &lo, an, &ln);
   text2undo *pt = (text2undo*)ubuf;
   pt->uytext = t->txy;
   pt->udindex = k;
@@ -166,8 +165,8 @@ static void genundo (int undodir)
   else if (undo_typ == UL_InLE) {
     lineundo *pl = (lineundo *)ubuf;
     tchar *utsptr = (tchar *)(ubuf + sizeof(lineundo));
-    small dx = pl->uldx, len = pl->ulnsl;
-    small maxlen = (dx == REPLACE) ? (pl->ulxr - pl->ulxl) : my_abs(dx);
+    short dx = pl->uldx, len = pl->ulnsl;
+    short maxlen = (dx == REPLACE) ? (pl->ulxr - pl->ulxl) : my_abs(dx);
     Lx = pl->ulx;
     if (undodir < 0) {  if (dx != REPLACE)    dx = -dx;
                         utsptr += len; len = pl->ulosl;  
@@ -189,8 +188,8 @@ static void genundo (int undodir)
   }
   else if (undo_typ == UT_REP) {
     text2undo *pt2 = (text2undo *)ubuf;
-    small index = pt2->udindex;
-    small usl, uosl, unsl;
+    short index = pt2->udindex;
+    short usl, uosl, unsl;
     char *usptr, *unsptr;
     qsety(pt2->uytext);
     usl = TxRead(Ttxt, afbuf) - index;
@@ -218,7 +217,7 @@ static void tsundo (BOOL slow)
   int undone = 0;
   while (t->txudcptr) {                        int real_len;
     DqCopyBackward(t->txudeq, t->txudcptr, ubuf, &real_len);
-    small utyp = ((textlundo *)ubuf)->utyp,
+    short utyp = ((textlundo *)ubuf)->utyp,
       undo_typ = utyp & (~U_MARK);
 //
 // If we were in LE mode and first block to undo is not "in-LE" type, then exit
@@ -247,7 +246,7 @@ static void tsunundo (BOOL slow)
   int redone = 0;
   while (t->txudcptr != DqLen(t->txudeq)) {   int real_len;
     DqCopyForward(t->txudeq, t->txudcptr, ubuf, &real_len);
-    small utyp = ((textlundo *)ubuf)->utyp,
+    short utyp = ((textlundo *)ubuf)->utyp,
       undo_typ = utyp & (~U_MARK);                  // stop if slow or @marker
     if ((slow || (utyp & U_MARK)) && redone) break; //     (and already redone)
     t->txudcptr += real_len;

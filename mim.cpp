@@ -700,7 +700,12 @@ void MiScTwin::Text (QPainter& dc, int x, int y, int attr, QString text)
     else if (attr & AT_COMMENT) dc.setPen(colorDarkGrey); //- testing that last
     else                        dc.setPen(*fg_color);     // to preserve colors
   }                                                       // in comments (jic)
-  dc.drawText(Tx2qtX(x), Ty2qtY(y)+fontBaseline, text);
+#if defined(Q_OS_MAC) && QT_VERSION >= 0x040500
+# define MiTEXT_AT(x) Tx2qtX(x)-1 //
+#else                             // With "raster" graphics system text painted
+# define MiTEXT_AT(x) Tx2qtX(x)   // 1 pixel to the right of requested position
+#endif                            //                           (moving it back)
+  dc.drawText(MiTEXT_AT(x), Ty2qtY(y)+fontBaseline, text);
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiScTwin::Text (QPainter& dc, int x, int y, tchar *tp, int len)

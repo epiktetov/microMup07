@@ -7,26 +7,26 @@
 txt *TxNew(BOOL qundo); void TxInit(),                       TxMarks0(txt *t);
 BOOL qTxTop   (txt *t); void TxDel (txt *t), TxUp  (txt *t), TxTop   (txt *t);
 BOOL qTxBottom(txt *t); void TxEmpt(txt *t), TxDown(txt *t), TxBottom(txt *t);
-void TxEnableSynt(txt *t, small clang);
+void TxEnableSynt(txt *t, short clang);
 /*
  * Conversions between Ascii file string (UTF-8 encoding) and tchar string 
  *                                 returns destination size, in char/bytes
  */
-small aftotc (const char *orig, int len, tchar *dest_buf);
-small tctoaf (tchar      *orig, int len, char  *dest_buf);
+short aftotc (const char *orig, int len, tchar *dest_buf);
+short tctoaf (tchar      *orig, int len, char  *dest_buf);
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 char *TxGetLn(txt *t, int *len);     /* get top (raw) line from upper stack  */
-small TxRead (txt *t,  char *p);     /* read text line into specified buffer */
-small TxTRead(txt *t, tchar *p);     /*                                      */
-small TxFRead(txt *t, tchar *p);     /* <- fill with spaces up to MAXLPAC    */
+short TxRead (txt *t,  char *p);     /* read text line into specified buffer */
+short TxTRead(txt *t, tchar *p);     /*                                      */
+short TxFRead(txt *t, tchar *p);     /* <- fill with spaces up to MAXLPAC    */
 
-void TxRep (txt *t,  char *a, small len); /* replace */
-void TxTRep(txt *t, tchar *a, small len);
+void TxRep (txt *t,  char *a, short len); /* replace */
+void TxTRep(txt *t, tchar *a, short len);
 void TxFRep(txt *t, tchar *p);
-void TxIL  (txt *t,  char *line, small len), TxDL(txt *t), TxDEL_beg(txt *t);
-void TxTIL (txt *t, tchar *line, small len),               TxDEL_end(txt *t);
+void TxIL  (txt *t,  char *line, short len), TxDL(txt *t), TxDEL_beg(txt *t);
+void TxTIL (txt *t, tchar *line, short len),               TxDEL_end(txt *t);
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-extern char   afbuf[]; extern small tab_size;
+extern char   afbuf[]; extern short tab_size;
 extern char   txbuf[]; extern txt     *texts;
 /*---------------------------------------------------------------------------*/
 #endif                                                      /* TX_H_INCLUDED */

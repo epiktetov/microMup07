@@ -13,6 +13,7 @@
 #include "twm.h"
 #include "vip.h"
 #include "clip.h" // clipRefocus()
+#include "macs.h"
 #include "synt.h"
 extern "C" {
 #include "le.h"
@@ -32,7 +33,7 @@ wnd *vipNewWindow (wnd *wbase, int sw, int sh, int kcode)
   L2_INSERT(windows, w, wdprev, wdnext);
   w->wsw = (sw < 0) ? MiApp_defWidth  : sw;  w->cx  = w->cy = -1;
   w->wsh = (sh < 0) ? MiApp_defHeight : sh;  w->wty = w->wtx = 0;
-
+  w->wspace = 0;
   MiFrame *basef = wbase ? wbase->sctw->mf : 0;
   MiFrame *frame;
   if (kcode == TM_VFORK) {
@@ -86,8 +87,9 @@ void vipCleanupWindow (wnd *vp)     /* called when MiScTwin deleted from GUI */
 /*---------------------------------------------------------------------------*/
 inline void vipGetPosition (wnd *vp, int& x, int& y)
 {
-  MiFrame *frame = vp->sctw->mf; x = frame->x(); // TODO: lower pane?
-                                 y = frame->y();
+  x = vp->sctw->mf->x();
+  y = vp->sctw->mf->y();
+  if (vp->sib_pos && vp->wsibling) y += vp->sctw->Th2qtH(vp->wsh);
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 wnd *vipFindWindow (wnd *wbase, int kcode) /* rel.direction TM_U/L/D/RWINDOW */
@@ -97,7 +99,12 @@ wnd *vipFindWindow (wnd *wbase, int kcode) /* rel.direction TM_U/L/D/RWINDOW */
      || (kcode == TM_UWINDOW && wbase->sib_pos == 1)) return wbase->wsibling;
   }
   int dx = 0, dy = 0, xb, yb, x, y, xt, yt, delta;
-  wnd *w, *wt = NULL;
+  wnd *w, *wt = NULL;        xt = yt = 2147483647; /* infinity */
+  macs_update_all_wspaces();
+#ifdef Q_OS_MAC_notdef
+  for (w = windows; w != NULL; w = w->wdnext)
+    w->wspace = macs_get_wspace((void*)( w->sctw->mf->winId() ));
+#endif
   vipGetPosition(wbase, xb, yb);
   switch (kcode) {
   case TM_UWINDOW: dx =  0; dy = -1; break;
@@ -105,17 +112,12 @@ wnd *vipFindWindow (wnd *wbase, int kcode) /* rel.direction TM_U/L/D/RWINDOW */
   case TM_LWINDOW: dx = -1; dy =  0; break;
   case TM_RWINDOW: dx = +1; dy =  0; break;
   }
-  xt = yt = 2147483647; /* infinity */
-  if (dx) {
-    for (w = windows; w != NULL; w = w->wdnext) {
-      vipGetPosition(w, x, y);
-      if ((delta = dx*(x - xb)) > 0 && delta < xt) { wt = w; xt = delta; }
-  } }
-  if (dy) {
-    for (w = windows; w != NULL; w = w->wdnext) {
-      vipGetPosition(w, x, y);
-      if ((delta = dy*(y - yb)) > 0 && delta < yt) { wt = w; yt = delta; }
-  } }
+  for (w = windows; w != NULL; w = w->wdnext) {
+    if (w->wspace != wbase->wspace) continue;
+    vipGetPosition(w, x, y);
+    if (dx && (delta = dx*(x - xb)) > 0 && delta < xt) { wt = w; xt = delta; }
+    if (dy && (delta = dy*(y - yb)) > 0 && delta < yt) { wt = w; yt = delta; }
+  }
   return wt;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -158,8 +160,8 @@ void vipRepaint(wnd *vp, QPainter& dc, MiScTwin *sctw, int x0, int x1,
       if (len <= vp->cx) len = vp->cx+1;   //
       pt_line[vp->cx] = (pt_line[vp->cx] & AT_CHAR) | vp->ctc; spoiled = true;
     }
-    if (len  > x0) sctw->Text (dc,  x0, y, pt_line+x0, len-x0);
     if (len <= x1) sctw->Erase(dc, len, y,           x1-len+1);
+    if (len  > x0) sctw->Text (dc,  x0, y, pt_line+x0, len-x0);
     if (spoiled)
       blktspac(pt_line+x0, x1-x0+1); // if spoiled (by cursor or BlockMark),
 } }                                  // cleanup everything to avoid ghosts
@@ -477,9 +479,8 @@ void vipPrepareSearch()             /* prepare Qspre/Qsstr for the vipFind() */
       (find_Mode & LeARG_WILDCARD)   ? QRegExp::Wildcard   : QRegExp::RegExp);
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-int vipFind (char *str, int st_len, int from_pos, BOOL backward)
+inline int vipDoFind (QString line, int st_len, int from_pos, BOOL backward)
 {
-  QString line = QString::fromUtf8(str, st_len);
   Qt::CaseSensitivity cs = (find_Mode & LeARG_IGNORECASE) ? Qt::CaseInsensitive
                                                           : Qt::CaseSensitive;
   if (backward) {
@@ -492,6 +493,17 @@ int vipFind (char *str, int st_len, int from_pos, BOOL backward)
     if (find_Mode & LeARG_STANDARD) return line.indexOf(Qsstr, from_pos, cs);
     else                            return line.indexOf(Qspre, from_pos);
 } }
+int vipFind (char *str, int st_len, int from_pos, BOOL backward)
+{
+  QString line = QString::fromUtf8(str, st_len);
+  int X = vipDoFind(line, st_len, from_pos, backward);
+//
+// Fix for bold (or any other) attr in the searched string: adjust by number of
+// switchers in the part of string before found position
+//
+  for (int i = X-1; i >= 0; i--)
+    if ((line.at(i).unicode() & 0x0FFE0) == 0x280) X--;  return X;
+}
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 int vipFindReplace (tchar *str, int st_len, int at_pos,  /* "find a replace" */
                     tchar *out, int *st_x0, int *st_x1)
@@ -588,9 +600,7 @@ void vipFileTooBigError (qfile *f, large size)
   vipError(QString("File %1 is too big (size: %2), truncated")
                          .arg(QfsShortName(f)).arg(size));
 }
-void vipBell()                                { QApplication::beep();       }
-void vipTrace1(const char *fmt, int arg)      { fprintf(stderr, fmt,  arg); }
-void vipTrace2(const char *fmt, int x, int y) { fprintf(stderr, fmt, x, y); }
+void vipBell() { QApplication::beep(); }
 /*---------------------------------------------------------------------------*/
 QString vipQstrX (QString str)
 {

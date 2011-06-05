@@ -2,7 +2,6 @@
 // МикроМир07              Texts - Тексты               | (c) Epi MG, 2007,2011
 //------------------------------------------------------+--------------------*/
 #include "mic.h"             /* Old tx.c (c) Attic 1989, (c) EpiMG 1998,2001 */
-#include "ccd.h"
 #include "qfs.h"
 #include "twm.h"
 #include "vip.h"
@@ -50,7 +49,7 @@ txt *TxNew (BOOL qundo)                        /* Создание / удале�
   return t;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void TxEnableSynt (txt *t, small clang)       /* add deqs for syntax checker */
+void TxEnableSynt (txt *t, short clang)       /* add deqs for syntax checker */
 {
   if (( t->clang = clang ) && t->clustk == NIL && t->cldstk == NIL) {
     t->clustk = DqNew(DT_SYNT, 0, MAXLPAC);
@@ -118,7 +117,7 @@ void TxDown (txt *t)
 } } }
 void TxBottom (txt *t) { while (!qTxBottom(t)) TxDown(t); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-BOOL TxSetY (txt *t, large y)
+BOOL TxSetY (txt *t, long y)
 {
   while(t->txy < y) { if (qTxBottom(t)) return FALSE; TxDown(t); }
   while(t->txy > y) { if (qTxTop(t))    return FALSE; TxUp(t);   } return TRUE;
@@ -128,7 +127,7 @@ void TxDL(txt *t)
 {
   if (qTxBottom(t)) exc(E_MOVDOWN);
   else {
-    small len = DqGetB(t->txdstk, txbuf); tundo1add(t, UT_DL, txbuf, len);
+    short len = DqGetB(t->txdstk, txbuf); tundo1add(t, UT_DL, txbuf, len);
     if (t->cldstk &&
       !qDqEmpt(t->cldstk)) DqGetB(t->cldstk, (char*)(t->thisSynts));
     int i;
@@ -142,7 +141,7 @@ void TxDEL_beg(txt *t)
   if (t->txy < 1) return; /* already in the first line: nothing to delete */
 
   while (!qDqEmpt(t->txustk)) {
-    small len = DqGetE(t->txustk, txbuf);
+    short len = DqGetE(t->txustk, txbuf);
     t->txy--;
     tundo1add(t, UT_DL, txbuf, len); num_deleted++; t->maxTy--;
   }
@@ -157,7 +156,7 @@ void TxDEL_end(txt *t)
   t->maxTy = t->txy;
   int i;
   while (!qDqEmpt(t->txdstk)) {
-    small len = DqGetB(t->txdstk, txbuf);
+    short len = DqGetB(t->txdstk, txbuf);
     tundo1add(t, UT_DL, txbuf, len);
   }
   if (t->cldstk && !qDqEmpt(t->cldstk)) DqEmpt(t->cldstk);
@@ -175,7 +174,7 @@ void TxEmpt (txt *t)
   memset(t->lastSynts, 0, sizeof(int) * MAXSYNTBUF); wndop(TW_EM, t);
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void TxIL(txt *t, char *text, small len)
+void TxIL(txt *t, char *text, short len)
 {
   DqAddB   (t->txdstk, text, len); t->maxTy++;
   tundo1add(t,  UT_IL, text, len); 
@@ -186,39 +185,39 @@ void TxIL(txt *t, char *text, small len)
   int i; for (i=0; i<TXT_MARKS; i++)
            if (t->txmarky[i] >= t->txy) t->txmarky[i]++;  wndop(TW_IL, t);
 }
-void TxTIL (txt *t, tchar *tp, small len)
+void TxTIL (txt *t, tchar *tp, short len)
 {
   TxIL(t, afbuf, tctoaf(tp, len, afbuf));
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void TxRep (txt *t, char *text, small len)
+void TxRep (txt *t, char *text, short len)
 {
   if (!qTxBottom(t)) {
-    small olen = DqGetB(t->txdstk, txbuf);
+    short olen = DqGetB(t->txdstk, txbuf);
     tundo2add(t,  txbuf, olen, text, len);
     DqAddB   (t->txdstk,       text, len); wndop(TW_RP, t);
 } }
-void TxTRep (txt *t, tchar *tp, small len)
+void TxTRep (txt *t, tchar *tp, short len)
 {
   TxRep(t, afbuf, tctoaf(tp, len, afbuf));
 }
 void TxFRep (txt *t, tchar *tp) { TxTRep(t, tp, lstrlen(MAXLPAC, tp)); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 char *TxGetLn(txt *t, int *len) { return DqLookupForw(t->txdstk,0, len,0); }
-small TxRead (txt *t, char *tp)
+short TxRead (txt *t, char *tp)
 {
   return qTxBottom(t) ? 0 : DqCopyForward(t->txdstk,0, tp,0);
 }
-small TxTRead (txt *t, tchar *tp)
+short TxTRead (txt *t, tchar *tp)
 {
   if (qTxBottom(t)) {
-    small  len = aftotc(AF_DIRTY "^^" AF_NONE " end of ", -1, tp);
+    short  len = aftotc(AF_DIRTY "^^" AF_NONE " end of ", -1, tp);
     return len + QfsFullName2tc(t->file, tp+len);
   } 
-  else { small laf =  TxRead(t, txbuf);
+  else { short laf =  TxRead(t, txbuf);
          return aftotc(txbuf, laf, tp); }
 }
-small TxFRead (txt *t, tchar *tp)
+short TxFRead (txt *t, tchar *tp)
 {
   int len =  TxTRead(t, tp);
   blktspac(tp+len, MAXLPAC-len); return len;
@@ -236,11 +235,11 @@ small TxFRead (txt *t, tchar *tp)
 // Unicode character from U+280 to U+29F (UTF-8 from \xCA\x80 to \xCA\x9F) thus
 // cannot appear in µMup07 text (they all belong to rarely used IPA extensions)
 //
-small aftotc (const char *orig, int len, tchar *dest_buf)
+short aftotc (const char *orig, int len, tchar *dest_buf)
 {
   const char *orig_end = orig + ((len < 0) ? (int)strlen(orig) : len);
   tchar attr = 0;                                      unsigned x,y,z;
-  small ltc  = 0;
+  short ltc  = 0;
   while (ltc < MAXLPAC && orig < orig_end) {
     char c = *orig++;
     if (c == ACPR && orig < orig_end && (*orig & 0xC0) == 0x80) {
@@ -288,7 +287,7 @@ small aftotc (const char *orig, int len, tchar *dest_buf)
 }
 /* - - - - - - - - - - - - - - - - Convert tchar string to ascii file string */
 //
-small tctoaf (tchar *orig, int len, char *dest_buf)
+short tctoaf (tchar *orig, int len, char *dest_buf)
 {
   char attr = 0, cattr; int laf, itc, j;
   tchar  c, csa;
@@ -343,7 +342,7 @@ tchar txFlags[TXT_MARKS] = { AT_MARKFLG             + 0xB0,   /* brown °     */
                              AT_MARKFLG + AT_BG_GRN + 0xB2,   /* green ²     */
                              AT_MARKFLG + AT_BG_BLU + 0xB3 }; /* blue  ³     */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-tchar *TxInfo (wnd *w, large y, int *pl)      /* used for repaint in vip.cpp */
+tchar *TxInfo (wnd *w, long y, int *pl)       /* used for repaint in vip.cpp */
 {                                             /* to get current char mim.cpp */
   txt *t = w->wtext;                          /* (return buf may be changed) */
   int len = 0;

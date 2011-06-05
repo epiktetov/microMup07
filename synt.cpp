@@ -3,7 +3,7 @@
 //------------------------------------------------------+----------------------
 #include <QString>
 #include "mic.h"
-#include "ccd.h"
+#include "ccd.h" // uses ‘KbRadix’ and ‘KbCount’
 #include "qfs.h"
 #include "twm.h"
 #include "vip.h"
@@ -16,9 +16,9 @@ extern "C" {
 #include <QRegExp>
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 small SyntKnownLang (QString filename)
-{
-  QRegExp ShFile(".+\\.sh");
-  QRegExp CppFile(".+\\.(c|cpp|cxx|h|hpp|hxx)", Qt::CaseInsensitive);
+{                                         // temporarily Objective-C == C++
+  QRegExp ShFile(".+\\.sh");              //
+  QRegExp CppFile(".+\\.(c|cpp|cxx|h|hpp|hxx|m|mm)", Qt::CaseInsensitive);
   QRegExp PerlFile(".+\\.pl");
   QRegExp PythonFile(".+\\.py");
        if (ShFile.exactMatch(filename))     return CLangSH   + CLangDISABLED;

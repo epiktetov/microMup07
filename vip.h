@@ -39,12 +39,11 @@ void vipRepaint(wnd *vp, QPainter& dc, MiScTwin *sctw, int x0, int x1,
                                                        int y0, int y1);
 void TxRecalcMaxTy(txt *t);
 extern QRect BlockMarkRect;
-extern int Scrolling; // 0 = no, negative = scrolling up, positive = down
 #endif
 /* namoMir was initially developed for very slow devices, special optimization
  * was deployed in TxIL/TxDL/TxRep to redraw only portion that really changed:
  */
-extern void wndop (small op, txt *t); /* Показать изменение текста:     */
+extern void wndop (short op, txt *t); /* Показать изменение текста:     */
 #define TW_EM  0                      /* - text empty                   */
 #define TW_IL  1                      /* - insert line                  */
 #define TW_DL  2                      /* - delete line                  */
@@ -57,8 +56,7 @@ void vipRedrawLine  (wnd *vp,         int ty);
 void vipRedrawWindow(wnd *vp);
 void vipRedraw      (wnd *vp, int tx, int ty, int width, int height);
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void vipReady();
-void vipBell();
+void vipReady(), vipBell();
 BOOL qkbhin();
 int  kbhin();
 void setkbhin(int kc); /* called on real keyboard events, resets kbhin timer */
@@ -71,24 +69,25 @@ void vipOnKeyCode(wnd *w, int ev, int ca); /* macro entering (TK_SMn,TW_CUP) */
 int  vipOnMimCmd (wnd *w, int ev, int ca); /* - TK_EMn and block selections  */
 int  vipOnTwxCmd (wnd *w, int kcode);      /* - TW_xx commands               */
 int  vipOnRegCmd (wnd *w, int kcode); /* process other (LE/TE/TM_x) commands */
-
-comdesc *Ldecode(int kcode); int LeCommand(comdesc *cp);  /* line editor cmd */
-comdesc *Tdecode(int kcode); int TeCommand(comdesc *cp);  /* text editor cmd */
-void EnterLEmode(void);      int TmCommand(int   kcode);
+void EnterLEmode(void);
 void ExitLEmode(void);
 extern int leARGmode;     /* Argument Enter mode (1 = first char, > 1 later) */
-/*---------------------------------------------------------------------------*/
+#ifdef CCD_H_INCLUDED
+comdesc *Ldecode(int kcode); int LeCommand(comdesc *cp);  /* line editor cmd */
+comdesc *Tdecode(int kcode); int TeCommand(comdesc *cp);  /* text editor cmd */
+                             int TmCommand(int   kcode);
+#endif /*--------------------------------------------------------------------*/
 extern wnd * Lwnd; /* Окно, в котором редактируется строка (used in le.c)    */
 extern wnd * Twnd; /* Окно, в котором редактируется текст (used in te.c)     */
 extern txt * Ttxt; /* Редактируемый текст                                    */
-extern large Ty;   /* Y курсора в тексте      (real programmers use global   */
-extern small Tx;   /* X курсора в тексте      vars for most important stuff) */
+extern long  Ty;   /* Y курсора в тексте      (real programmers use global   */
+extern short Tx;   /* X курсора в тексте      vars for most important stuff) */
 /*
  * Positioning in text (returns FALSE if could not reach specified line) and
  * principal method of getting text info (used for window re-paint):
  */
-BOOL   TxSetY(txt *t, large y);
-tchar *TxInfo(wnd *w, large y, int *len);                 /* defined in tx.c */
+BOOL   TxSetY(txt *t, long y);
+tchar *TxInfo(wnd *w, long y, int *len);                  /* defined in tx.c */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void vipPrepareSearch(); /* using patterns prepared by tesParse() - see te.h */
 int  vipFind(char  *str,
@@ -108,10 +107,8 @@ int vipConvert (tchar *str, int str_len, int cvt_type, tchar *out_buf);
 #define cvTO_RADIX   16 /* number to any base (default hex)         returned */
 /*---------------------------------------------------------------------------*/
 void vipError (const char *message);                              /* vip.cpp */
-void vipTrace1(const char *fmt, int arg);
-void vipTrace2(const char *fmt, int x, int y);
 #ifdef QFS_H_INCLUDED
-  void vipFileTooBigError(qfile *f, large size);
+  void vipFileTooBigError(qfile *f, long size);
 #endif
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #ifdef __cplusplus

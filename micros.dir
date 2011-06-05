@@ -11,13 +11,15 @@ Qt-based File System                                           |qfs.h
                                                                |qfs.cpp
 Text & Window Manager                                          |twm.h
                                              TM_xxx processing |twm.cpp
-UNIX-specific stuff and tmSyncPos                              |unix.h
-                                                               |unix.cpp
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -|- - - - - - - -
 Clipboard (using QClipboard) and Char/Line Storage operations, |clip.h
                                       plus block copy and stuff|clip.cpp
 Syntax checker / text colorizer                                |synt.h
                                                                |synt.cpp
+Mac-specific code (GCC's Objectvie-C++ extension)              |macs.h
+                                                               |macs.mm
+UNIX-specific stuff and tmSyncPos                              |unix.h
+                                                               |unix.cpp
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -|- - - - - - - -
 ViewPort (interface between wx/C++ and legacy C code) and some |vip.h
      other stuff used in both C and C++ code (like QString ops)|vip.cpp

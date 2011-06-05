@@ -9,10 +9,11 @@ extern "C" {
 #ifdef small /*----------- Определим свои типы (for legacy C code) ----------*/
 #undef small
 #endif
-typedef short small; /* (at least) 16-bit signed integer      */
-typedef long  large; /* (at least) 32-bit integer             */
-typedef long  addr;  /* Целое достаточного размера для адреса */
-typedef int   BOOL;  
+typedef short small;   /* (at least) 16-bit signed integer     -- DEPRECATED */
+typedef long  large;   /* (at least) 32-bit integer     (TODO: replace them) */
+#ifndef OBJC_BOOL_DEFINED
+  typedef signed char BOOL; /* <- just to reduce the entropy, using the same */
+#endif                      /*  typedef as in Objective-C header objc/objc.h */
 #ifndef FALSE
 # define TRUE  ((BOOL)1)
 # define FALSE ((BOOL)0)
@@ -24,7 +25,6 @@ typedef int   BOOL;
 #define EOFchar '\032' /* 'EOF' is reserved somewhere */
 #define ACPR    '\xCA'
 #define ACPR2   '\x80'
-#define local static                           /* Локальная (static) функция */
 #define ctotc(c) ((tchar)(unsigned char)(c))   /* <- без расширения знака    */
 #define NIL      ((void*)0) /* указатель (same as standard NULL but shorter) */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

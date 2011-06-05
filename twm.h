@@ -67,7 +67,7 @@ struct wnd_tag
   small  wtx;   large wty;  /* координаты левого верхнего угла окна в тексте */
   small  wcx;   large wcy;  /* курсор в связанном с окном тексте (inactive)  */
   int cx, cy;   tchar ctc;  /* - оконные координаты курсора и аттрибуты      */
-  small wsh,          wsw;  /* высота и ширина окна                          */
+  small wsh, wsw,  wspace;  /* высота и ширина окна, workspace (Mac only)    */
   txt              *wtext;  /* ссылка на описатель текста                    */
   dirstk stack[MAXDIRSTK];  /* стек файлов, связанный с окном                */
   dirstk *dirsp;            /* - его указатель                               */

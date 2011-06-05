@@ -9,18 +9,18 @@ void DqInit(char *membuf, long bufsize);
 struct deq_tag
 {
   char     *dbeg, *dend;   /* указатель на начало / за конец дека            */
-  small    dbext, deext;   /* оптимальный размер экстента для начала / конца */
+  short    dbext, deext;   /* оптимальный размер экстента для начала / конца */
   struct deq_tag *dnext,   /* следующий дек                                  */
                  *dprev;   /* предыдущий дек                                 */
-  addr           dextra;   /* промежуток свыше квоты                         */
-  small            dtyp;   /* тип дека: 't'ext, 'u'ndo, 's'ynt-info          */
+  long           dextra;   /* промежуток свыше квоты                         */
+  short            dtyp;   /* тип дека: 't'ext, 'u'ndo, 's'ynt-info          */
 };
 /* Типы деков - поле dtyp (младший бит означает двоичный дек:  */
 #define DT_TEXT 't' /* верхний/нижний стек для текстов (ascii) */
 #define DT_UNDO 'u' /* буфер откатки                  (binary) */
 #define DT_SYNT 's' /* буфер для Syntax checker       (binary) */
 /*---------------------------------------------------------------------------*/
-deq *DqNew(small typ, small bext, small eext);
+deq *DqNew(short typ, short bext, short eext);
 BOOL DqDel(deq *d);
 
 #define DT_IsBIN(dtyp) (dtyp & 1)
@@ -28,7 +28,7 @@ BOOL DqDel(deq *d);
 #define DqLen(d)   cpdiff(d->dend, d->dbeg)
 #define qDqEmpt(d) ((d)->dbeg == (d)->dend)
 
-int  DqLoad(deq *d, qfile *f, large size);   /* -1:fail,0:empty,1:trunc,2:ok */
+int  DqLoad(deq *d, qfile *f, long size); /* -1:fail, 0:empty, 1:trunc, 2:ok */
 void DqEmpt(deq *d);
 BOOL DqSave(deq *d, qfile *f);                 /* if move_prev => extend gap */
 void extgap(deq *d, long len, BOOL move_prev); /* for previous (upper) deque */

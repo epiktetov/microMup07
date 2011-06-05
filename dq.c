@@ -30,7 +30,6 @@ CR LF (или только LF). Таким образом, появление с
 (если такой имеется) и добавляются (при отсутствии) LF.
 */
 #include "mic.h"
-#include "ccd.h" /* need E_NOMEM for exc() */
 #include "qfs.h"
 #include "vip.h"
 #include "dq.h"
@@ -73,7 +72,7 @@ void DqInit(char *membuf, long bufsize)     /* create "anti-deq" that covers */
 //  fprintf(stderr, "\n");
 //}
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-deq *DqNew (small typ, small bext, small eext)
+deq *DqNew (short typ, short bext, short eext)
 {
   deq *d; if (freedeqs) { d = freedeqs; freedeqs = d->dnext; }
           else            d = (deq*)GetMain(sizeof(deq));
@@ -156,8 +155,8 @@ void DqAddB (deq *d, char *data, int len)
   if (DT_IsBIN(d->dtyp)) {
     int real_len = (len+1) & (~1); 
     extgap (d, real_len+4,  TRUE);
-    d->dbeg -= real_len+4;   pb  = d->dbeg;    *(small*)pb = len;
-    blkmov(data, pb+2, len); pb += real_len+2; *(small*)pb = len;
+    d->dbeg -= real_len+4;   pb  = d->dbeg;    *(short*)pb = len;
+    blkmov(data, pb+2, len); pb += real_len+2; *(short*)pb = len;
   }
   else if (dosEOL) {
     extgap(d, len+2, TRUE);                 d->dbeg -= len+2;
@@ -173,8 +172,8 @@ void DqAddE (deq *d, char *data, int len)
   if (DT_IsBIN(d->dtyp)) {
     int real_len = (len+1) & (~1);
     extgap (d, real_len+4, FALSE); 
-    pb = d->dend;       d->dend += real_len+4; *(small*)pb = len;
-    blkmov(data, pb+2, len); pb += real_len+2; *(small*)pb = len;
+    pb = d->dend;       d->dend += real_len+4; *(short*)pb = len;
+    blkmov(data, pb+2, len); pb += real_len+2; *(short*)pb = len;
   }
   else {
     if (dosEOL) { extgap(d, len+2, FALSE);
@@ -188,10 +187,10 @@ void DqAddE (deq *d, char *data, int len)
 /*---------------------------------------------------------------------------*/
 char *DqLookupForw(deq *d, int pos, int *len_out, int *real_len_out)
 {
-  char *pb, *pbeg; small *pi;
+  char *pb, *pbeg; short *pi;
   int len, real_len;
   if (DT_IsBIN(d->dtyp)) {
-    pi = (small*)(d->dbeg + pos);         len = *pi++;
+    pi = (short*)(d->dbeg + pos);         len = *pi++;
     pbeg = (char*)pi; real_len = ((len+1) & (~1)) + 4;
   } 
   else {
@@ -213,10 +212,10 @@ int DqCopyForward(deq *d, int pos, char *out, int *real_len_out)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 char *DqLookupBack(deq *d, int pos, int *len_out, int *real_len_out)
 {
-  char *pb, *pend; small *pi;
+  char *pb, *pend; short *pi;
   long len, real_len;
   if (DT_IsBIN(d->dtyp)) {
-    pi = (small*)(pend = d->dbeg + pos);    len = *(--pi);
+    pi = (short*)(pend = d->dbeg + pos);    len = *(--pi);
     real_len = ((len+1) & (~1)) + 4; pb = pend-real_len+2;
   } 
   else {
@@ -253,7 +252,7 @@ void DqEmpt (deq *d) { if (d->dbext < d->deext) d->dend = d->dbeg;
 void DqCutB_byX (deq *d, long  dx) { d->dbeg += dx;           }
 void DqCutE_toX (deq *d, long len) { d->dend = d->dbeg + len; }
 /*---------------------------------------------------------------------------*/
-int DqLoad (deq *d, qfile *f, large size)
+int DqLoad (deq *d, qfile *f, long size)
 {
   long actual_size;  int rc = 2; DqEmpt(d);
   long mem_available = DqFree();
@@ -272,7 +271,7 @@ int DqLoad (deq *d, qfile *f, large size)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 BOOL DqSave (deq *d, qfile *f) 
 {                               
-  large len = DqLen(d);
+  long len = DqLen(d);
   return (QfsWrite(f, len, d->dbeg) == len);
 }
 /*---------------------------------------------------------------------------*/
@@ -296,7 +295,7 @@ BOOL DqSave (deq *d, qfile *f)
 #define S_EDESC  010 /* erase desc = освободим дескриптор */
 #define S_UDCUT  020 /* cut undo (up to UDLQUOTA == 8192) */
 
-static small mem_swap_rules[] =
+static short mem_swap_rules[] =
 {
   TS_BUSY|TS_PSEUDO|TS_FILE|TS_CHANGED,         S_EFILE|S_EDESC,
   TS_BUSY|TS_PSEUDO|TS_FILE,                    S_EFILE|S_EDESC,
@@ -310,7 +309,7 @@ static small mem_swap_rules[] =
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 long tmswap (long required)
 {
-  small *pcode, mask, lrum, op; long available;
+  short *pcode, mask, lrum, op; long available;
   txt *t, *tm;
   for (pcode = mem_swap_rules; (mask = *pcode++); pcode++) {
     if ((op = *pcode) & S_UDCUT) {

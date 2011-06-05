@@ -17,8 +17,8 @@ void tundounload(txt *t); void udcut(txt *t), udclear(txt *t);
 
 void leundo(), lesundo(), leunundo(), lesunundo();
 extern BOOL UdMark;
-void tundo1add(txt *t, small typ,          char *a, small len);
-void tundo2add(txt *t, char *ao, small lo, char *an, small ln);
-void lundoadd (txt *t, small xl, small xr, small dx, tchar *os, tchar *ns);
+void tundo1add(txt *t, short typ,          char *a, short len);
+void tundo2add(txt *t, char *ao, short lo, char *an, short ln);
+void lundoadd (txt *t, short xl, short xr, short dx, tchar *os, tchar *ns);
 /*---------------------------------------------------------------------------*/
 #endif                                                      /* UD_H_INCLUDED */

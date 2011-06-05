@@ -19,6 +19,9 @@ QMAKE_CXXFLAGS += -DQtPLATF=\'\"$$QtPLATF\"\'
 
 HEADERS += micro.keys mic.h mim.h   ccd.h   qfs.h   twm.h   clip.h   synt.h
 SOURCES +=                  mim.cpp ccd.cpp qfs.cpp twm.cpp clip.cpp synt.cpp
+HEADERS += macs.h
+macx:OBJECTIVE_SOURCES += macs.mm
+macx:LIBS += -framework Cocoa
 !win32 {
   HEADERS += unix.h
   SOURCES += unix.cpp
