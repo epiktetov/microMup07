@@ -4,9 +4,9 @@
 #ifndef TX_H_INCLUDED        /* Old tx.h (c) Attic 1989, (c) EpiMG 1998,2001 */
 #define TX_H_INCLUDED
 
-txt *TxNew(BOOL qundo); void TxInit(),                       TxMarks0(txt *t);
-BOOL qTxTop   (txt *t); void TxDel (txt *t), TxUp  (txt *t), TxTop   (txt *t);
-BOOL qTxBottom(txt *t); void TxEmpt(txt *t), TxDown(txt *t), TxBottom(txt *t);
+txt *TxNew(bool qundo); void TxInit(),                       TxMarks0(txt *t);
+bool qTxTop   (txt *t); void TxDel (txt *t), TxUp  (txt *t), TxTop   (txt *t);
+bool qTxBottom(txt *t); void TxEmpt(txt *t), TxDown(txt *t), TxBottom(txt *t);
 void TxEnableSynt(txt *t, short clang);
 /*
  * Conversions between Ascii file string (UTF-8 encoding) and tchar string 

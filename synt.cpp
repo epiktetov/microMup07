@@ -15,7 +15,7 @@ extern "C" {
 #include "synt.h"
 #include <QRegExp>
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-small SyntKnownLang (QString filename)
+short SyntKnownLang (QString filename)
 {                                         // temporarily Objective-C == C++
   QRegExp ShFile(".+\\.sh");              //
   QRegExp CppFile(".+\\.(c|cpp|cxx|h|hpp|hxx|m|mm)", Qt::CaseInsensitive);
@@ -28,7 +28,7 @@ small SyntKnownLang (QString filename)
   else                                      return CLangNONE;
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-small SyntSniffText (txt *text)
+short SyntSniffText (txt *text)
 {
 
   int len;   TxTop(text); if (qTxBottom(text)) return CLangNONE;

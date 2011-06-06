@@ -72,7 +72,7 @@ void x2enter (void)           /* command line enter (2) ввести коман�
                         &tcmdbufFlag, TM_FEXEC, TM_F2EXEC, 0);
 }
 /*---------------------------------------------------------------------------*/
-static void appendText(txt *Stxt, small& Sx, char *text, char *tend)
+static void appendText(txt *Stxt, short& Sx, char *text, char *tend)
 {
 //  if (qTxBottom(Ttxt)) { teIL(); Lleng = 0; } // insert new empty line here,
 //  else       Lleng = TxTRead(Ttxt, Lebuf);    // or get partially filled one
@@ -92,13 +92,13 @@ static void appendText(txt *Stxt, small& Sx, char *text, char *tend)
     Lleng += aftotc(text, tend-text, Lebuf+Lleng);
     TxTRep(Stxt, Lebuf, Sx = Lleng);
 } }
-static void appendCR(txt *Stxt, small& Sx, large& Sy)
+static void appendCR(txt *Stxt, short& Sx, long& Sy)
 {
   TxDown(Stxt); Sx = Stxt->txlm; Sy++;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-static void shellexec (txt *Stxt, small& Sx,
-                                  large& Sy, const char *cmd, wnd *Swnd = NULL)
+static void shellexec (txt *Stxt, short& Sx,
+                                  long & Sy, const char *cmd, wnd *Swnd = NULL)
 {
   int fdsin[2], fdsout[2];
   int pid;
@@ -116,7 +116,7 @@ static void shellexec (txt *Stxt, small& Sx,
     flags = fcntl(fds_out, F_GETFL, 0); flags |= O_NONBLOCK;
             fcntl(fds_out, F_SETFL, flags);
 
-    small oldTXED = Stxt->txredit;           // mark text as "read only"..
+    short oldTXED = Stxt->txredit;           // mark text as "read only"..
                     Stxt->txredit = TXED_NO; // mostly to force red cursor
     EnterOSmode();
     do {
@@ -259,8 +259,8 @@ void tmLoadXeq (txt *t) /* load text by executing command from t->file->name */
   TxEmpt(t);                      //
   if (t->txudeq) { DqDel(t->txudeq); t->txudeq  =     NULL;
                                      t->txstat &= ~TS_UNDO; }
-  small Sx = 0;
-  large Sy = 0; QString cmd =  t->file->name; // <- copy the value first, since
+  short Sx = 0;
+  long  Sy = 0; QString cmd =  t->file->name; // <- copy the value first, since
                 cmd.remove(0,1).remove(-1,1); //  remove() changes the argument
   shellexec(t, Sx, Sy, cmd.cStr());
 }
@@ -279,8 +279,8 @@ void tmCalcBC (void)      /* Calculator -- using POSIX (or GNU) 'bc' utility */
   cpclose(); tecsblock(); // save the block into (empty) cut/paste buffer, and
   cpsave();               // flush that buffer to file (use it as input to bc)
   if (multiBlock) Tx++;
-  small save_Tx = Tx;
-  large save_Ty = Ty;
+  short save_Tx = Tx;
+  long  save_Ty = Ty;
   EnterLEmode(); ledeol(); leLLCE(LeSCH_REPL_BEG);  Lchange = TRUE;
   ExitLEmode();
   shellexec (Ttxt, Tx,  Ty, "bc -l " SAVFILNAM "</dev/null", Twnd);
@@ -301,9 +301,9 @@ static int scan_lines_up (char c1st, char *line_buffer)       /* SyncPos(tm) */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 int tmSyncPos (void) /* SyncPos(tm) -- NOTE: only works with ASCII filenames */
 {
-  char c, line_buffer[MAXLPAC]; large file_pos = 0, line_pos = 0, foo;
+  char c, line_buffer[MAXLPAC]; long file_pos = 0, line_pos = 0, foo;
   wnd *other_wnd = NULL;
-  small len,  steps = 0;                       // gcc "unix.cpp:277: error:..."
+  short len,  steps = 0;                       // gcc "unix.cpp:277: error:..."
   QString filename;                            // grep "unix.cpp:273:int tm..."
   QRegExp gnuFileLine("([+./0-9A-z-]+):(\\d+):.*");
   QRegExp unifiedDiff("@@ [^@]+\\+(\\d+),[^@]+ @@.*");

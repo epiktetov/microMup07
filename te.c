@@ -14,17 +14,17 @@
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 wnd  *Twnd = NIL;                     /* Окно, в котором редактируется текст */
 txt  *Ttxt;                           /* Редактируемый текст                 */
-small Tx;                             /* X курсора в тексте                  */
-large Ty;                             /* Y курсора в тексте                  */
+short Tx;                             /* X курсора в тексте                  */
+long  Ty;                             /* Y курсора в тексте                  */
 /*---------------------------------------------------------------------------*/
-void qsety (large y)
+void qsety (long y)
 {
-  BOOL q = TxSetY(Ttxt, y); Ty = Ttxt->txy;
+  bool q = TxSetY(Ttxt, y); Ty = Ttxt->txy;
   if (!q) exc(E_SETY);
 }
-BOOL tesetxy (small x, large y)
+bool tesetxy (short x, long y)
 {
-  BOOL q = TxSetY(Ttxt,y); Tx = x;
+  bool q = TxSetY(Ttxt,y); Tx = x;
                            Ty = Ttxt->txy; return q;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -39,8 +39,8 @@ void tecmark() /* вернуться туда, где были (и запомн�
   if (BlockMark) { long tmp = BlockTx; BlockTx = Tx; Tx = tmp;
                         tmp = BlockTy; BlockTy = Ty; Ty = tmp; }
   else {
-    small Mx = Ttxt->txmarkx[TXT_TempMARK];
-    large My = Ttxt->txmarky[TXT_TempMARK]; if (My < 0) exc(E_MOVUP);
+    short Mx = Ttxt->txmarkx[TXT_TempMARK];
+    long  My = Ttxt->txmarky[TXT_TempMARK]; if (My < 0) exc(E_MOVUP);
     tesmark();
     qsety(My); Tx = Mx;
 } }
@@ -68,8 +68,8 @@ void teup  () { Ty--; }  void tetend() { tesmark(); tesetxy(Tx, 2147483647); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tecentr()             /* Esc NN Ctrl+E => В строку с номером KbCount-1  */
 {                          /*          else => Текущую строку в центр экрана */
-  small whh;
-  large y;
+  short whh;
+  long y;
   if (KbRadix != 0) qsety(KbCount ? KbCount-1 : 0); 
   else {
     wadjust(Twnd, Tx, Ty); whh = (Twnd->wsh-1) >> 1; y = my_max(Ty-whh, 0);
@@ -95,7 +95,7 @@ void teRCR()
   if (Tx == Ttxt->txrm) Tx = Ttxt->txlm;                      Ty++;   
 } 
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-static small mcdpat (tchar *buf, small i)           /* micros.dir paste line */
+static short mcdpat (tchar *buf, short i)           /* micros.dir paste line */
 {
   if ((Ttxt->txstat & TS_MCD) && i < MCD_LEFT) {
     if (qTxBottom(Ttxt) && i == 0)
@@ -112,7 +112,7 @@ void teDL() { if (BlockMark) teclrblock();
 void teclrbeg(void) { TxDEL_beg(Ttxt); qsety(0); wndop(TW_ALL, Ttxt); }
 void teclrend(void) { TxDEL_end(Ttxt);           wndop(TW_ALL, Ttxt); }
 /*---------------------------------------------------------------------------*/
-static void teslice (BOOL vert)
+static void teslice (bool vert)
 {
   int len; Lleng = TxTRead(Ttxt, Lebuf);
   if (Tx < Lleng) {
@@ -193,7 +193,7 @@ void teformat()
   if (BlockMark) {
     int len,    x0,  x1;
     Block1size(&x0, &x1); // exc(E_BLOCKOUT) if not 1-line block
-    small wbeg;
+    short wbeg;
     Lleng = TxFRead(Ttxt, Lebuf);
     if (Lleng > x1) {
       if (tcharIsBlank(Lebuf[x1]) || tcharIsBlank(Lebuf[x1-1])) {
@@ -262,7 +262,7 @@ void teformat()
 //
   else if (Lleng > txw) {
     while (Lleng > txw) {
-      small wbeg;
+      short wbeg;
       Lx = txw-1; if (tcharIsBlank(Lebuf[Lx])) wbeg = Lx;
                   else          leNword(&wbeg, NIL, NIL);
       Lx = Tx;
@@ -282,7 +282,7 @@ void teformat()
     len = TxFRead(Ttxt, lfbuf);
     if (len == 0) TxDL(Ttxt);
     else {
-      small tbeg = 0;
+      short tbeg = 0;
       while(tbeg < len && tcharIsBlank(lfbuf[tbeg])) tbeg++;
       if (Lleng+1+len-tbeg > txw) Ty++;
       else {
@@ -402,7 +402,7 @@ void terup()   { if (qTxBottom(Ttxt) || tereplace() < 0) tesup();   }
 /*---------------------------------------------------------------------------*/
 void teswidth (void)                              /* <- currently not mapped */
 {
-  small x = KbCount;
+  short x = KbCount;
   if (KbRadix == 0 || x < 0 || x > MAXLPAC) exc(E_BADPRM);
   Ttxt->txrm = x;
   if (Tx > x) Tx = x;
@@ -488,8 +488,8 @@ comdesc *Tdecode (int kcode)  /*- - - - - - - - - - - - - - - - - - - - - - -*/
 int TeCommand (comdesc *cp)
 {
   jmp_buf *nextexc, teenv; /* TODO: remove nextexc (no recursion anymore) */
-  large rpt;
-  small x;
+  long rpt;
+  short x;
 
   if (cp->attr & CA_LCUT && Ttxt == LCtxt) return E_LCUT;
   if (cp->attr & CA_CHANGE) {

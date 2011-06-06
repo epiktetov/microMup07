@@ -24,12 +24,12 @@ void vipFocusOff(wnd *w);     /* to be called when focus goes off the window */
 void vipActivate(wnd *w);     /* make this window current (set Ttxt/Twnd)    */
 void vipGotoXY(int x, int y); /*        click in the active window (Twnd)    */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-extern BOOL LeInsMode;  /* Режим вставки (если FALSE, то режим замены), le.c */
-extern BOOL BlockMark;  /* block mark is on, with BlockMarkRect coordinates  */
-void scblkon(BOOL tmp);
+extern bool LeInsMode;  /* Режим вставки (если FALSE, то режим замены), le.c */
+extern bool BlockMark;  /* block mark is on, with BlockMarkRect coordinates  */
+void scblkon(bool tmp);
 void scblkoff();
 extern int BlockTx, BlockTy; /* block 1st corner (another one is at cursor)  */
-extern BOOL BlockTemp;       /* block is "temporary"                         */
+extern bool BlockTemp;       /* block is "temporary"                         */
 extern wnd *windows;  /* <-- used in tm.c to loop through all active windows */
 #ifdef MIM_H_INCLUDED /*- - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 /* 
@@ -57,11 +57,11 @@ void vipRedrawWindow(wnd *vp);
 void vipRedraw      (wnd *vp, int tx, int ty, int width, int height);
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void vipReady(), vipBell();
-BOOL qkbhin();
+bool qkbhin();
 int  kbhin();
 void setkbhin(int kc); /* called on real keyboard events, resets kbhin timer */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-extern BOOL vipOSmode; /* working in OS mode: current Twnd is modal and keys */
+extern bool vipOSmode; /* working in OS mode: current Twnd is modal and keys */
 void EnterOSmode();    /* are converted back to raw Ascii, used only on UNIX */
 void ExitOSmode(), vipYield();
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -86,12 +86,12 @@ extern short Tx;   /* X курсора в тексте      vars for most import
  * Positioning in text (returns FALSE if could not reach specified line) and
  * principal method of getting text info (used for window re-paint):
  */
-BOOL   TxSetY(txt *t, long y);
+bool   TxSetY(txt *t, long y);
 tchar *TxInfo(wnd *w, long y, int *len);                  /* defined in tx.c */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void vipPrepareSearch(); /* using patterns prepared by tesParse() - see te.h */
 int  vipFind(char  *str,
-             int st_len, int from_pos, BOOL backward);
+             int st_len, int from_pos, bool backward);
 /*
  *  Next function verifies that 'str' matches previously set pattern at given
  *  position and provides the replacement string (and also positions of match

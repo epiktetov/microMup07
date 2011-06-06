@@ -5,18 +5,11 @@
 #define MIC_H_INCLUDED
 #ifdef __cplusplus
 extern "C" {
-#endif
-#ifdef small /*----------- Определим свои типы (for legacy C code) ----------*/
-#undef small
-#endif
-typedef short small;   /* (at least) 16-bit signed integer     -- DEPRECATED */
-typedef long  large;   /* (at least) 32-bit integer     (TODO: replace them) */
-#ifndef OBJC_BOOL_DEFINED
-  typedef signed char BOOL; /* <- just to reduce the entropy, using the same */
-#endif                      /*  typedef as in Objective-C header objc/objc.h */
+#endif  /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+#include <stdbool.h>
 #ifndef FALSE
-# define TRUE  ((BOOL)1)
-# define FALSE ((BOOL)0)
+# define TRUE  ((bool)1)
+# define FALSE ((bool)0)
 #endif
 #define CR      '\015'
 #define LF      '\012'
@@ -66,7 +59,7 @@ typedef long tchar;                           /* Unicode символ с атр�
 #define TeSCH_CONTINUE  AT_SUPER+0xBB /* Line continuation mark (TE_FORMAT)  */
 /*---------------------------------------------------------------------------*/
 extern int TABsize; /* Настраиваемые параметры - табуляция, 4 или 8 символов */
-extern BOOL dosEOL; /* - DOS/Windows style for end-of-line (CR/LF вместо CR) */
+extern bool dosEOL; /* - DOS/Windows style for end-of-line (CR/LF вместо CR) */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #define MAXPATH    400                     /* Некоторые магические константы */
 #define MAXDIRSTK   12
@@ -137,10 +130,10 @@ extern char
   *sncpy(const char *from, char *to, int how_many), /* copy functions return */
   *scpy (const char *from, char *to),               /* pointer to the end of */
   *scpyx(const char *from, char *to, int limit),    /* destination string    */
-  *dtol(char *pn, large *dest),
-  *dtos(char *pn, small *dest),
-  *ltod(char *buffer, large l), /* return pointer to end-of-num   */
-  *stod(char *buffer, small s); 
+  *dtol(char *pn, long  *dest),
+  *dtos(char *pn, short *dest),
+  *ltod(char *buffer, long  l), /* return pointer to end-of-num   */
+  *stod(char *buffer, short s);
 
 char *lblkmov(char *From, char *To, long len); /* returns ptr after the dest */
 void * blkmov(void *From, void *To, long len); /*        block (i.e. To+len) */

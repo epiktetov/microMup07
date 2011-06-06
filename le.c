@@ -18,15 +18,15 @@ void LeStart() { blktspac(Lebuf, MAXLPAC); }
 
 tchar Lebuf[MAXLPAC];     /* Буфер строки                                    */
 tchar lfbuf[MAXLPAC];     /* альтернативный буфер                            */
-small Lleng;              /* Длина строки без хвостовых пробелов             */
-small Lxlm, Lxrm;         /* левая/правая граница для перемещения            */
-small Lxle, Lxre;         /* левая/правая граница для редактирования         */
-large Ly;                 /* Y строки в тексте (для окна)                    */
-small Lx;                 /* X курсора в строке (а не в окне!)               */
-BOOL  LeInsMode;          /* Режим вставки (если 0, то режим замены)         */
-BOOL  Lclang;             /* Язык редактируемого текста (из Ttxt->clang)     */
-BOOL  Lredit;             /* Можно менять строку                             */
-BOOL  Lchange;            /* Строка изменялась                               */
+short Lleng;              /* Длина строки без хвостовых пробелов             */
+short Lxlm, Lxrm;         /* левая/правая граница для перемещения            */
+short Lxle, Lxre;         /* левая/правая граница для редактирования         */
+long  Ly;                 /* Y строки в тексте (для окна)                    */
+short Lx;                 /* X курсора в строке (а не в окне!)               */
+bool  LeInsMode;          /* Режим вставки (если 0, то режим замены)         */
+bool  Lclang;             /* Язык редактируемого текста (из Ttxt->clang)     */
+bool  Lredit;             /* Можно менять строку                             */
+bool  Lchange;            /* Строка изменялась                               */
 txt  *Ltxt;               /* Текст, в который сливается откатка              */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 wnd  *Lwnd = NIL;         /* Окно, в котором редактируется строка            */
@@ -53,10 +53,10 @@ void leltab() { int x = (Lx - 1)/TABsize*TABsize; Lx = (x > Lxlm) ? x : Lxlm; }
 void lecentr()            /* Esc NN Ctrl+H => В позицию с номером KbCount-1  */
 {                         /*          else => Текущую позицию в центр экрана */
   if (KbRadix) {
-    small x = KbCount ? KbCount-1 : 0; if (Lxlm <= x && x <= Lxrm) Lx = x;
+    short x = KbCount ? KbCount-1 : 0; if (Lxlm <= x && x <= Lxrm) Lx = x;
                                        else                 exc(E_MOVEND); }
   else {
-    small dx = (Lwnd->wsw - 1) / 2; if (Lx < dx) wadjust(Lwnd, 0,     Ly);
+    short dx = (Lwnd->wsw - 1) / 2; if (Lx < dx) wadjust(Lwnd, 0,     Ly);
                                     else {       wadjust(Lwnd, Lx+dx, Ly);
                                                  wadjust(Lwnd, Lx-dx, Ly); }}
 }
@@ -93,31 +93,31 @@ void tleunload (void)                              /* unload LE line to text */
 void ExitLEmode (void) { if (leARGmode) LenterARGcomplete(0);
                          else                    tleunload(); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-BOOL tleread(void)    /* read Lebuf from text (read-only), true if non-empty */
+bool tleread(void)    /* read Lebuf from text (read-only), true if non-empty */
 {
            TxSetY (Ttxt, Ty); if (qTxBottom(Ttxt)) return FALSE;
   Lleng  = TxTRead(Ttxt, Lebuf);                   return (Lleng > 0);
 }
 /*---------------------------------------- Базовый уровень строчных операций */
-void blktspac (tchar *p, small len)
+void blktspac (tchar *p, short len)
 {
   if (len) do { *p++ = (tchar)' '; } while(--len);
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-small lstrlen (small lmax, tchar *p0)
+short lstrlen (short lmax, tchar *p0)
 {
   if (p0 == NIL) return 0;
   else {
     tchar *p; for (p = p0+lmax; p > p0 && p[-1] == (tchar)' '; p--);
     return p-p0;
 } }
-static small leleng() { return lstrlen(MAXLPAC, Lebuf); }
+static short leleng() { return lstrlen(MAXLPAC, Lebuf); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-static void lefill (tchar* dest, small len, tchar *src)
+static void lefill (tchar* dest, short len, tchar *src)
 {
   for (; len; len--) *dest++ = (src != NIL) ? *src++ : (tchar)' ';
 }
-void llmove (small xl, small xr, small dx, tchar *ns) /* xl - start position */
+void llmove (short xl, short xr, short dx, tchar *ns) /* xl - start position */
 {                                                     /* xr - end position   */
   if (dx == REPLACE) {                                /* dx - move direction */
     lundoadd(Ltxt, xl, xr, dx, Lebuf+xl, ns);         /* ns - inserted chars */
@@ -144,7 +144,7 @@ void ledeol();    /* == llmove(Lx, Lxre, REPLACE, NIL); used in leLLCE below */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static void llchar (tchar lchar)
 {
-  small x = Lx; lundoadd(Ltxt, x, x+1, REPLACE, Lebuf+x, &lchar);
+  short x = Lx; lundoadd(Ltxt, x, x+1, REPLACE, Lebuf+x, &lchar);
 
   if ((Lebuf[x++] = lchar) != ' ') { if (Lleng <  x) Lleng = x;        }
   else                             { if (Lleng == x) Lleng = leleng(); }
@@ -198,11 +198,11 @@ void lehchar2() { leLLCE(LeSCH_REPL_BEG); } /* Ctrl+.('>') ʈ>ʀ */
 void lehchar1() { leLLCE(LeSCH_REPL_END); } /* Ctrl+/('/') ʈ/ʀ */
 void lehchar0() { leLLCE(TmSCH_THIS_OBJ); } /* Ctrl+,('<')   */
 /*---------------------------------------------------------------------------*/
-BOOL leNword (small *cwbeg, /* Найти (unless ptr=0): начало текущего слова   */
-              small *cwend, /*                       конец текущего слова    */
-              small *nwbeg) /* (return "на слове?")  начало следующего слова */
+bool leNword (short *cwbeg, /* Найти (unless ptr=0): начало текущего слова   */
+              short *cwend, /*                       конец текущего слова    */
+              short *nwbeg) /* (return "на слове?")  начало следующего слова */
 {
-  BOOL onWord = TRUE;
+  bool onWord = TRUE;
   int x = Lx;
   if (tcharIsBlank(Lebuf[x])) onWord = FALSE;
   else {
@@ -244,14 +244,14 @@ void lepword()
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void ledword()   /* удалить слово и пробелы за ним (всегда схлопывает текст) */
 {
-  small xl, xr; if (!leNword(&xl, NIL, &xr)) xl = Lx;
+  short xl, xr; if (!leNword(&xl, NIL, &xr)) xl = Lx;
   if (xl < Lxle) xl = Lxle;
   if (xr > Lxre) xr = Lxre; llmove(Lx = xl, Lxre, xl-xr, NIL);
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void ledlword()        /* удалить слово влево (очистить или схлопнуть текст) */
 {
-  small old_Lx = Lx; lepword();
+  short old_Lx = Lx; lepword();
   if (Lx < Lxle) Lx = Lxle;
   if (Lx < old_Lx) {
     if (LeInsMode) llmove(Lx, Lxre, Lx-old_Lx, NIL);

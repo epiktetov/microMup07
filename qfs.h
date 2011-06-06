@@ -62,8 +62,8 @@ bool    QfsIsWritable (QFileInfo Qi); // no file => check if dir is writable
 extern "C" {
 #endif                                                        /* __cplusplus */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-large QfsRead (qfile *file, large size, char *buffer);
-large QfsWrite(qfile *file, large size, char *buffer);
+long QfsRead (qfile *file, long size, char *buffer);
+long QfsWrite(qfile *file, long size, char *buffer);
 
 void QfsClear     (qfile *file);
 int QfsFullName2tc(qfile *file, tchar *buffer);

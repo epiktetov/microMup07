@@ -15,23 +15,23 @@ struct txt_tag
 {
   qfile *file;              /* Файл (or dir/pseudo-name) связанный с текстом */
   deq *txustk, *txdstk;     /* Деки - верхний и нижний стеки                 */
-  large txy;                /* Число строк над указателем                    */
+  long txy;                /* Число строк над указателем                    */
   deq  *txudeq;             /* Дек - буфер откатки                           */
-  large txudcptr;           /* - указатель в буфере откатки                  */
-  large txudlptr;           /* - граница строчной откатки                    */
-  large txudfile;           /* - положение откатки равное "текст не менялся" */
-  small txredit;            /* Можно ли менять текст:                        */
+  long  txudcptr;           /* - указатель в буфере откатки                  */
+  long  txudlptr;           /* - граница строчной откатки                    */
+  long  txudfile;           /* - положение откатки равное "текст не менялся" */
+  short txredit;            /* Можно ли менять текст:                        */
 #define TXED_YES  0         /* - можно                                       */
 #define TXED_NO   1         /* - нельзя                                      */
 #define TXED_NONO 2         /* - совсем нельзя                               */
-  small clang;              /* Язык для раскрашивания текста (см. synt.h)    */
+  short clang;              /* Язык для раскрашивания текста (см. synt.h)    */
   deq *clustk, *cldstk;     /* - верхний и нижний стеки для раскрашивания    */
-  small txlm,     txrm;     /* Left margin / правая граница текста           */
-  small txmarkx[TXT_MARKS]; /* Маркеры (установлены в ноль если не занято),  */
-  large txmarky[TXT_MARKS]; /* см. te(c|s)mark в файле te.c и TxMarks0(tx.c) */
+  short txlm,     txrm;     /* Left margin / правая граница текста           */
+  short txmarkx[TXT_MARKS]; /* Маркеры (установлены в ноль если не занято),  */
+  long  txmarky[TXT_MARKS]; /* см. te(c|s)mark в файле te.c и TxMarks0(tx.c) */
   wnd  *txwndptr;           /* Список окон, наложенных на текст              */
-  small txlructr;           /* Счетчик для алгоритма выталкивания            */
-  small txstat;             /* Биты слова-состояния текста:                  */
+  short txlructr;           /* Счетчик для алгоритма выталкивания            */
+  short txstat;             /* Биты слова-состояния текста:                  */
 #define TS_BUSY     001     /* - слот занят                                  */
 #define TS_FILE     002     /* - файл в памяти                               */
 #define TS_UNDO     004     /* - откатка файла в памяти                      */
@@ -46,28 +46,28 @@ struct txt_tag
 #define TS_NEW    02000     /* - новый файл - записывать по FO_NEW           */
 #define TS_MCD    04000     /* - this file == micros.dir                     */
 #define TS_GITPL 010000     /* - this file == git pretty log or blame result */
-  small cx, tcx;            /* Последняя позиция курсора в тексте            */
-  large cy, tcy;            /*                    и окна на тексте           */
+  short cx, tcx;            /* Последняя позиция курсора в тексте            */
+  long  cy, tcy;            /*                    и окна на тексте           */
   struct txt_tag *txnext;
   int thisSynts[MAXSYNTBUF];  /* Syntax info for after-line-on-top-of-txdstk */
   int prevSynts[MAXSYNTBUF];  /* Previos syntax info = between txustk/txdstk */
-  large maxTy;                /* max Ty (total number of lines in the text)  */
+  long maxTy;                 /* max Ty (total number of lines in the text)  */
   int lastSynts[MAXSYNTBUF];  /* Last syntax info (from after the last line) */
 };
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 struct dirstk_tag
 {
-  qfile *file; small dswtx, dsx;    /* Имя файла и сохраненные wnd->wtx, Tx */
-               large dswty, dsy;    /*                         wnd->wty, Ty */
+  qfile *file; short dswtx, dsx;    /* Имя файла и сохраненные wnd->wtx, Tx */
+               long  dswty, dsy;    /*                         wnd->wty, Ty */
 };
 typedef struct dirstk_tag dirstk;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 struct wnd_tag 
 {
-  small  wtx;   large wty;  /* координаты левого верхнего угла окна в тексте */
-  small  wcx;   large wcy;  /* курсор в связанном с окном тексте (inactive)  */
+  short  wtx;   long  wty;  /* координаты левого верхнего угла окна в тексте */
+  short  wcx;   long  wcy;  /* курсор в связанном с окном тексте (inactive)  */
   int cx, cy;   tchar ctc;  /* - оконные координаты курсора и аттрибуты      */
-  small wsh, wsw,  wspace;  /* высота и ширина окна, workspace (Mac only)    */
+  short wsh, wsw,  wspace;  /* высота и ширина окна, workspace (Mac only)    */
   txt              *wtext;  /* ссылка на описатель текста                    */
   dirstk stack[MAXDIRSTK];  /* стек файлов, связанный с окном                */
   dirstk *dirsp;            /* - его указатель                               */
@@ -113,7 +113,7 @@ void twShowFile(QString filename);
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 extern "C" {
 #endif
-BOOL tmsave (txt *t, BOOL qback); /* сохранить файл на диске  (used in dq.c) */
+bool tmsave (txt *t, bool qback); /* сохранить файл на диске  (used in dq.c) */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #ifdef __cplusplus
 }

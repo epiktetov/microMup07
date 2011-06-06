@@ -62,10 +62,10 @@ char *scpyx (const char *from, char *to, int limit)
   while (*from && limit--) *to++ = *from++; return to;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-char *ltod(char *buffer, large l) /* long to decimal (returns end-of-number) */
+char *ltod (char *buffer, long l) /* long to decimal (returns end-of-number) */
 {
   char *p1, lbuf[12];
-  small i;
+  short i;
   if (l < 0) { l= -l; *buffer++ = '-'; }
 
   p1 = lbuf+12; *(--p1) = 0;  i = 11;
@@ -73,12 +73,12 @@ char *ltod(char *buffer, large l) /* long to decimal (returns end-of-number) */
 
   return scpy(p1, buffer);
 }
-char *stod(char *p, small s) { return ltod(p, (large)s); }
+char *stod(char *p, short s) { return ltod(p, (long)s); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-char *dtol(char *p, large *dest) 
+char *dtol (char *p, long *dest)
 {
-  small i, is_negative = 0; 
-  large l = 0;
+  short i, is_negative = 0;
+  long l = 0;
   if (*p == '-') { p++; is_negative++; }
 
   while ((i = *p++ - '0') >= 0 && i < 10) l = l*10 + i;
@@ -86,8 +86,8 @@ char *dtol(char *p, large *dest)
   if (is_negative) l = -l;
   *dest = l;   return --p;
 }
-char *dtos(char *p, small *dest) { large l; p = dtol(p, &l);
-                                           *dest = (small)l; return p; }
+char *dtos(char *p, short *dest) { long l; p = dtol(p, &l);
+                                          *dest = (short)l; return p; }
 /*---------------------------------------------------------------------------*/
 jmp_buf *excptr = 0;
 

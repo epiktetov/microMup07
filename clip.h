@@ -29,7 +29,7 @@ void teclrblock(),                   /* clear the block                      */
 extern txt *LCtxt;                   /* Текст-хранилище строк (just in case) */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 int  Block1size (int *x0, int *x1);  /* <- Return 1-line block size (+x0/x1) */
-BOOL BlockXYsize(int *dx, int *dy);  /*   0 if no block, exc() if multi-line */
+bool BlockXYsize(int *dx, int *dy);  /*   0 if no block, exc() if multi-line */
 /*---------------------------------------------------------------------------*/
 #ifdef __cplusplus
 }

@@ -29,3 +29,30 @@
     facility. Licensee represents and warrants that it will not use or
     redistribute the Software for such purposes.
 
+ʁDEPENDENCY:
+
+ This software uses Qt Cross-platform application and UI framework under terms
+ of GNU Lesser General Public License version 2.1 with special exception:
+ ------------------------------------------------------------------------
+ Copyright (C) 2011 Nokia Corporation and/or its subsidiary(-ies).
+ All rights reserved.
+ Contact: Nokia Corporation (qt-info@nokia.com) -- http://qt.nokia.com --
+
+    Alternatively, [Qt] files may be used under the terms of the GNU Lesser
+    General Public License version 2.1 as published by the Free Software
+    Foundation and appearing in the file LICENSE.LGPL included in the
+    [Qt] packaging.  Please review the following information to ensure
+    the GNU Lesser General Public License version 2.1 requirements
+    will be met: http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html.
+
+ As an additional permission to the GNU Lesser General Public License version
+ 2.1, the object code form of a "work that uses the Library" may incorporate
+ material from a header file that is part of the Library.  You may distribute
+ such object code under terms of your choice, provided that:
+     (i)   the header files of the Library have not been modified; and
+     (ii)  the incorporated material is limited to numerical parameters, data
+           structure layouts, accessors, macros, inline functions and
+           templates; and
+     (iii) you comply with the terms of Section 6 of the GNU Lesser General
+           Public License version 2.1.
+

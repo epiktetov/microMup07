@@ -21,8 +21,8 @@ extern "C" {
 }
 #include <stdlib.h>
 /*---------------------------------------------------------------------------*/
-BOOL BlockMark = FALSE; QRect BlockMarkRect;   wnd *windows = NULL;
-BOOL BlockTemp = FALSE;
+bool BlockMark = FALSE; QRect BlockMarkRect;   wnd *windows = NULL;
+bool BlockTemp = FALSE;
 int  BlockTx,  BlockTy; /* block 1st corner (another is cursor) */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 wnd *vipNewWindow (wnd *wbase, int sw, int sh, int kcode)
@@ -200,7 +200,7 @@ inline void BlockMark_repaint (wnd *vp)
   vp->sctw->Repaint(BlockMarkRect.left(),  BlockMarkRect.top(),
                     BlockMarkRect.width(), BlockMarkRect.height());
 }
-void scblkon (BOOL isTemp) { BlockMark = TRUE;   BlockTx = Tx;
+void scblkon (bool isTemp) { BlockMark = TRUE;   BlockTx = Tx;
                              BlockTemp = isTemp; BlockTy = Ty; }
 void scblkoff() 
 { 
@@ -221,7 +221,7 @@ void vipRoll (wnd *vp, int wymin, int wymax, int dy) /* rolls region up/down */
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 //  Переизобразим текст после модификации на всех прикрепленных к нему окнах
 //
-void wndop (small op, txt *text)
+void wndop (short op, txt *text)
 {
   int y = text->txy, dy;
   for (wnd *vp = text->txwndptr; vp; vp = vp->wnext) {
@@ -307,7 +307,7 @@ void vipActivate (wnd *vp)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void vipGotoXY (int x, int y)           /* click in the active window (Twnd) */
 {
-  vipFocusOff(Twnd); tesetxy((small)(Twnd->wtx+x), Twnd->wty+y);
+  vipFocusOff(Twnd); tesetxy((short)(Twnd->wtx+x), Twnd->wty+y);
   vipOnFocus (Twnd);
 }
 /*---------------------------------------------------------------------------*/
@@ -479,7 +479,7 @@ void vipPrepareSearch()             /* prepare Qspre/Qsstr for the vipFind() */
       (find_Mode & LeARG_WILDCARD)   ? QRegExp::Wildcard   : QRegExp::RegExp);
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-inline int vipDoFind (QString line, int st_len, int from_pos, BOOL backward)
+inline int vipDoFind (QString line, int st_len, int from_pos, bool backward)
 {
   Qt::CaseSensitivity cs = (find_Mode & LeARG_IGNORECASE) ? Qt::CaseInsensitive
                                                           : Qt::CaseSensitive;
@@ -493,7 +493,7 @@ inline int vipDoFind (QString line, int st_len, int from_pos, BOOL backward)
     if (find_Mode & LeARG_STANDARD) return line.indexOf(Qsstr, from_pos, cs);
     else                            return line.indexOf(Qspre, from_pos);
 } }
-int vipFind (char *str, int st_len, int from_pos, BOOL backward)
+int vipFind (char *str, int st_len, int from_pos, bool backward)
 {
   QString line = QString::fromUtf8(str, st_len);
   int X = vipDoFind(line, st_len, from_pos, backward);
@@ -555,7 +555,7 @@ int vipConvert (tchar *str, int str_len, int cvt_type, tchar *out)
 }
 /*---------------------------------------------------------------------------*/
 #define MAX_KEY_QUEUE 64
-BOOL vipOSmode;
+bool vipOSmode;
 static int keyQueue[MAX_KEY_QUEUE], *kqHead = keyQueue, *kqTail = keyQueue;
 static quint64 last_kbhin = 0;
 
@@ -573,7 +573,7 @@ void setkbhin(int key)
     *kqTail++ = key;
 } }
 int   kbhin(void) { return (kqHead < kqTail) ? *kqHead++ : 0; }
-BOOL qkbhin(void)
+bool qkbhin(void)
 {
   return (kqHead < kqTail) || (pgtime() - last_kbhin) > 32768;
 }
@@ -595,7 +595,7 @@ void vipError (QString msg)
 {
   QMessageBox::warning(NULL, QString("µMup07 error"), msg);
 }
-void vipFileTooBigError (qfile *f, large size)
+void vipFileTooBigError (qfile *f, long size)
 {
   vipError(QString("File %1 is too big (size: %2), truncated")
                          .arg(QfsShortName(f)).arg(size));

@@ -5,8 +5,8 @@
 #define TE_H_INCLUDED
 
 void TeInit(void);
-void qsety           (large y); /* exception if cannot */
-BOOL tesetxy(small x, large y);
+void qsety           (long y); /* exception if cannot */
+bool tesetxy(short x, long y);
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void teIL(),              /* некоторые команды (используются в clip.cpp etc) */
      teCR();

@@ -6,9 +6,10 @@
 #include "twm.h"
 #include "vip.h"
 #include "macs.h"
-
-void macs_update_all_wspaces(void)
-{
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void macs_update_all_wspaces(void)     // Objectice-C code does not really work
+{                                      // with Carbon framework, quite expected
+#ifdef QT_MAC_USE_COCOA                //
   id pool = [[NSAutoreleasePool alloc] init];
   for (wnd *vp = windows; vp; vp = vp->wdnext) {
     NSView *view = (NSView*)( vp->sctw->mf->winId() );
@@ -18,5 +19,6 @@ void macs_update_all_wspaces(void)
     else break; //
   }             // it is VERY unlikely that only some windows can respond to
   [pool drain]; // isOnActiveSpace (which was introduced in 10.6 Snow Leopard)
+#endif
 }
 //-----------------------------------------------------------------------------

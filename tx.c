@@ -26,7 +26,7 @@ char txbuf[MAXLUP+2];
  */
 void TxInit() { blktspac(tcbuf, MAXLPAC); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-txt *TxNew (BOOL qundo)                        /* Создание / удаление текста */
+txt *TxNew (bool qundo)                        /* Создание / удаление текста */
 {
   txt *t, *tprev;
   for (tprev = NIL, t = texts; t && t->txstat != 0; t = t->txnext) tprev = t;
@@ -68,8 +68,8 @@ void TxDel (txt *t)
   if (t->cldstk) DqDel(t->cldstk); t->cldstk = NIL; t->clang = 0;
 }
 /*---------------------------------------------------------------------------*/
-BOOL qTxBottom(txt *t) { return qDqEmpt(t->txdstk); }
-BOOL qTxTop   (txt *t)
+bool qTxBottom(txt *t) { return qDqEmpt(t->txdstk); }
+bool qTxTop   (txt *t)
 {                           // cleanup prevSynts and upper stack for Synts when
   if (qDqEmpt(t->txustk)) { // at the top of text - just in case we lost tracks
     t->prevSynts[0] = 0;
@@ -117,7 +117,7 @@ void TxDown (txt *t)
 } } }
 void TxBottom (txt *t) { while (!qTxBottom(t)) TxDown(t); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-BOOL TxSetY (txt *t, long y)
+bool TxSetY (txt *t, long y)
 {
   while(t->txy < y) { if (qTxBottom(t)) return FALSE; TxDown(t); }
   while(t->txy > y) { if (qTxTop(t))    return FALSE; TxUp(t);   } return TRUE;

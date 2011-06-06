@@ -21,7 +21,7 @@ struct deq_tag
 #define DT_SYNT 's' /* буфер для Syntax checker       (binary) */
 /*---------------------------------------------------------------------------*/
 deq *DqNew(short typ, short bext, short eext);
-BOOL DqDel(deq *d);
+bool DqDel(deq *d);
 
 #define DT_IsBIN(dtyp) (dtyp & 1)
 #define            cpdiff(p1, p2) (p1 - p2)
@@ -30,8 +30,8 @@ BOOL DqDel(deq *d);
 
 int  DqLoad(deq *d, qfile *f, long size); /* -1:fail, 0:empty, 1:trunc, 2:ok */
 void DqEmpt(deq *d);
-BOOL DqSave(deq *d, qfile *f);                 /* if move_prev => extend gap */
-void extgap(deq *d, long len, BOOL move_prev); /* for previous (upper) deque */
+bool DqSave(deq *d, qfile *f);                 /* if move_prev => extend gap */
+void extgap(deq *d, long len, bool move_prev); /* for previous (upper) deque */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void DqAddB(deq *d, char *data, int len);  /* add to Beginning (at dbeg ptr) */
 void DqAddE(deq *d, char *data, int len);  /* add to End       (at dend ptr) */

@@ -15,6 +15,7 @@ win32 {
   QtPLATF = win32
 }
 !win32:DEFINES += UNIX
+QMAKE_CFLAGS   += -std=c99
 QMAKE_CXXFLAGS += -DQtPLATF=\'\"$$QtPLATF\"\'
 
 HEADERS += micro.keys mic.h mim.h   ccd.h   qfs.h   twm.h   clip.h   synt.h

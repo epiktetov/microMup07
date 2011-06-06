@@ -4,8 +4,8 @@
 #ifndef SYNT_H_INCLUDED
 #define SYNT_H_INCLUDED
 #ifdef __cplusplus
-small SyntKnownLang(QString filename); // returns lang code (or 0 if not known)
-small SyntSniffText(txt *text);
+short SyntKnownLang(QString filename); // returns lang code (or 0 if not known)
+short SyntSniffText(txt *text);
 enum SyntSupportedLangs {
   CLangNONE = 0, //                  not known / no syntax check & colorization
   CLangGEN  = 1, // generic (eol comment is '#', brackets checked, no keywords)

@@ -181,8 +181,8 @@ cmdmap vcs_commands[] =
 txt *tmDesc (QString filename, bool needUndo, txt *referer)
 {
   QRegExp ptn("(.+):(git|gitlog|blame||hg):(.*)");
-  small force_txstat = 0;
-  small force_clang  = 0;
+  short force_txstat = 0;
+  short force_clang  = 0;
        if (filename.compare(":clip") == 0) filename = QString(SAVFILNAM);
   else if (ptn.exactMatch(filename)) {
     for (cmdmap *p = vcs_commands; p->key; p++)
@@ -320,7 +320,7 @@ bool tmReLoad (txt *t)   // Forced reload -- check the status of real file (and
   case QftDIR:         TxEmpt(Ttxt); tmDoLoad(Ttxt); return  true;
 } }
 /*---------------------------------------------------------------------------*/
-BOOL tmsave (txt *t, BOOL needBackup)
+bool tmsave (txt *t, bool needBackup)
 {
   if (t->file == NULL || (t->txstat & (TS_PSEUDO|TS_DIRLST)) ||
                         !(t->txstat &  TS_CHANGED)) return TRUE;
@@ -338,7 +338,7 @@ BOOL tmsave (txt *t, BOOL needBackup)
     int omode = ((t->txstat & TS_NEW) || t->file->size > deqsize) ? FO_NEW
                                                                   : FO_WRITE;
     if (QfsOpen(t->file, omode) < 0) return teferr(t);
-    BOOL ok = DqSave(t->txdstk, t->file);
+    bool ok = DqSave(t->txdstk, t->file);
     QfsClose(t->file); if (ok) QfsUpdateInfo(t->file);
                        else          return teferr(t); t->txstat &= ~TS_NEW;
   }

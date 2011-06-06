@@ -35,7 +35,7 @@ CR LF (или только LF). Таким образом, появление с
 #include "dq.h"
 
 static deq deq0, *freedeqs = NIL, *gapdeq, *lockdeq;
-static BOOL DqReserveExt  = TRUE;
+static bool DqReserveExt  = TRUE;
 static long tmswap(long req_mem); /* выкидывает заменимое, return: available */
 /*---------------------------------------------------------------------------*/
 void DqInit(char *membuf, long bufsize)     /* create "anti-deq" that covers */
@@ -83,7 +83,7 @@ deq *DqNew (short typ, short bext, short eext)
   d->dbeg = d->dend = dn->dend;     d->deext = eext; return d;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-BOOL DqDel (deq *d)
+bool DqDel (deq *d)
 {
   if (d == lockdeq) return FALSE;
   else {
@@ -109,7 +109,7 @@ static long DqFree()                  /* calculate total free memory in deqs */
   while ((d = d->dnext) != &deq0); return f;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void extgap (deq *d, long len, BOOL move_previous)
+void extgap (deq *d, long len, bool move_previous)
 {
   deq *d1st, *d2nd; /* нужна память в промежутке между [d1st}-..gap..-{d2nd] */
   long delta;
@@ -269,7 +269,7 @@ int DqLoad (deq *d, qfile *f, long size)
     if (rc == 1) p = scpy("«...»\n",p); d->dend = p; return rc;
 } }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-BOOL DqSave (deq *d, qfile *f) 
+bool DqSave (deq *d, qfile *f)
 {                               
   long len = DqLen(d);
   return (QfsWrite(f, len, d->dbeg) == len);

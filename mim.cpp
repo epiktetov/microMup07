@@ -16,7 +16,7 @@ static QString MimVersion()
   return Utf8("µMup07 version %1 (" QtPLATF ")").arg(microVERSION);
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-BOOL dosEOL = false;                              /* Настраиваемые параметры */
+bool dosEOL = false;                              /* Настраиваемые параметры */
 int TABsize = 4;
 QSize MiFrameSize;
 static bool MiApp_debugKB    = false;

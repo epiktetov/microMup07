@@ -46,9 +46,9 @@ typedef struct { /* UL_InLE -- замена внутри строки (tchar) */
  /* Старая подстрока */
 } lineundo;
 
-static BOOL undo_blocked =  FALSE;
+static bool undo_blocked =  FALSE;
 static char ubuf[UBUFSIZ], *eubuf;
-BOOL UdMark = FALSE;
+bool UdMark = FALSE;
 /*-----------------------------------------------------------------------------
  *               Добавить сформированную запись откатки к файлу
  */
@@ -210,7 +210,7 @@ static void genundo (int undodir)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  *                         Собственно команды откатки
  */
-static void tsundo (BOOL slow)
+static void tsundo (bool slow)
 {
   txt *t = Lwnd ? Ltxt : Ttxt;
   if (!t || t->txudeq == NULL || t->txudcptr == 0) exc(E_NOUNDO);
@@ -239,7 +239,7 @@ static void tsundo (BOOL slow)
 void leundo()  { tsundo(FALSE); }
 void lesundo() { tsundo(TRUE ); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-static void tsunundo (BOOL slow)
+static void tsunundo (bool slow)
 {
   txt *t = Lwnd ? Ltxt : Ttxt;
   if (!t || !t->txudeq || t->txudcptr == DqLen(t->txudeq)) exc(E_NOUNDO);

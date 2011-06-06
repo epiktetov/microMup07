@@ -135,12 +135,12 @@ bool QfsRename (qfile *file, QString to_name)
   else                     return false;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-large QfsRead (qfile *file, large size, char *buffer)
+long QfsRead (qfile *file, long size, char *buffer)
 {
   if (file->ft == QftTEXT) return ((qtxtfile*)(file))->Qf.read(buffer, size);
   else                     return -1;
 }
-large QfsWrite (qfile *file, large size, char *buffer)
+long QfsWrite (qfile *file, long size, char *buffer)
 {
   if (file->ft == QftTEXT) return ((qtxtfile*)(file))->Qf.write(buffer, size);
   else                     return -1;
