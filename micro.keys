@@ -482,7 +482,7 @@ k_(TK_EM2,           Mk_F8, 0xfd037)
 k_(TK_EM3,           Mk_F9, 0xfd038)
 k_(TK_EMX, 0,               0xfd038)
 /*
-ʁSYNTAX CHECKER:ʀ  Automatically do minimal syntax checks (mostly bracket balance
+ʁSYNTAX CHECKER:ʀ Automatically does minimal syntax check (mostly bracket balance
 and proper quoting) and highlights keywords and comments, depending on language
 used in the text (which is determined by file extension and/or #! in 1st line).
  Currently works more or less reliable for C/C++ formatted with "proper" style,
@@ -513,7 +513,7 @@ where primColor - primary gradient color for first (default) color palette
        offColor - off-color (default "white")
      start/stop - start/stop points from 0.0 (top left) to 1.0 (bottom right)
            tilt - from 0 (horizontal) to 1 (diagonal) to 4 (even more tilted)
-          primX - primary color for Xth color palette
+          primN - primary color for Nth color palette
 Color:
   #rrggbb 24-bit hexadecimal RGB value                for example:    #ffefd5
   SVG color names (see http://www.w3.org/TR/SVG/types.html)        papayawhip
