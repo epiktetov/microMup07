@@ -1,6 +1,7 @@
 #!qmake -- Qt project file for µMup07
 TEMPLATE = app
-CONFIG += release
+#+CONFIG += release
+CONFIG += debug
 unix:QtPLATF = unix# must be the first (as 'unix' condition's true on macx too)
 macx {
   TARGET = µMup07
@@ -27,8 +28,9 @@ macx:LIBS += -framework Cocoa
   HEADERS += unix.h
   SOURCES += unix.cpp
 }
-HEADERS += vip.h   te.h le.h tx.h dq.h ud.h
-SOURCES += vip.cpp te.c le.c tx.c dq.c ud.c rt.c
+HEADERS += vip.h   te.h le.h tx.h dq.h ud.h      luas.h
+SOURCES += vip.cpp te.c le.c tx.c dq.c ud.c rt.c luas.cpp
+LIBS += -llua
 DEPENDPATH += .
 INCLUDEPATH += .
 OBJECTS_DIR = obj

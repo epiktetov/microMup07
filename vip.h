@@ -111,7 +111,9 @@ void vipError (const char *message);                              /* vip.cpp */
   void vipFileTooBigError(qfile *f, long size);
 #endif
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-#ifdef __cplusplus
+#ifdef __cplusplus                  /* mim.cpp (used by luas.cpp, which does */
+void MicomSetMapL(int key, int mk); /* not need other stuff from mim.h file) */
+int  MicomGetMapL(int key);
 }
 #endif
 /*---------------------------------------------------------------------------*/

@@ -460,14 +460,6 @@ k_(TE_CENTR,  mod_CTRL+'E',                0xfb445) /* в середину ок�
 a_(TE_CENTR,  mod_META+'E',                0xfb445) /* - по вертикали        */
 k_(LE_CENTR,  mod_CTRL+'H',                0xfb448) /* - по горизонтали      */
 /*
-   Ctrl+Shift+'=' - Calculator (MacOS X/Linux only), courtesy of /usr/bin/bc,
-
-input: from block selection (if active),    output: inserted to the right of
-    or from '«' mark in text to cursor,             cursor position (exsting
-    or from first word left of cursor               text there will be DELETED)
-*/
-k_(TM_CALC, mod_CTRL+mod_SHIFT+'+', 0xcc63d) /* калькулятор */
-/*
 ʁMACRO:ʀ Shift+F7/F8/F9 - start recording macro
              F7/F8/F9 - finish recording / execute
 */
@@ -481,6 +473,12 @@ k_(TK_EM1,           Mk_F7, 0xfd036)
 k_(TK_EM2,           Mk_F8, 0xfd037)
 k_(TK_EM3,           Mk_F9, 0xfd038)
 k_(TK_EMX, 0,               0xfd038)
+/*
+Lua
+*/
+k_(TM_LUA, mod_CTRL+'J', 0xfc000)
+k_(TM_LUA_FUNC0,      0, 0xfc100)
+k_(TM_LUA_FnMAX,      0, 0xfc1ff)
 /*
 ʁSYNTAX CHECKER:ʀ Automatically does minimal syntax check (mostly bracket balance
 and proper quoting) and highlights keywords and comments, depending on language
@@ -501,6 +499,32 @@ a_(TE_BRAK0,  mod_CTRL+mod_SHIFT+')', 0xce630)
 k_(TE_BRAK9,  mod_CTRL+mod_SHIFT+'9', 0xce639) /* включить раскраску  */
 a_(TE_BRAK9,  mod_CTRL+mod_SHIFT+'(', 0xce639)
 k_(TE_SHBRAK, mod_CTRL+'O',           0xce44f) /* переключить режим   */
+/*
+ʁMISCELLANEOUS.
+
+  Ctrl+A - abandon (cancel) current command (e.g. stop entering search pattern)
+  Ctrl+K - display unicode value of the current character in the info window
+  Ctrl+L - display line number in the info window (default)
+  Ctrl+Q - ask for shell command and execute it (MacOS X/Linux only)
+   in shell command:
+        light blue '•' (Ctrl+'<') is replaced with the name of current file,
+        light blue '/' (Ctrl+'/') replaced with full path to current file
+*/
+k_(TK_NONE,   0,            0xce000) /* None command */
+k_(TK_BREAK,  mod_CTRL+'A', 0xce441)
+k_(TK_CHARK,  mod_CTRL+'K', 0xce44b)
+k_(TK_LINFO,  mod_CTRL+'L', 0xce44c)
+k_(TM_SHELL,  mod_CTRL+'Q', 0xce451) /* ввести и выполнить команду shell */
+k_(TM_FEXEC,  0,            0xceef1) /*       в том же окне:       Enter */
+k_(TM_F2EXEC, 0,            0xceef2) /*       в новом окне:  Shift+Enter */
+/*
+   Ctrl+Shift+'=' - Calculator (MacOS X/Linux only), courtesy of /usr/bin/bc,
+
+input: from block selection (if active),    output: inserted to the right of
+    or from '«' mark in text to cursor,             cursor position (exsting
+    or from first word left of cursor               text there will be DELETED)
+*/
+k_(TM_CALC, mod_CTRL+mod_SHIFT+'+', 0xce63d) /* калькулятор */
 /*
 ʁGRADIENTS:ʀ By default MicroMir07 fills background with linear gradient (because
 solid background is just too boring), which may be configured using Preferences
@@ -529,23 +553,32 @@ k_(TW_GRAD2, mod_CTRL+mod_ALT+'2', 0xcfc32) /* - палитру 2 (зелена�
 k_(TW_GRAD3, mod_CTRL+mod_ALT+'3', 0xcfc33) /* - палитру 3 (голубая)         */
 k_(TW_GRAD4, mod_CTRL+mod_ALT+'4', 0xcfc34) /* - палитру 4 (розовая)         */
 /*
-ʁMISCELLANEOUS.
+ʁKEYCODES MAPPINGʀ. Any MicroMir command may be remapped to different key (useful
+for compact keyboards that lack specific keys or have them at the wrong place),
+using Preferences menu. That list in the Key mapping pane should consist of one
+mapping per line, with the following format:
 
-  Ctrl+A - abandon (cancel) current command (e.g. stop entering search pattern)
-  Ctrl+K - display unicode value of the current character in the info window
-  Ctrl+L - display line number in the info window (default)
-  Ctrl+Q - ask for shell command and execute it (MacOS X/Linux only)
-   in shell command:
-        light blue '•' (Ctrl+'<') is replaced with the name of current file,
-        light blue '/' (Ctrl+'/') replaced with full path to current file
+  {code-from-Qt-event}:0x{command} [comments]
+
+The recommended way to find out the Qt code for a particular key (or key accord)
+is to start MikroMir with '-kb' option - in that case the last key code will be
+displayed in the info panel (at the bottom left corner of the window). Commands
+are easier - they may be found in this document (last hex number in the table).
+
+For example (you can cut-n-paste this mapping from this text into Preferences,
+using block selection and Ctrl/Command+C / Ctrl/Command+V commands):
+        --------------------------------+-------------------------------
+        0100003a:0xf3006 F11 -> Insert  | 0100003b:0xf3007 F12 -> Delete
+        0300003a:0xc3206 shift+F11 (IL) | 0300003b:0xf3207 shift+F12 (DL)
+        0500003a:0xf2406 ctrl+F11       | 0500003b:0xf2407 ctrl+F12
+        0700003a:0xcb606 ctrl+shift+F11 | 1100003b:0xc1007 meta+F12
+        15a0003a:0xca506 ctrl+meta+F11  | 15a0003b:0xca507 ctrl+meta+F11
+
+Currently does not work (yet):
+
+    01000039:0xcc010 F10=Home         |
+    01a0003a:0xc4806 Home F11, slin   | 01a0003b:0xc4807 Home F12,snlin
 */
-k_(TK_NONE,   0,            0xce000) /* None command */
-k_(TK_BREAK,  mod_CTRL+'A', 0xce441)
-k_(TK_CHARK,  mod_CTRL+'K', 0xce44b)
-k_(TK_LINFO,  mod_CTRL+'L', 0xce44c)
-k_(TM_SHELL,  mod_CTRL+'Q', 0xce451) /* ввести и выполнить команду shell */
-k_(TM_FEXEC,  0,            0xceef1) /*       в том же окне:       Enter */
-k_(TM_F2EXEC, 0,            0xceef2) /*       в новом окне:  Shift+Enter */
 /*
 Useful Alt+CHARs for Linux/Windows (already present on Mac):
 */
@@ -583,32 +616,5 @@ a_((micom_enum)0x2265, mod_ALT+'.',           0x2265) /* ≥ */
 a_((micom_enum)0x00F7, mod_ALT+'/',           0x00F7) /* ÷ */
 a_((micom_enum)0x00BF, mod_ALT+mod_SHIFT+'?', 0x00BF) /* ¿ */
 #endif
-/*
-ʁKEYCODES MAPPINGʀ. Any MicroMir command may be remapped to different key (useful
-for compact keyboards that lack specific keys or have them at the wrong place),
-using Preferences menu. That list in the Key mapping pane should consist of one
-mapping per line, with the following format:
-
-  {code-from-Qt-event}:0x{command} [comments]
-
-The recommended way to find out the Qt code for a particular key (or key accord)
-is to start MikroMir with '-kb' option - in that case the last key code will be
-displayed in the info panel (at the bottom left corner of the window). Commands
-are easier - they may be found in this document (last hex number in the table).
-
-For example (you can cut-n-paste this mapping from this text into Preferences,
-using block selection and Ctrl/Command+C / Ctrl/Command+V commands):
-        --------------------------------+-------------------------------
-        0100003a:0xf3006 F11 -> Insert  | 0100003b:0xf3007 F12 -> Delete
-        0300003a:0xc3206 shift+F11 (IL) | 0300003b:0xf3207 shift+F12 (DL)
-        0500003a:0xf2406 ctrl+F11       | 0500003b:0xf2407 ctrl+F12
-        0700003a:0xcb606 ctrl+shift+F11 | 1100003b:0xc1007 meta+F12
-        15a0003a:0xca506 ctrl+meta+F11  | 15a0003b:0xca507 ctrl+meta+F11
-
-Currently does not work (yet):
-
-    01000039:0xcc010 F10=Home         |
-    01a0003a:0xc4806 Home F11, slin   | 01a0003b:0xc4807 Home F12,snlin
-*/
 k_(TK_ZERO,0,0)
 k_END_OF_TABLE

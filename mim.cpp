@@ -23,7 +23,8 @@ static bool MiApp_debugKB    = false;
 static bool MiApp_timeDELAYS = false;
 int      last_MiCmd_code;
 quint64  last_MiCmd_time;
-QMap<int,int> MiApp_keyMap;
+QMap<int,int> MiApp_keyMapC; // two levels of key mapping: Config and Lua
+QMap<int,int> MiApp_keyMapL; //
 QString MiApp_defaultFont, MiApp_defFontAdjH, MiApp_keyMaps, MiApp_gradDescr;
 int     MiApp_defFontSize;
 int     MiApp_fontAdjOver, MiApp_fontAdjUnder, MiApp_defWidth, MiApp_defHeight;
@@ -824,9 +825,10 @@ void MiScTwin::keyPressEvent (QKeyEvent *event)
   } }
 #endif // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   last_MiCmd_code = key|modMask|key2mimHomeEscMask();
-  int mk_ev = MiApp_keyMap.value(last_MiCmd_code);
   micom *mk = NULL, userMk;
-  if (mk_ev) {      userMk.ev  = (micom_enum)mk_ev;
+  int         mk_ev = MiApp_keyMapL.value(last_MiCmd_code);
+  if (!mk_ev) mk_ev = MiApp_keyMapC.value(last_MiCmd_code);
+  if ( mk_ev) {     userMk.ev  = (micom_enum)mk_ev;
     mk = &userMk;   userMk.kcode = last_MiCmd_code;
     switch (mk_ev & 0xf0000) {                      // NOTE: text/line editors
     case 0xc0000: userMk.attr = 0;          break;  // do not care about KxTS,
@@ -976,13 +978,15 @@ void MiInfoWin::updateInfo (MiInfoType mit) { if (mit) infoType = mit;
 static void myParseKeyMap() // parse QString MiApp_keyMaps -> QMap MiApp_keyMap
 {
   QStringList lines = MiApp_keyMaps.split(QChar('\n'));
-  MiApp_keyMap.clear();
+  MiApp_keyMapC.clear();
   for (QStringList::const_iterator it  = lines.constBegin();
                                    it != lines.constEnd(); it++)
   { int key, mk;
     if (sscanf(it->cStr(), "%x:0x%x", &key, &mk) == 2)
-      MiApp_keyMap.insert(key, mk);
+      MiApp_keyMapC.insert(key, mk);
 } }
+void MicomSetMapL (int key, int mk) { MiApp_keyMapL.insert  (key, mk); }
+int  MicomGetMapL (int key)         { return MiApp_keyMapL.value(key); }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 inline QString myPackAdj2string (int X, int Y)
 {

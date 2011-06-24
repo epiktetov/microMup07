@@ -11,8 +11,9 @@ enum SyntSupportedLangs {
   CLangGEN  = 1, // generic (eol comment is '#', brackets checked, no keywords)
   CLangSH   = 2, // [ba]sh shell script
   CLangCPP  = 3, // C/C++
-  CLangPERL = 4, // Perl   (not implemented yet)
-  CLangPYTH = 5, // Python (not implemented yet)
+  CLangLUA  = 4, // Lua
+  CLangPERL = 5, // Perl 5.x
+  CLangPYTH = 6, // Python
   CLangMAX,
   CLangDISABLED = 8
 };

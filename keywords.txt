@@ -30,6 +30,13 @@ Preprocessor directives (not really reserved, but common in C code):
   define    ifdef   ifndef  |
   include   endif   elif    | NOTE: if and else are already C keywords
 
+Lua keywords (21):
+
+  and       break     do      else        elseif
+  end       false     for     function    if
+  in        local     nil     not         or
+  repeat    return    then    true        until     while
+
 Perl keywords and stuff (30):
 
   and  eq     my      if     while   foreach   last  use   strict  require

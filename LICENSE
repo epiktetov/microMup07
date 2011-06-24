@@ -4,23 +4,28 @@
  * "nanoMir" implementation (c) Attic (Д.В.Варсанофьев, А.Г.Дымченко) 1989-1991
  * "nanoMir" and МикроМир07 (c) EpiMG (М.Г.Эпиктетов)       1998-2001,2006-2011
 -------------------------------------------------------------------------------
+ Author(s) grant(s) you (''Licensee'') a non-exclusive, royalty free, license
+ to use, modify and redistribute this software in source and binary code form,
+ provided that:
 
-    Author(s) grant(s) you ("Licensee") a non-exclusive, royalty free,
-    license to use, modify and redistribute this software in source and
-    binary code form, provided that (i) this copyright notice and license
-    appear on all copies of the software; and (ii) Licensee does not utilize
-    the software in a manner which is disparaging to the Author(s).
+   (i) this copyright notice and license appear on all copies of the software;
+  (ii) the origin of this software is not misrepresented  (you must not claim
+         that you wrote the original software); and
+ (iii) altered source versions must be plainly marked as such, and must not be
+         misrepresented as being the original software.
 
  This software is provided "AS IS," without a warranty of any kind.
- ALL EXPRESS OR IMPLIED CONDITIONS, REPRESENTATIONS AND WARRANTIES, INCLUDING
- ANY IMPLIED WARRANTY OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE OR
+
+ ALL EXPRESS OR IMPLIED CONDITIONS,  REPRESENTATIONS AND WARRANTIES, INCLUDING
+ ANY IMPLIED WARRANTY OF MERCHANTABILITY,  FITNESS FOR A PARTICULAR PURPOSE OR
  NON-INFRINGEMENT, ARE HEREBY EXCLUDED.
- AUTOR(S) AND ITS LICENSORS SHALL NOT BE LIABLE FOR ANY DAMAGES SUFFERED BY
- LICENSEE AS A RESULT OF USING, MODIFYING OR DISTRIBUTING THE SOFTWARE OR ITS
- DERIVATIVES. IN NO EVENT WILL AUTOR(S) OR ITS LICENSORS BE LIABLE FOR ANY
+
+    AUTOR(S) AND ITS LICENSORS SHALL NOT BE LIABLE FOR ANY DAMAGES SUFFERED BY
+ LICENSEE AS A RESULT OF USING, MODIFYING OR  DISTRIBUTING THE SOFTWARE OR ITS
+ DERIVATIVES.  IN NO EVENT WILL  AUTOR(S) OR ITS  LICENSORS  BE LIABLE FOR ANY
  LOST REVENUE, PROFIT OR DATA, OR FOR DIRECT, INDIRECT, SPECIAL, CONSEQUENTIAL,
- INCIDENTAL OR PUNITIVE DAMAGES, HOWEVER CAUSED AND REGARDLESS OF THE THEORY
- OF LIABILITY, ARISING OUT OF THE USE OF OR INABILITY TO USE SOFTWARE, EVEN
+ INCIDENTAL OR PUNITIVE DAMAGES,  HOWEVER CAUSED AND REGARDLESS  OF THE THEORY
+ OF LIABILITY,  ARISING OUT OF THE USE OF  OR INABILITY TO USE SOFTWARE,  EVEN
  IF AUTHOR(S) HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
 
     This software is not designed or intended for use in on-line control of

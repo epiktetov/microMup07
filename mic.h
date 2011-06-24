@@ -49,6 +49,7 @@ typedef long tchar;                           /* Unicode символ с атр�
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #define AF_NONE    "\xCA\x80" /*   file representation for some attributes   */
 #define AF_PROMPT  "\xCA\x82" /*   (used to set nice prompt for LenterARG)   */
+#define AF_ERROR   "\xCA\x84"
 #define AF_SUPER   "\xCA\x88"
 #define AF_DIRTY   "\xCA\x90"
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

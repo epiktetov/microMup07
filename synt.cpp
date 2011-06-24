@@ -19,10 +19,12 @@ short SyntKnownLang (QString filename)
 {                                         // temporarily Objective-C == C++
   QRegExp ShFile(".+\\.sh");              //
   QRegExp CppFile(".+\\.(c|cpp|cxx|h|hpp|hxx|m|mm)", Qt::CaseInsensitive);
+  QRegExp LuaFile(".+\\.lua");
   QRegExp PerlFile(".+\\.pl");
   QRegExp PythonFile(".+\\.py");
        if (ShFile.exactMatch(filename))     return CLangSH   + CLangDISABLED;
   else if (CppFile.exactMatch(filename))    return CLangCPP;
+  else if (LuaFile.exactMatch(filename))    return CLangLUA;
   else if (PerlFile.exactMatch(filename))   return CLangPERL + CLangDISABLED;
   else if (PythonFile.exactMatch(filename)) return CLangPYTH + CLangDISABLED;
   else                                      return CLangNONE;
@@ -150,6 +152,86 @@ static bool Bash_in_word_set (const tchar *tstr, unsigned int len)
   } }
   return false;
 }
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#define LUA_TOTAL_KEYWORDS 21
+#define LUA_MIN_WORD_LENGTH 2
+#define LUA_MAX_WORD_LENGTH 8
+#define LUA_MIN_HASH_VALUE 2
+#define LUA_MAX_HASH_VALUE 28
+
+inline unsigned int Lua_hash (const tchar *tstr, unsigned int len)
+{
+  static unsigned char Lua_char_values[] =
+    {
+      29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
+      29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
+      29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
+      29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
+      29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
+      29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
+      29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
+      29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
+      29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
+      29, 29, 29, 29, 29, 29, 29, 10, 10, 29,
+      15,  5,  5, 29, 29,  0, 29, 10,  0, 29,
+       0, 10, 29, 29,  0, 29, 15, 15, 29,  0,
+      29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
+      29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
+      29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
+      29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
+      29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
+      29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
+      29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
+      29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
+      29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
+      29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
+      29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
+      29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
+      29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
+      29, 29, 29, 29, 29, 29
+    };
+  return len + Lua_char_values[(unsigned char)tstr[len - 1]]
+             + Lua_char_values[(unsigned char)tstr[0]];
+}
+static bool Lua_in_word_set (const tchar *tstr, unsigned int len)
+{
+  static const char * wordlist[] =
+    {
+      "", "", "in", "nil", "", "local", "return", "if", "for", "", "while",
+      "", "or", "function", "else", "false", "elseif", "", "not", "then",
+      "until", "repeat", "", "end", "true", "break", "", "do", "and"
+    };
+  if (LUA_MIN_WORD_LENGTH <= len && len <= LUA_MAX_WORD_LENGTH) {
+    int key = Lua_hash(tstr, len);
+    if (key <= LUA_MAX_HASH_VALUE) {
+      const char *word = wordlist[key];
+      while (len--)
+        if ((char)(*tstr++) != *word++) return false;
+                                        return true;
+  } }
+  return false;
+}
+static bool Lua_is_eol_com_tc (const tchar *tstr, int len)
+{
+  return (len > 1 && (char)tstr[0] == '-' && (char)tstr[1] == '-'
+                  &&             (len < 3 || (char)tstr[2] != '['));
+}
+static bool Lua_is_eol_com_c (const char *str, int len)
+{
+  return (len > 1 && str[0] == '-' && str[1] == '-'
+                  &&      (len < 3 || str[2] != '['));
+}
+static bool Lua_is_begin_com_tc (const tchar *tstr, int len)
+{
+  return (len > 3 && (char)tstr[0] == '-' && (char)tstr[1] == '-'
+                  && (char)tstr[2] == '[' && (char)tstr[3] == '[');
+}
+static bool Lua_is_begin_com_c (const char *str, int len)
+{
+  return (len > 1 && str[0] == '/' && str[1] == '*'
+                  && str[2] == '[' && str[3] == '[');
+}
+static const char Lua_end_comment[] = "]]";
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #define CPP_TOTAL_KEYWORDS  68
 #define CPP_MIN_WORD_LENGTH  2
@@ -384,6 +466,10 @@ SyntLang_t SyntLangs[] =
   { &Cpp_in_word_set,
     &Cpp_is_eol_com_tc, &Cpp_is_begin_com_tc,
     &Cpp_is_eol_com_c,  &Cpp_is_begin_com_c, Cpp_end_comment }, // CLangCPP
+
+  { &Lua_in_word_set,
+    &Lua_is_eol_com_tc, &Lua_is_begin_com_tc,
+    &Lua_is_eol_com_c,  &Lua_is_begin_com_c, Lua_end_comment }, // CLangLUA
 
   { &Perl_in_word_set, &Perl_eol_com_tc, &no_comments_tc,
                        &Perl_eol_com_c,  &no_comments_c, empty }, // CLangPERL
