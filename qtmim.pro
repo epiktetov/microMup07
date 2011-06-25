@@ -28,9 +28,19 @@ macx:LIBS += -framework Cocoa
   HEADERS += unix.h
   SOURCES += unix.cpp
 }
-HEADERS += vip.h   te.h le.h tx.h dq.h ud.h      luas.h
-SOURCES += vip.cpp te.c le.c tx.c dq.c ud.c rt.c luas.cpp
-LIBS += -llua
+HEADERS += vip.h   te.h le.h tx.h dq.h ud.h
+SOURCES += vip.cpp te.c le.c tx.c dq.c ud.c rt.c
+contains(LUA,1){
+  HEADERS += luas.h
+  SOURCES += luas.cpp
+  DEFINES += UseLUA
+  macx {
+    LIBS += -llua
+  } else:unix {
+    LIBS += -llua5.1
+    INCLUDEPATH += /usr/include/lua5.1
+  }
+}
 DEPENDPATH += .
 INCLUDEPATH += .
 OBJECTS_DIR = obj

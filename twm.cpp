@@ -10,7 +10,6 @@
 #include "unix.h"
 #include "vip.h"
 #include "clip.h"
-#include "luas.h"
 #include "synt.h"
 extern "C" {
 #include "dq.h"
@@ -19,6 +18,11 @@ extern "C" {
 #include "tx.h"
 #include "ud.h"
 }
+#ifdef UseLUA
+# include "luas.h"
+#else
+# define luasInit()
+#endif
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tmInitialize (void)
 {
@@ -26,7 +30,7 @@ void tmInitialize (void)
   char *membuf = MemInit(&memsize); DqInit(membuf, memsize);
   TxInit();
   TeInit(); LeStart(); clipStart(); luasInit();
-}                                   //+
+}
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 bool tmStart (QString param)
 {
@@ -581,9 +585,13 @@ int TmCommand (int kcode)
   case TW_GRAD1: case TW_GRAD3:
   case TW_GRAD2: case TW_GRAD4: Twnd->sctw->SetGradFromPool(kcode - TW_GRAD1);
     break;
+#ifdef UseLUA
   case TM_LUA: return luasExec();
   default:
     if (TM_LUA_FUNC0 <= kcode && kcode <= TM_LUA_FnMAX) return luasFunc(kcode);
+#else
+  default:
+#endif
     return E_NOCOM;
   } return E_OK;
 }
