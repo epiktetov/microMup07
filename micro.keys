@@ -24,11 +24,11 @@ k_BEGIN
 in the operating system) but rather a 2-dimensional matrix of lines filled with
 characters and cursor (current editing position) located on some character.
 
-ʁBASIC CURSORʀ     <arrows>   - move cursor one position in given direction
-  ʁMOVEMENTʀ     Ctrl+<left>  - move cursor to beginning of line
-               Ctrl+<right> - move cursor to end of line
-           Alt+  <up/down>  - move cursor a few lines (1/6th of window) up/down
-           Alt+<left/right> - move cursor word left/right
+ʁBASIC CURSORʀ    {arrows}    - move cursor one position in given direction
+  ʁMOVEMENTʀ      Ctrl+Left   - move cursor to beginning of line
+                Ctrl+Right  - move cursor to end of line
+       Alt+Up   / Alt+Down  - move cursor a few lines (1/6th of window) up/down
+       Alt+Left / Alt+Right - move cursor word left/right
  ------------------------------------------------------------------------------
  Word = sequence of non-space characters; in addition, '(' starts new word, and
  comma and semicolon terminate the word (all three are included into the word)
@@ -44,11 +44,11 @@ k_(TW_DOWN,  mod_ALT+Mk_DOWN,  0xd0815) /* на несколько строк в
 k_(LE_PWORD, mod_ALT+Mk_LEFT,  0xd0812) /* -> предыдущее слово               */
 k_(LE_NWORD, mod_ALT+Mk_RIGHT, 0xd0814) /* -> следующее слово                */
 /*
-     PageUp/PageDown - scroll text one page (= windows height - 1) up / down
+     PageUp/PageDown - scroll text one page (= windows height - 1) up/down
 Ctrl+PageUp/PageDown - move cursor to very beginning / end of the document
-Ctrl+   <up/down>    - move continuously up/down (stop by any key)
-Ctrl+  '[' / ']'     - move cursor to left / right edge of the current window
-Ctrl+Meta+<arrows>   - scroll text in given direction (cursor moves over text,
+Ctrl+Up / Ctrl+Down  - move continuously up/down (stop by any key)
+Ctrl+[  / Ctrl+]     - move cursor to left / right edge of the current window
+Ctrl+Meta+{arrows}   - scroll text in given direction (cursor moves over text,
                        while remaining in the same position relative to window)
 */
 k_(TE_PPAGE,           Mk_PAGEUP,   0xd0016) /* на страницу вверх        ..0 */
@@ -74,7 +74,7 @@ replaces anything, it just pushes current text into stack like Esc <down> does)
   Meta+'-'          - split the window into two panes, forking the contents
   Meta+Delete/F12   - ask for filename and enter that file (see FILES below)
 
-  Meta+<arrow> - move cursor to closest window in given direction
+  Meta+{arrow} - move cursor to closest window in given direction
   Meta+Enter   - SyncPos(tm) - open (in upper pane) file mentioned here
 */
 k_(TM_VFORK,   mod_META+'=',          0xc103d) /* открыть новое окно с тем   */
@@ -180,8 +180,8 @@ for text modification:
   Ctrl+D     - delete from cursor to end of line
   Ctrl+U     - delete/clear all characters up to cursor position
   Ctrl+W     - delete word under cursor (and trailing spaces) from the text
-  Esc Ctrl+D - delete everything from cursor to end of file
-  Esc Ctrl+U - delete everything from the beginning up to cursor (very strong)
+  Esc,Ctrl+D - delete everything from cursor to end of file
+  Esc,Ctrl+U - delete everything from the beginning up to cursor (very strong)
 */
 k_(LE_IC,           Mk_INSERT,     0xf4006) /* вставить пробел на месте      */
 a_(LE_IC,           Mk_F13,        0xf4006) /*   курсора, сдвинуть все влево */
@@ -201,11 +201,11 @@ For those who are used to Enter splitting text line... it can work that way, if
 you press Home before Enter (MicroMir uses Home and Esc kayes as prefixes, both
 should be pressed and released before the next key - unlike Shift/Ctrl/Alt/etc)
 
-  Home Enter  - split the line, moving right part to the beginning of new line
-  Home Backsp - join lines back, moving text as shown:  +------
+  Home,Enter  - split the line, moving right part to the beginning of new line
+  Home,Backsp - join lines back, moving text as shown:  +------
                                                         |like█  <-> |like█this
-  Home Insert - split the line vertically               |this       |
-  Home Delete - join back:  +---------
+  Home,Insert - split the line vertically               |this       |
+  Home,Delete - join back:  +---------
                             |like█      <-> |like█that     (both join commands
                             |     that      |               discard text right
   Meta+Shift+<arrow> -                                      of cursor position)
@@ -268,10 +268,10 @@ when entering search/replace pattern.
        Ctrl+8 (*) - search with wildcards                ‹wc·--›
        Ctrl+I     - toggle case sensitivity: ignore case ‹--·ic› or not ‹--·cs›
 
-      (Meta/Ctrl)+G ==       End - search forward (down)
-Shift+(Meta/Ctrl)+G == Shift+End - search backward (up)
-       Ctrl+Meta +G ==  Ctrl+End - replace (if matches) or search down (if not)
-                  Shift+Ctrl+End - replace (if matches) or search up (if not)
+              End - search (for previously entered pattern) forward (down)
+        Shift+End - search backward (up)
+         Ctrl+End - replace (if matches) or search down (if not)
+   Shift+Ctrl+End - replace (if matches) or search up (if not)
 */
 k_(TE_SENTR,   mod_HOME+Mk_END, 0xc6811) /* ввод подстроки поиска и замены   */
 a_(TE_SENTR,   mod_META+'F',    0xc6811) /*     (Enter или End - поиск вниз, */
@@ -336,9 +336,9 @@ however it is always a rectangle in the text. Shift+movements makes "temporary"
 selection (grey rectangle) and F5 followed by any regular cursor movement makes
 "permanent" one (light blue rectangle). Typing DO NOT overwrites selected text!
 
-        Shift+  <arrows> - start/extend  |       (any movement   - start/extend
-   Alt +Shift+  <arrows>    "temporary"  |  F5 ..  except for  ..   "permanent"
-   Ctrl+Shift+<left/right>    selection  |       [Shift+]Enter)       selection
+        Shift+{arrows} - start/extend  |       (any movement   - start/extend
+   Alt +Shift+{arrows}    "temporary"  |  F5 ..  except for  ..   "permanent"
+   Ctrl+Shift+Left/Right    selection  |       [Shift+]Enter)       selection
 */
 a_(LE_LEFT,  mod_SHIFT+         Mk_LEFT,  0xe0012) /* влево  |               */
 a_(TE_UP,    mod_SHIFT+         Mk_UP,    0xe0013) /* вверх  | с отметкой    */
@@ -357,18 +357,18 @@ text instead of character, namely:
 
         F1 (Meta/Ctrl+C) - add selected text to copy/paste buffer
   Shift+F1 (Meta/Ctrl+X) - save selection and delete from text
-  Ins                    - insert column of spaces at left edge of selection
-  Del                    - delete column at left edge of selection
-  Shift+Del              - clear the text covered by selection rectangle
-  <character>            - insert character at block position in all lines
+  Insert                 - insert column of spaces at left edge of selection
+  Delete                 - delete column at left edge of selection
+  Shift+Delete           - clear the text covered by selection rectangle
+  {character}            - insert character at block position in all lines
   (last command works only when block width is 1 column, "tall cursor" mode)
 
 The following commands also can work with selections, but only with single-line
 ones (without selection, current character is converted and cursor moves right)
 
-  Alt+Meta+ <up>   - convert current character/selection to uppercase
-  Alt+Meta+<down>  - convert current character/selection to lowercase
-  Ctrl+B           - add / clear "bold" attribute
+  Alt+Meta+Up   - convert current character (or selected block) to uppercase
+  Alt+Meta+Down - convert current character (or selected block) to lowercase
+  Ctrl+B        - add / clear "bold" attribute
 
 NOTE: "bold" attribute is marked by Unicode chars U+281 / U+280 (which are very
 unlikely to appear in regular text) and not compatible with anything.. not even
@@ -383,12 +383,12 @@ file browser, one can keep files sorted his/her way (and also add any comments)
 by listing filenames in 'micros.dir'.  This is a regular text file, except that
 it has '|' symbols in all lines in 64th position (and, optionally, in 69th one)
 
-  Esc <right> - move right to the filename field (return back by Enter)
-  Esc <down>  - down into file (filename taken from the text, see below)
-  Esc <up>    - up one level = normal exit (with changes automatically saved)
-  Esc PageUp  - up all levels (closing the window), with changes saved
-  Esc Ctrl+A  - abandon all changes and leave the file (up one level)
-  Esc Ctrl+B  - exit the file, save both original and new versions
+  Esc,Right   - move right to the filename field (return back by Enter)
+  Esc,Down    - down into file (filename taken from the text, see below)
+  Esc,Up      - up one level = normal exit (with changes automatically saved)
+  Esc,PageUp  - up all levels (closing the window), with changes saved
+  Esc,Ctrl+A  - abandon all changes and leave the file (up one level)
+  Esc,Ctrl+B  - exit the file, save both original and new versions
   Meta/Ctrl+R - reload the file (or directory contents) from disk
   Meta/Ctrl+S - save all changes without leaving the file
 */
@@ -422,26 +422,26 @@ Special ʁFILESʀ (MacOS X/Linux only):
 MicroMir automatically detects read-only files and don't allow changing them...
 unless you insist: edit/view mode may be changed at any time (at your own risk)
 
-  Ctrl+Meta+Ins - set text edit mode (green or blue cursor, can change text)
-  Ctrl+Meta+Del - set text view mode (no changes allowed, red cursor)
+  Ctrl+Meta+Insert - set text edit mode (green or blue cursor, can change text)
+  Ctrl+Meta+Delete - set text view mode (no changes allowed, red cursor)
 */
 k_(TE_SRW, mod_CTRL+mod_META+Mk_INSERT, 0xca506) /* режим редактирования     */
 a_(TE_SRW, mod_CTRL+mod_META+Mk_F13,    0xca506) /* - синоним для Mac KB     */
 k_(TE_SRO, mod_CTRL+mod_META+Mk_DELETE, 0xca507) /* режим просмотра текста   */
 /*
-ʁREPETITION:ʀ Esc N - enter repetition counter (or argument) for the next command
+ʁREPETITION:ʀ Esc,N - enter repetition counter (or argument) for the next command
                               where N is either ddd decimal number like   126
 For example:                                   0ddd octal number such as 0176
                                                xddd hexadecimal number    x7e
-  Esc 3 Shift+Del - delete 3 lines
-  Esc 7 '*'       - same as ******* (insert or replace, depending on edit mode)
+  Esc,3,Shift+Delete - delete 3 lines
+  Esc,5,*            - same as ***** (insert or replace, depending on the mode)
 
-  Esc N Alt+Meta+'<'   - convert word / selection to decimal from radix-N (hex)
-  Esc N Alt+Meta+'>'   - convert word / selection to radix-N (where N = 2..36)
-  Esc N Ctrl+Shift+Ins - insert character with given code
-  Esc N Ctrl+Shift+']' - set the width (of editable part) of the text
-  Esc N Meta/Ctrl+E    - move cursor to Nth line in text
-  Esc N      Ctrl+H    - move cursor to Nth position in current line
+  Esc,N,Alt+Meta+'<'  - convert word/selection from radix-N (hex) to decimal
+  Esc,N,Alt+Meta+'>'  - convert word/selection to radix-N (where N = 2..36)
+  Esc,N,Ctrl+Shift+Insert - insert character with given code
+  Esc,N,Ctrl+Shift+]      - set the width (of editable part) of the text
+  Esc,N,Meta/Ctrl+E       - move cursor to Nth line in text
+  Esc,N,     Ctrl+H       - move cursor to Nth position in current line
 
 Note: without repetition prefix, the last two commands work differently, which
      is a special convenience feature to allow easy centering specific position
@@ -449,8 +449,9 @@ Note: without repetition prefix, the last two commands work differently, which
   Meta/Ctrl+E - centers current line in the windows (vertically only)
        Ctrl+H - centers curret position in the windows (horizontally)
 */
-k_(TK_ESC,    Mk_ESCAPE,                   0xcc000) /* Esc префикс  */
-k_(TK_HOME,   Mk_HOME,                     0xcc010) /* Home префикс */
+k_(TK_HOME,   Mk_HOME,                     0xcc00a) /* Home префикс */
+k_(TK_ESC,    Mk_ESCAPE,                   0xcc00e) /* Esc префикс  */
+k_(TK_CtrJ,   mod_CTRL+'J',                0xcc010) /* ^J префикс   */
 k_(LE_CWDEC,  mod_ALT+mod_META+',',        0xfb92c)
 k_(LE_CWHEX,  mod_ALT+mod_META+'.',        0xfb92e)
 k_(LE_SPCHAR, mod_CTRL+mod_SHIFT+Mk_INSERT,0xcb606) /* ввести символ по коду */
@@ -476,9 +477,9 @@ k_(TK_EMX, 0,               0xfd038)
 /*
 Lua
 */
-k_(TM_LUA, mod_CTRL+'J', 0xfc000)
-k_(TM_LUA_FUNC0,      0, 0xfc100)
-k_(TM_LUA_FnMAX,      0, 0xfc1ff)
+k_(TM_LUA, mod_CtrJ+mod_CTRL+'J', 0xfc000)
+k_(TM_LUA_FUNC0,               0, 0xfc100)
+k_(TM_LUA_FnMAX,               0, 0xfc1ff)
 /*
 ʁSYNTAX CHECKER:ʀ Automatically does minimal syntax check (mostly bracket balance
 and proper quoting) and highlights keywords and comments, depending on language
@@ -486,12 +487,12 @@ used in the text (which is determined by file extension and/or #! in 1st line).
  Currently works more or less reliable for C/C++ formatted with "proper" style,
 so a couple of commands added to turn it on/off dynamically (on per-file basis)
 
-  Ctrl+Shift+'0'/')' - disable syntax check / coloring for given file
-  Ctrl+Shift+'9'/'(' - (re-)enable syntax check
-  Ctrl+O (letter O)  - toggle "show all brackets not closed in the line" mode
-   (sequence Esc 0 Ctrl+O turns off bracket position check, reducing warnings)
+  Ctrl+Shift+0/)    - disable syntax check / coloring for given file
+  Ctrl+Shift+9/(    - (re-)enable syntax check
+  Ctrl+O (letter O) - toggle "show all brackets not closed in the line" mode
+  (sequence Esc,0,Ctrl+O turns off bracket position check, reducing warnings)
 
-Note for Windows 7: keyboard shortcut Ctrl+Shift+'0' does not work in default
+Note for Windows 7: keyboard shortcut Ctrl+Shift+0 does not work with default
    configuration. Refer to http://support.microsoft.com/kb/967893 for the fix.
 */
 k_(TE_BRAK0,  mod_CTRL+mod_SHIFT+'0', 0xce630) /* выключить раскраску */
@@ -543,10 +544,10 @@ Color:
   SVG color names (see http://www.w3.org/TR/SVG/types.html)        papayawhip
   Hue degrees (in that case Sat=16% and Val=100% is forced)        40° or 40*
 
-  Ctrl+Alt+'1' - switch to first / default palette in current window
-  Ctrl+Alt+'2' - switch to palette 2 (if not confiured, set to 80° light green)
-  Ctrl+Alt+'3' - switch to palette 3 (default is 200° sky blue)
-  Ctrl+Alt+'4' - switch to palette 4 (default is "mistyrose")
+  Ctrl+Alt+1 - switch to first / default palette in current window
+  Ctrl+Alt+2 - switch to palette 2 (if not confiured, set to 80° light green)
+  Ctrl+Alt+3 - switch to palette 3 (default is 200° sky blue)
+  Ctrl+Alt+4 - switch to palette 4 (default is "mistyrose")
 */
 k_(TW_GRAD1, mod_CTRL+mod_ALT+'1', 0xcfc31) /* включить палитру 1 в текущем  */
 k_(TW_GRAD2, mod_CTRL+mod_ALT+'2', 0xcfc32) /* - палитру 2 (зеленая)    окне */
@@ -556,30 +557,29 @@ k_(TW_GRAD4, mod_CTRL+mod_ALT+'4', 0xcfc34) /* - палитру 4 (розова�
 ʁKEYCODES MAPPINGʀ. Any MicroMir command may be remapped to different key (useful
 for compact keyboards that lack specific keys or have them at the wrong place),
 using Preferences menu. That list in the Key mapping pane should consist of one
-mapping per line, with the following format:
+mapping per line as following:
+                                        0x{command}:{keySequence}
+where:
+   {command} = hexadecimal command code as found in this help text (3rd column)
+   {keySequence} = assigned key sequence as understood by Qt, mostly consistent
+      with notation used in this text, except that regular characters are never
+      quoted (Ctrl+-) and Esc should be spelled as Escape (in addition, "Ctrl+"
+      may be shortened to a single caret character, for example: ^A == Ctrl+A)
 
-  {code-from-Qt-event}:0x{command} [comments]
+For example, the following table may be used to map Home, Insert & Delete keys
+(that may be missing on compact keyboard) to F10/F11/F12  (you can cut-n-paste
+this mapping from this text into Preferences, using block selection and Ctrl+C
+and Ctrl+V commands):
 
-The recommended way to find out the Qt code for a particular key (or key accord)
-is to start MikroMir with '-kb' option - in that case the last key code will be
-displayed in the info panel (at the bottom left corner of the window). Commands
-are easier - they may be found in this document (last hex number in the table).
+        Home prefix | Insert replacements    | Delete replacements
+        ------------+------------------------+----------------------
+        0xcc00a:F10 | 0xf4006:F11            | 0xf4007:F12
+                    | 0xf3406:^F11           | 0xf3407:^F12
+                    | 0xc4206:Shift+F11      | 0xf4207:Shift+F12
+                    | 0xc5806:Home,F11       | 0xc5807:Home,F12
+                    | 0xca506:Ctrl+Meta+F11  | 0xca507:Ctrl+Meta+F12
+                    | 0xcb606:Ctrl+Shift+F11 | 0xc1007:Meta+F12
 
-For example (you can cut-n-paste this mapping from this text into Preferences,
-using block selection and Ctrl/Command+C / Ctrl/Command+V commands):
-        --------------------------------+-------------------------------
-        0100003a:0xf3006 F11 -> Insert  | 0100003b:0xf3007 F12 -> Delete
-        0300003a:0xc3206 shift+F11 (IL) | 0300003b:0xf3207 shift+F12 (DL)
-        0500003a:0xf2406 ctrl+F11       | 0500003b:0xf2407 ctrl+F12
-        0700003a:0xcb606 ctrl+shift+F11 | 1100003b:0xc1007 meta+F12
-        15a0003a:0xca506 ctrl+meta+F11  | 15a0003b:0xca507 ctrl+meta+F11
-
-Currently does not work (yet):
-
-    01000039:0xcc010 F10=Home         |
-    01a0003a:0xc4806 Home F11, slin   | 01a0003b:0xc4807 Home F12,snlin
-*/
-/*
 Useful Alt+CHARs for Linux/Windows (already present on Mac):
 */
 #ifndef Q_OS_MAC

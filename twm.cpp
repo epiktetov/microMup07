@@ -62,23 +62,26 @@ void wattach (txt *t, wnd *w)
   scblkoff(); w->wtext = t;
               w->wnext = t->txwndptr;
                          t->txwndptr = w;
-  t->txstat |= TS_WND;
-  w->wcx = t->cx; w->wtx = t->tcx;
-  w->wcy = t->cy; w->wty = t->tcy;
+  w->ctx = t->vp_ctx; w->wtx = t->vp_wtx;
+  w->cty = t->vp_cty; w->wty = t->vp_wty; t->txstat |= TS_WND;
 }
-void wdetach (txt *t, wnd *w) /*- - - - - - - - - - - - - - - - - - - - - - -*/
+void wupdate (txt *t, wnd *vp)
 {
-  if (t->txwndptr == NIL) return;
-  if (t->txwndptr == w) t->txwndptr = w->wnext;
+  t->vp_ctx = vp->ctx; t->vp_wtx = vp->wtx;
+  t->vp_cty = vp->cty; t->vp_wty = vp->wty;
+}
+void wdetach (txt *t) /*- - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+{                                     /* assuming Twnd is currently attached */
+  if (t->txwndptr == NULL) return;
+  if (t->txwndptr == Twnd) t->txwndptr = Twnd->wnext;
   else {
-    wnd *w1;
-    for (w1 = t->txwndptr; w1->wnext != w; w1 = w1->wnext)
-      if (w1->wnext == NIL) return;
-    w1->wnext = w->wnext;
+    for (wnd *vp = t->txwndptr; vp; vp = vp->wnext)
+      if (vp->wnext == Twnd) { vp->wnext = Twnd->wnext; break; }
   }
-  t->cx = Tx; t->tcx = w->wtx;  w->wtext = NULL;
-  t->cy = Ty; t->tcy = w->wty;  w->wnext = NULL;
   if (t->txwndptr == NULL) t->txstat &= ~TS_WND;
+  Twnd->wtext = NULL;
+  Twnd->wnext = NULL; t->vp_wtx = Twnd->wtx; t->vp_ctx = Tx;
+                      t->vp_wty = Twnd->wty; t->vp_cty = Ty;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static void twRedraw (txt *t)    /* redraw all attached windows after rename */
@@ -92,8 +95,8 @@ bool twEdit (wnd *wind, QString filename, txt *referer, bool isNew)
   txt *tfound = tmDesc(filename, true, referer);
   if (!tfound || !tmLoad(tfound))  return false;
   Ttxt = tfound;
-  Tx = Ttxt->cx; wattach(Ttxt, wind);
-  Ty = Ttxt->cy;
+  Tx = Ttxt->vp_ctx; wattach(Ttxt, wind);
+  Ty = Ttxt->vp_cty;
   if (isNew) { Twnd = NULL; vipActivate(wind); }
                       vipUpdateWinTitle(wind);
                       vipRedrawWindow  (wind); return true;
@@ -101,7 +104,7 @@ bool twEdit (wnd *wind, QString filename, txt *referer, bool isNew)
 /*---------------------------------------------------------------------------*/
 void twDirPop (void)
 {
-  wdetach(Ttxt, Twnd);
+  wdetach(Ttxt);
   while (Twnd->dirsp > Twnd->stack) {
     Twnd->dirsp--;
     Twnd->wtx = Twnd->dirsp->dswtx; Tx = Twnd->dirsp->dsx;
@@ -114,7 +117,7 @@ void twDirPop (void)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void twDirPush (QString filename, txt *referer)
 {
-  wdetach(Ttxt, Twnd);
+  wdetach(Ttxt);
 //
 // Do not save pseudo-text used for shell command execution in the stack (since
 // such text is unique and does not have proper name anyway), also check space
@@ -188,7 +191,23 @@ txt *tmDesc (QString filename, bool needUndo, txt *referer)
   QRegExp ptn("(.+):(git|gitlog|blame||hg):(.*)");
   short force_txstat = 0;
   short force_clang  = 0;
-       if (filename.compare(":clip") == 0) filename = QString(SAVFILNAM);
+  if (filename.compare(QfsELLIPSIS) == 0) { // PSEUDO text used by Unix & Lua
+    txt *Ctxt;                              //
+    for (Ctxt = texts; Ctxt; Ctxt = Ctxt->txnext)
+      if ((Ctxt->file && Ctxt->file->ft == QftNOFILE) &&
+          (Ctxt->txstat & TS_PSEUDO) &&
+         !(Ctxt->txstat & (TS_WND|TS_PERM)) ) break;
+//   ^^
+// Look for unattached PSEUDO text, clear existing one or create new (no UNDO),
+// update the status (just in case), recreate the name (with proper directory):
+//
+    if  (Ctxt)  TxEmpt(Ctxt);
+    else Ctxt = TxNew(FALSE);     Ctxt->txstat |=   TS_PSEUDO |TS_FILE;
+    Ctxt->txredit = TXED_YES;     Ctxt->txstat &= ~(TS_CHANGED|TS_RDONLY);
+    qfile *new_file = QfsNew(QfsELLIPSIS, referer ? referer->file : NULL);
+    QfsClear(Ctxt->file);
+    Ctxt->file = new_file; return Ctxt;
+  }
   else if (ptn.exactMatch(filename)) {
     for (cmdmap *p = vcs_commands; p->key; p++)
       if (ptn.cap(2) == p->key) {
@@ -252,8 +271,8 @@ static void tmDirLST (txt *t)
          ftattr, (wchar_t *)(it->fileName().utf16()));
     TxTIL(t, Lebuf, qstr2tcs(line, Lebuf)); TxDown(t);
   } 
-  if (t->txudeq)      udclear(t); //<- reset undo start to this point (initial
-  t->cx = t->txlm = DIRLST_FNPOS; //   blank state is not very not interesting)
+  if (t->txudeq) udclear(t); //<- reset undo start to this point (initial blank
+  t->vp_ctx = t->txlm = DIRLST_FNPOS; //         state is not very interesting)
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static void check_MCD (txt *t) // TODO: check file contents instead
@@ -262,8 +281,8 @@ static void check_MCD (txt *t) // TODO: check file contents instead
     t->txstat |= TS_MCD; t->txlm = 0;
                          t->txrm = MCD_LEFT;
   }
-  else { t->txstat &= ~TS_MCD; t->txlm = 0;
-                               t->txrm = MAXTXRM; }
+//  else { t->txstat &= ~TS_MCD; t->txlm = 0;
+//+                              t->txrm = MAXTXRM; }
 }
 bool tmDoLoad (txt *t)  /*- - - - - - - - - - - - - - - - - - - - - - - - - -*/
 {
@@ -291,6 +310,9 @@ bool tmDoLoad (txt *t)  /*- - - - - - - - - - - - - - - - - - - - - - - - - -*/
   t->txstat &= ~TS_CHANGED;     check_MCD(t);  // double-check file type
   t->txstat |=  TS_FILE;                       //
   if (t->clang == CLangNONE) TxEnableSynt(t, SyntSniffText(t));
+#ifdef UseLUA
+  luasNtxt(t); // (re-)create Lua table for the text
+#endif
   if (t->txudeq != NIL) { t->txstat  |= TS_UNDO;
                           t->txudfile = t->txudcptr; } TxRecalcMaxTy(t);
   return true;
@@ -382,9 +404,8 @@ bool twSave (txt *t, wnd *vp, bool needBackup)
   else if (t->file->ft == QftTEXT)       return tmsave(t, needBackup);
   else if (t->txstat & TS_CHANGED) {
     QString new_name = vp->sctw->mf->saveAsDialog(t);
-    if (new_name.isEmpty()) return false;
-    else                    return tmSaveAs(t, new_name);
-  } else                    return true;
+    if (!new_name.isEmpty()) return tmSaveAs(t, new_name);
+  }                          return true;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tmSaveAll (void)                    /* сохранить ВСЕ изменения на диске */
@@ -398,8 +419,8 @@ void tmSaveAll (void)                    /* сохранить ВСЕ измен
 bool twSafeClose (txt *t, wnd *vp)
 {
   if ((t->txstat & TS_CHANGED) && t->txwndptr->wnext == NULL) return false;
-  wdetach(t, vp);
-  Twnd = vp; twExit(); return true; /* NOTE: directory stack is NOT checked */
+  Twnd =  vp;
+  wdetach(t); twExit(); return true; /* NOTE: directory stack is NOT checked */
 }
 /*---------------------------------------------------------------------------*/
 #define  FPROMPT AF_PROMPT "File:"
@@ -556,11 +577,10 @@ int TmCommand (int kcode)
   case TM_VFORK:                     /* create new window и к правому окну   */
     wind = vipSplitWindow(Twnd, KbCode);
     if (wind) {
-      wattach  (Ttxt, wind); Ttxt->tcx = Twnd->wtx; wind->wcy = Ty;
-      twDirCopy(Twnd, wind); Ttxt->tcy = Twnd->wty; wind->wcx = Tx;
-      vipActivate(wind);
-      vipUpdateWinTitle(wind);
-      vipRedrawWindow  (wind); return E_OK;
+      wupdate  (Ttxt, Twnd);
+      wattach  (Ttxt, wind); vipActivate      (wind);
+      twDirCopy(Twnd, wind); vipUpdateWinTitle(wind);
+                             vipRedrawWindow  (wind); return E_OK;
     }
     else return E_SFAIL;
 

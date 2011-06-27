@@ -249,6 +249,7 @@ bool MiFrame::safeClose (MiScTwin *sctw)  // NOTE: sctw pointer in the MiFrame
         QMessageBox::Save|QMessageBox::Default, QMessageBox::Discard,
        QMessageBox::Cancel|QMessageBox::Escape, this,     Qt::Sheet);
   connect(mbox, SIGNAL(finished(int)), this, SLOT(finishClose(int)));
+  mbox->setWindowModality(Qt::WindowModal);
   mbox->show();
   return false; // not safe to close yet (user notified, waiting for reaction)
 }
@@ -264,7 +265,8 @@ void MiFrame::finishClose (int qtStandBtn) // finish closing either scwin (when
          if (scwin) scwin->vp->wtext->txstat &= ~TS_CHANGED;
     else if (main)   main->vp->wtext->txstat &= ~TS_CHANGED;
   }
-  close();
+  QCloseEvent close();
+  QCoreApplication::postEvent(this, new QCloseEvent);
 }
 //-----------------------------------------------------------------------------
 MiScTwin *MiFrame::NewScTwin (wnd *vp) // creates new pane (unless two already
@@ -828,8 +830,9 @@ void MiScTwin::keyPressEvent (QKeyEvent *event)
   micom *mk = NULL, userMk;
   int         mk_ev = MiApp_keyMapL.value(last_MiCmd_code);
   if (!mk_ev) mk_ev = MiApp_keyMapC.value(last_MiCmd_code);
-  if ( mk_ev) {     userMk.ev  = (micom_enum)mk_ev;
-    mk = &userMk;   userMk.kcode = last_MiCmd_code;
+  if ( mk_ev) {
+    userMk.ev  = key2mimCheckPrefix(mk_ev);   mk = &userMk;
+    userMk.kcode = last_MiCmd_code;
     switch (mk_ev & 0xf0000) {                      // NOTE: text/line editors
     case 0xc0000: userMk.attr = 0;          break;  // do not care about KxTS,
     case 0xd0000: userMk.attr =      KxBLK; break;  // thus we must convert it
@@ -939,11 +942,7 @@ void MiInfoWin::paintEvent (QPaintEvent *)
 {
   QPainter dc(this); int Y = sctw->Ty2qtY(0)+sctw->fontBaseline;
   QString info;                                      int dx, dy;
-  if (MiApp_debugKB) {
-    info.sprintf("%8x",  last_MiCmd_code);
-    dc.drawText(sctw->Tx2qtX(0), Y, info);
-  }
-  else if (infoType == MitCHARK && sctw->vp->cx >= 0) {
+  if (infoType == MitCHARK && sctw->vp->cx >= 0) {
     tchar tc = 0, *textln;
     if (TxSetY(sctw->vp->wtext, sctw->vp->wty+sctw->vp->cy)) {
       textln = TxInfo(sctw->vp, sctw->vp->wty+sctw->vp->cy, &dx);
@@ -958,7 +957,7 @@ void MiInfoWin::paintEvent (QPaintEvent *)
      (dx = (int)(pgtime()-last_MiCmd_time)) > 1) { info.sprintf("%4dms", dx);
                                        dc.drawText(sctw->Tx2qtX(0), Y, info); }
   else {
-    info.sprintf("%7d", int((sctw->vp == Twnd) ? Ty : sctw->vp->wcy)+1);
+    info.sprintf("%7d", int((sctw->vp == Twnd) ? Ty : sctw->vp->cty)+1);
     if (sctw->vp->wtext && 0 < sctw->vp->wtext->clang &&
                                sctw->vp->wtext->clang < CLangMAX) {
       int *Synts = sctw->vp->wtext->lastSynts,
@@ -977,14 +976,17 @@ void MiInfoWin::updateInfo (MiInfoType mit) { if (mit) infoType = mit;
 //-----------------------------------------------------------------------------
 static void myParseKeyMap() // parse QString MiApp_keyMaps -> QMap MiApp_keyMap
 {
+  QRegExp re("(?:0x)?([0-9A-F]+):(.+)", Qt::CaseInsensitive);
   QStringList lines = MiApp_keyMaps.split(QChar('\n'));
   MiApp_keyMapC.clear();
   for (QStringList::const_iterator it  = lines.constBegin();
-                                   it != lines.constEnd(); it++)
-  { int key, mk;
-    if (sscanf(it->cStr(), "%x:0x%x", &key, &mk) == 2)
-      MiApp_keyMapC.insert(key, mk);
-} }
+                                   it != lines.constEnd(); it++) {
+    if (re.exactMatch(*it)) {
+      int mk = re.cap(1).toInt(0,16);
+      int key = MkFromString(re.cap(2));
+      if (key && mk) MiApp_keyMapC.insert(key, mk);
+      else fprintf(stderr, "Bad mapping %s (%x:%x)\n", it->cStr(), mk, key);
+} } }
 void MicomSetMapL (int key, int mk) { MiApp_keyMapL.insert  (key, mk); }
 int  MicomGetMapL (int key)         { return MiApp_keyMapL.value(key); }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

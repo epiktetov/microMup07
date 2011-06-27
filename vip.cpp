@@ -287,20 +287,19 @@ void vipOnFocus (wnd *vp) /* if possible, goto window (cursor is not Ok yet) */
 void vipFocusOff (wnd *vp)
 {
   if (Lwnd) ExitLEmode();
-  if (vp == Twnd) { 
-    vp->wcx = Tx; // save the last text position when un-focusing the current
-    vp->wcy = Ty; // editor's window... just in case
-  }
-  scblkoff(); wpos_off(vp);
+  if (vp == Twnd) { Twnd->ctx = Tx;   // save current text position when
+                    Twnd->cty = Ty; } // un-focusing active editor window
+  scblkoff();
+  wpos_off(vp);
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void vipActivate (wnd *vp)
 {
   if (tmLoad(vp->wtext)) {
-    Ttxt = vp->wtext; if (Twnd != NIL) { Twnd->wcx = Tx;
-                                         Twnd->wcy = Ty; }
-                     Tx = vp->wcx;
-    if (TxSetY(Ttxt, Ty = vp->wcy) == FALSE) Ty = Ttxt->txy;
+    Ttxt = vp->wtext; if (Twnd != NIL) { Twnd->ctx = Tx;
+                                         Twnd->cty = Ty; }
+                     Tx = vp->ctx;
+    if (TxSetY(Ttxt, Ty = vp->cty) == FALSE) Ty = Ttxt->txy;
     clipRefocus(); 
     Twnd = vp; // no vipFocus(Twnd) here!
 } }

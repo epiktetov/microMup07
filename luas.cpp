@@ -1,125 +1,250 @@
 /*------------------------------------------------------+----------------------
 // МикроМир07          Embedded Lua scripting           | (c) Epi MG, 2011
 //------------------------------------------------------+--------------------*/
-#include "mic.h"
-#include "ccd.h"
 #include <QString>
 #include <QRegExp>
+#include "mic.h"
+#include "ccd.h"
 #include "lua.hpp"
 #include "luas.h"
+#include "qfs.h"
 #include "twm.h"
 #include "vip.h"
 extern "C" {
+#include "dq.h"
 #include "tx.h"
 }
 lua_State *L = NULL;
 //-----------------------------------------------------------------------------
-static int LFunc[TM_LUA_FnMAX - TM_LUA_FUNC0 + 1] = { 0 };
+static int micomNextFn = TM_LUA_FUNC0;
 static int luMicomNewindex (lua_State *L)
 {
-  // 1st argument is a reference to Micom table itself (we don't need it here)
-  //
-  if (lua_isnumber(L,2) && lua_isfunction(L,3)) {
-    int key = (int)lua_tonumber(L,2);
-    int  mk = MicomGetMapL(key);
-    if (!mk) {
-      for (int  N = TM_LUA_FUNC0; N <= TM_LUA_FnMAX; N++)
-        if (LFunc[N-TM_LUA_FUNC0] == 0)
-          { LFunc[N-TM_LUA_FUNC0] = mk = N; break; }
+  int key, mk; // 1st argument is a reference to Micom table itself (not used,
+               //                                         that table is unique)
+  if (lua_isnumber(L,2)) key = lua_tointeger(L,2);
+  else   key = MkFromString(luaL_checkstring(L,2));
+
+  if (lua_isnumber(L,3)) MicomSetMapL(key, lua_tointeger(L,3));
+  else {
+    luaL_checktype(L,3,LUA_TFUNCTION);  mk = MicomGetMapL(key);
+    if (!mk) {                          mk = micomNextFn++;
+      if (mk > TM_LUA_FnMAX) return luaL_error(L, "no room in micom table");
     }
-    if (!mk) luaL_error(L, "micom table is full");
-    MicomSetMapL(key, mk);
-    luaP_getglobal("Micom");
-    luaP_getfield(-1, "_f");
-    luaP_pushvalue(3);
-    luaQ_rawseti(-2, mk-TM_LUA_FUNC0);
-    luaQn_pop   (2);         return 0;
-  }
-  return luaL_error(L, "bad parameters");
+    MicomSetMapL  (key, mk); luaP_getglobal("Micom"); luaX_getfield_top("_f");
+                             luaP_pushvalue(3);
+                             luaQ_rawseti(-2, mk); // Micom._f[mk] = arg3
+                             luaQn_pop(1);
+  } return 0;
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 int luasFunc(int kcode)   // executing Lua-defined function as MicroMir command
 {
-  luaP_getglobal("Micom");
-  luaP_getfield (-1,"_f");
-  luaP_rawgeti  (-1, kcode-TM_LUA_FUNC0);
-  if (KbRadix) luaP_pushinteger(KbCount);
-  else         luaP_pushnil(); //
-  int rc = luaQX_pcall (1, 0); // call function(count=N or nil)
-  if (rc) {
-    const char *luaErr = lua_tolstring(L,-1,0); luaQn_pop(1);
-    fprintf(stderr, "LuaERROR: %s\n", luaErr); // TODO: handle error message
-  }
-  luaQn_pop(2); return rc ? E_SFAIL : E_OK;
-}
+  luaP_getglobal("Micom"); luaX_getfield_top("_f"); // function == Micom._f[mk]
+                           luaX_rawgeti_top(kcode);
+  luaP_getglobal("Txt");   luaX_rawgeti_top(Ttxt->luaTxid);
+  if (KbRadix)
+       luaP_pushinteger(KbCount);         // function(Ttxt,kbCount/nil)
+  else luaP_pushnil();                    //   no return if Ok
+  if (luaQX_pcall(2,0) == 0) return E_OK; //   errof msg if fails
+  else {
+    vipError(QString("LuaERROR: %1").arg(lua_tolstring(L,-1,0)));
+    luaQn_pop(1);                                 return E_SFAIL;
+} }
 //-----------------------------------------------------------------------------
-//
-//   Tx.line(N) = content of line N in current text (nil if past end-of-text)
-//   Tx.bottom  = true if at the bottom-of-the text
-//   Tx.x, Tx.y = current cursor position (setting new value will move cursor)
-//
-// NOTE: attempt to move cursor past end-of-text does not generate any error
-// (cursor is moved to the bottom, that is, after the last line in the text)
-//
-//   Tx.IL("text" or nil) = insert given text or empty line at cursor position
-//   Tx.DL()              = delete line at cursor position
-//
-static int luTxLine (lua_State *L)
+struct luTxtID { // userdata for safe reference to the particular text instance
+  txt *t;        // - pointer (safe to use, since txt_tag structs never freed)
+  int id;        // - expected value of luaTxid in that text
+};
+static int atNextInst = 1;
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void luasNtxt (txt *newTxt)  // "new text" hook (called from tmDoLoad, twm.cpp)
 {
-  if (lua_gettop(L) == 1 && lua_isnumber(L,1)) {
-    long Y = (long)lua_tonumber(L,1);
-    int len;
-    if (TxSetY(Ttxt, Y)) {
-      char *line = TxGetLn(Ttxt, &len);
-      luaP_pushlstring(line, len);
-    }
-    else luaP_pushnil(); return 1;
+  luaP_getglobal("Txt"); int iTxt = lua_gettop(L);
+  if (newTxt->luaTxid) {
+    luaP_pushinteger(newTxt->luaTxid);
+    luaP_pushnil();
+    luaQQ_settable(iTxt); // Txt[oldTxid] = nil (remove the element)
   }
-  else return luaL_error(L,"incorrect argument");
+//+
+  fprintf(stderr, "luasNtxt(%d,file=%s,top=%d)\n", atNextInst,
+                                    newTxt->file->name.cStr(), iTxt);
+//-
+  luaP_pushinteger(newTxt->luaTxid = atNextInst++);
+  luaP_newtable();
+  luTxtID *newTxtID = (luTxtID*)luaP_newuserdata(sizeof(luTxtID));
+           newTxtID->t  = newTxt;
+           newTxtID->id = newTxt->luaTxid; luaQ_setfield(-2,"id");
+//
+// Set metatable for the new instance == Txt._mt (handles Tx.X, Tx.Y etc)
+//
+  luaP_pushvalue (iTxt); luaX_getfield_top("_mt");
+  luaQ_setmetatable(-2);
+  luaQQ_rawset   (iTxt); luaQn_pop(1);
+}
+static void luasN_setTxt_this (bool set_to_Ttxt) // - - - - - - - - - - - - - -
+{
+  luaP_getglobal  ("Txt"); // Txt.this = Txt[ Ttxt->luaTxid ] or nil (clear)
+  luaP_pushstring("this"); //
+  if (set_to_Ttxt) luaP_rawgeti(-2,Ttxt->luaTxid);
+  else             luaP_pushnil();
+  luaQQ_rawset(-3);  luaQn_pop(1);
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-static int luTxIndex (lua_State *L)
+static txt *luasN_gettext (int ix)  // returns txt from Lua reference on given
+{                                   // index in the stack (verifies id match)
+  luaP_getfield(ix,"id");
+  luTxtID *txtID = (luTxtID*)lua_touserdata(L,-1);
+  if (txtID == NULL ||
+      txtID->id != txtID->t->luaTxid) luaL_error(L,"bad txt reference");
+  luaQn_pop(1);
+  if (txtID->t == Ttxt) { Ttxt->vp_ctx = Tx;
+                          Ttxt->vp_cty = Ty; }  return txtID->t;
+}
+static void luas_UpdateTxy (txt *t) { if (t == Ttxt) { Tx = Ttxt->vp_ctx;
+                                                       Ty = Ttxt->vp_cty; } }
+//-----------------------------------------------------------------------------
+// Text lazy constructor by text name or bool flags: EMPTY = "real text" (true)
+//                                                   PSEUDO = not real  (false)
+//   Tx.open("name"/true/false) --> text object
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+static int luTxOpen (lua_State *L)
 {
-  // 1st argument is a reference to Tx table itself (currently not used)
-  //
-  if (lua_isstring(L,2)) {
-    const char *var = lua_tolstring(L,2,0);
-         if (strcmp(var,"x") == 0) { luaP_pushinteger(Tx); return 1; }
-    else if (strcmp(var,"y") == 0) { luaP_pushinteger(Ty); return 1; }
-    else if (strcmp(var,"bottom") == 0) {
-      TxSetY(Ttxt, Ty); if (qTxBottom(Ttxt)) luaP_pushboolean(1);
-                        else                 luaP_pushnil();
-      return 1;
-  } }
-  return luaL_error(L, "bad parameters");
+  QString tname; bool init = false;
+  if (lua_isboolean(L,1))
+     { tname = lua_toboolean(L,1) ? QfsEMPTY_NAME : QfsELLIPSIS; init = true; }
+  else tname = luaL_checkstring(L,1);
+  if (tmStart(tname)) {
+    if (init) luasNtxt(Ttxt); // tmDoLoad does nothing for ÷/… files, add table
+    luaP_getglobal("Txt");
+    luaX_rawgeti_top(Ttxt->luaTxid); return 1;
+  }
+  else return luaL_error(L,"cannot open %s", tname.uStr());
+}
+//-----------------------------------------------------------------------------
+// Methods and instance variables (members) of Txt class, text access/movements
+//
+//   Tx:line(N) = content of Nth line in given text (= nil if past end-of-text)
+//   Tx:lines() = iterator over the text:  for N,line in Tx:lines() do ... end
+//   Tx.X, Tx.Y = current cursor position  (setting new value will move cursor)
+//   Tx.maxY    = max valid value of Y  (= total number of lines in given text)
+//   Tx:go(dy)
+//   Tx:go(dx,dy) = convenience methods to move cursor around ('cause Lua does
+//                                      not allow 'Tx.Y++' or even 'Tx.Y += k')
+// NOTE:
+//   attempt to move cursor past out of text borders does not generate any
+//   error, cursor just moves as far as possible in requested direction
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+static int luTxLine (lua_State *L) // Tx:line(N) == Tx.line(Tx,N)
+{
+  txt *t = luasN_gettext(1);
+  long Y = (long)luaL_optnumber(L,2,t->vp_cty);
+  int len;
+  if (TxSetY(t, Y-1)) { char *line = TxGetLn(t, &len);
+                         luaP_pushlstring(line,  len); } else luaP_pushnil();
+  return 1;
+}
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+static int luTxLine_it (lua_State *L)   // line iterator function called as:
+{                                       //
+  txt *t = luasN_gettext(1);            //   while true do
+  long N = (long)luaL_checknumber(L,2); //     local N,line = line_it(self,N)
+  int len;                              //     if N == nil then break end
+  if (TxSetY(t, N) && !qTxBottom(t)) {  //     ...
+    char *line = TxGetLn(t, &len);      //   end
+    luaP_pushnumber(N+1);
+    luaP_pushlstring(line, len);
+  }
+  else { luaP_pushnil(); luaP_pushnil(); }  return 2;
+}
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+static int luTxLines (lua_State *)
+{
+  luasN_gettext(1);
+  luaP_pushCfunction(luTxLine_it); // function = luTxLine_it(self,N)
+  luaP_pushvalue  (1);             //    state = text descriptor
+  luaP_pushinteger(0); return 3;   // init.var = 0 (before 1st line)
+}
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+static int luTxIndex (lua_State *L) // Tx.X and Tx.Y - read/write access
+{                                   // Tx.maxY       - read-only
+  txt *t = luasN_gettext(1);
+  const char *var = luaL_checkstring(L,2);
+       if (strcmp(var,"X")    == 0) luaP_pushinteger(t->vp_ctx+1);
+  else if (strcmp(var,"Y")    == 0) luaP_pushinteger(t->vp_cty+1);
+  else if (strcmp(var,"maxY") == 0) luaP_pushinteger(t->maxTy);
+  else {
+    luaP_getglobal ("Txt"); // refer to the base Txt table for everything else
+    luaX_getfield_top(var); // (if field is not there, let Lua generate errors
+  }                         // by itself)
+  return 1;
 }
 static int luTxNewindex (lua_State *L)
 {
-  // 1st argument is a reference to Tx table itself (currently not used)
-  //
-  if (lua_isstring(L,2) && lua_isnumber(L,3)) {
-    const char *var = lua_tolstring(L,2,0);
-    long N = (long)lua_tonumber(L,3);
-         if (strcmp(var,"x") == 0) { Tx = (short)N;  return 0; }
-    else if (strcmp(var,"y") == 0) {
-      TxSetY(Ttxt,N);           // NOTE: operation is successful even if given
-      Ty = Ttxt->txy; return 0; // line does not exists (set to max available)
-  } }
-  return luaL_error(L, "bad parameters");
+  txt *t = luasN_gettext(1);
+  const char *var = luaL_checkstring(L,2);
+  long N =    (long)luaL_checknumber(L,3);
+       if (strcmp(var,"X") == 0) t->vp_ctx = my_max(my_min(N-1,0),t->txrm);
+  else if (strcmp(var,"Y") == 0) {
+    if (N < 0) t->vp_cty = my_min(t->maxTy-N+1,0);
+    else       t->vp_cty = my_max(my_min(N-1,0),t->maxTy);
+  }
+  else return luaL_error(L,"unknown property");
+  luas_UpdateTxy(t);                  return 0;
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-static int luTxIL (lua_State *L)
-{
-  if (lua_gettop(L) != 1) return luaL_error(L, "missing parameters");
-  const char *text = "";
-  size_t len;
-       if (lua_isnil(L,1))                           len = 0;
-  else if (lua_isstring(L,1)) text = lua_tolstring(L,1,&len);
-  else                  return luaL_error(L,"bad parameter");
-  TxSetY(Ttxt, Ty);
-  TxIL  (Ttxt, (char*)text, len); return 0;
+static int luTxGo (lua_State *L) // Tx:go([dx,]dy) == Tx.go(Tx,[dx,]dy)
+{                                //   if dx not specified, default to 0
+  txt *t = luasN_gettext(1);
+  int dx = 0, dy, k = 2;
+  if (lua_gettop(L) > 2) dx = luaL_checkinteger(L,k++);
+                         dy = luaL_checkinteger(L,k  );
+  t->vp_ctx = my_max(my_min(t->vp_ctx + dx,0),t->txrm);
+  t->vp_cty = my_max(my_min(t->vp_cty + dy,0),t->maxTy);
+  luas_UpdateTxy(t);                           return 0;
 }
-static int luTxDL (lua_State*) { if (TxSetY(Ttxt, Ty)) TxDL(Ttxt); return 0; }
+//-----------------------------------------------------------------------------
+// Methods of Txt class, text modifications:
+//                                                 +-- unlike built-in MicroMir
+//   Tx:IC("text") = insert text into current line | commands, move cursor past
+//   Tx:IL("line") = insert given line at cursor   | inserted text
+//   Tx:DC(N) = delete N characters at cursor
+//   Tx:DL(N) = delete N lines at cursor (default = 1)
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+static int luTxIC (lua_State *L) // Tx:IC("text") = insert given text at cursor
+{
+  return luaL_error(L,"not implemented");
+}
+static int luTxIL (lua_State *L) // Tx:IL("text") = insert given line at cursor
+{
+  txt *t = luasN_gettext(1);          size_t len;
+  const char *text = luaL_checklstring(L,2,&len);
+  TxSetY(t, t->vp_cty++);
+  TxIL  (t, (char*)text, len); luas_UpdateTxy(t); return 0;
+}
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+int luTxDC (lua_State *L) // Tx:DC(N) = delete N character (default = 1)
+{
+  return luaL_error(L,"not implemented");
+}
+int luTxDL (lua_State *L) // Tx:DL(N) = delete N lines (default = 1) at cursor
+{
+  txt *t = luasN_gettext(1);
+  int N = luaL_optinteger(L,2,1);
+  TxSetY(t, t->vp_cty);
+  while (!qTxBottom(t) && N--) TxDL(t); return 0;
+}
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+luaL_Reg luTxFuncs[] =
+{
+  { "open",  luTxOpen  }, { "IL", luTxIL },
+  { "line",  luTxLine  }, { "IC", luTxIC },
+  { "lines", luTxLines }, { "DL", luTxDL },
+  {    "go", luTxGo    }, { "DC", luTxDC }, { NULL, NULL   }
+};
+luaL_Reg luTxMetaFuncs[] =
+{
+  { "__index", luTxIndex }, { "__newindex", luTxNewindex }, { NULL, NULL }
+};
 //-----------------------------------------------------------------------------
 void luasInit(void)
 {
@@ -133,41 +258,49 @@ void luasInit(void)
   luaQ_setfield     (-2,"__newindex");
   luaQ_setmetatable (-2);
   luaQ_setglobal ("Micom");
-  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  luaP_newtable();              // 'Tx' table keeps functions to work with text
-  luaP_pushCfunction(luTxLine); //   Tx.line(N)
-  luaQ_setfield    (-2,"line"); //   Tx.IL(text)
-  luaP_pushCfunction(luTxIL);   //   Tx.DL()
-  luaQ_setfield    (-2,"IL");
-  luaP_pushCfunction(luTxDL);
-  luaQ_setfield    (-2,"DL");
-  luaP_newtable();               // Metatable handles access to "member vars":
-  luaP_pushCfunction(luTxIndex); //   Tx.x, Tx.y, Tx.bottom
-  luaQ_setfield  (-2,"__index"); //
-  luaP_pushCfunction(luTxNewindex);
-  luaQ_setfield  (-2,"__newindex");
-  luaQ_setmetatable (-2);
-  luaQ_setglobal("Tx");
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// Txt table
+//   open(tn/f) - lazy constructor, by text name or int flags (EMPTY/PSEUDO)
+//   EMPTY      - empty unnamed text (= true)
+//   PSEUDO     - empty pseudo-text (= false)
+//   functions  - other instance functions (line,lines,go,IC,IL,DC,DL)
+//   _mt        - metatable for instance objects (class methods & inst vars)
+//     __index    - read access to instance variables (X,Y,maxY;ref->Txt)
+//     __newindex - write access to inst variables (X,Y only)
+//   this       - reference to the currently active text (Ttxt), luasExec only
+//   [luaTxid]  - active texts are stored here (idexed by txt->luaTxid)
+//     [k].id   -- instance id as userdata == { &txt_tag, txt_tag.luaTxid }
+//
+  luaP_newtable(); luaL_register(L,NULL,luTxFuncs);
+  luaP_pushboolean(1);  luaQ_setfield(-2, "EMPTY");
+  luaP_pushboolean(0);  luaQ_setfield(-2,"PSEUDO");
+  luaP_pushstring("_mt");
+  luaP_newtable(); luaL_register(L,NULL,luTxMetaFuncs); luaQQ_settable(-3);
+  luaQ_setglobal("Txt");
 }
 //-----------------------------------------------------------------------------
 int luasExec (void)
 {
-  QString LS = "--\n";
-  int len;
-  for (TxTop(Ttxt); !qTxBottom(Ttxt); TxDown(Ttxt)) {
+  int len;    TxTop(Ttxt);
+  while (!qTxBottom(Ttxt)) {
     char *pl = TxGetLn(Ttxt, &len);
-    if (*pl == '^')                      TxDL(Ttxt);
-    else LS.append(QString::fromAscii(pl,len)+"\n");
+    if (*pl == '^' || *pl == ACPR || *pl == '\xE2') TxDL  (Ttxt);
+    else                                            TxDown(Ttxt);
   }
-  if (luaL_dostring(L, LS.cStr()) == 0) return E_OK;
-  if (lua_gettop(L) > 0 && lua_isstring(L,-1)) {
-    const char *luaErr = lua_tolstring(L,-1,0);
+  char *buffer = Ttxt->txustk->dbeg;
+  len = Ttxt->txustk->dend - buffer;    luasN_setTxt_this(true);
+  int rc = luaL_loadbuffer(L,buffer,len,Ttxt->file->name.uStr())
+              || lua_pcall(L,0,0,0);   luasN_setTxt_this(false);
+  if (rc) {
+    const char *luaError = lua_tostring(L,-1);
     QRegExp re("\\[.+\\]:(\\d+):(.+)");
-    if (re.exactMatch(luaErr)) {            int N = re.cap(1).toInt();
+    QString mimErr;
+    if (re.exactMatch(luaError)) {    TxSetY(Ttxt, re.cap(1).toInt());
       QString mimErr = Utf8("^" AF_ERROR "%1" AF_NONE).arg(re.cap(2));
-      TxSetY(Ttxt, N-1);
       TxIL(Ttxt, mimErr.uStr(), mimErr.length());
-  } }
-  return E_SFAIL;
+    }
+    else vipError(QString("LuaERROR: %1").arg(lua_tolstring(L,-1,0)));
+    return E_SFAIL;
+  } return E_OK;
 }
 //-----------------------------------------------------------------------------

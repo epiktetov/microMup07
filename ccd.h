@@ -30,6 +30,7 @@
 #define CCD_H_INCLUDED
 void key2mimStart();
 int key2mimHomeEscMask();
+enum micom_enum key2mimCheckPrefix(int TK_HomeEscCtrJ);
 struct micom {
   enum micom_enum ev; /* keyboard event                    */
   int kcode;          /* key code as reported by Qt        */
@@ -63,12 +64,15 @@ typedef struct {
 #define Mk_IsCHAR(x) (' ' <= x && x < 0x10000) /* only 16bit Unicode allowed */
 #define Mk_IsSHIFT(x) (Qt::Key_Shift <= x && x < Qt::Key_F1)
 #define mod_SHIFT 0x02000000
-#define mod_CTRL  0x04000000
-#define mod_ALT   0x08000000
-#define mod_META  0x10000000 /* NOTE: 0x20000000 is Qt::KeypadModifier */
+#define mod_CTRL  0x04000000 /* Mostly equivalent to Qt::SHIFT/CTRL/ALT/META */
+#define mod_ALT   0x08000000 /* except Ctrl == mod_CTRL even on Mac keyboard */
+#define mod_META  0x10000000 /* (not used: 0x20000000 is Qt::KeypadModifier) */
 #define mod_HOME  0x00a00000
+#define mod_CtrJ  0x00c00000
 #define mod_ESC   0x00e00000
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+#ifdef QSTRING_H
+  int MkFromString(QString keySequence);
+#endif  /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #ifdef Q_OS_MAC
 #  define Mk_UP    (Qt::Key_Up   |Qt::KeypadModifier)
 #  define Mk_DOWN  (Qt::Key_Down |Qt::KeypadModifier)

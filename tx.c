@@ -42,10 +42,15 @@ txt *TxNew (bool qundo)                        /* Создание / удале�
   t->txudeq = qundo ? DqNew(DT_UNDO, 0, UDLQUOTA) : NIL; t->txlm = 0;
   t->txudcptr = t->txudlptr  = 0;     t->txwndptr = NIL; t->txrm =    MAXTXRM;
   t->clustk   = t->cldstk    = 0;     t->txlructr = 0;   t->txstat |= TS_BUSY;
-  t->clang       = 0; t->txy = 0;
-  t->cx = t->tcx = 0; memset(t->thisSynts, 0xDE, sizeof(int) * MAXSYNTBUF);
-  t->cy = t->tcy = 0; memset(t->prevSynts,    0, sizeof(int) * MAXSYNTBUF);
-  t->maxTy       = 0; memset(t->lastSynts,    0, sizeof(int) * MAXSYNTBUF);
+  t->clang  = 0;
+  t->vp_ctx = t->vp_wtx = 0; t->txy = t->maxTy = 0;
+  t->vp_cty = t->vp_wty = 0;
+  memset(t->thisSynts, 0xDE, sizeof(int) * MAXSYNTBUF);
+  memset(t->prevSynts,    0, sizeof(int) * MAXSYNTBUF);
+  memset(t->lastSynts,    0, sizeof(int) * MAXSYNTBUF);
+#ifdef UseLUA
+  t->luaTxid = 0;
+#endif
   return t;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -169,9 +174,9 @@ void TxEmpt (txt *t)
   DqEmpt(t->txdstk); if (t->clustk) DqEmpt(t->clustk);
   DqEmpt(t->txustk); if (t->cldstk) DqEmpt(t->cldstk);
   t->maxTy = t->txy = 0;
-  t->txudcptr = t->txudlptr = 0; t->cx = t->tcx = 0;
-  t->txudfile = -1;              t->cy = t->tcy = 0;     TxMarks0(t);
-  memset(t->lastSynts, 0, sizeof(int) * MAXSYNTBUF); wndop(TW_EM, t);
+  t->txudcptr = t->txudlptr = 0; t->vp_ctx = t->vp_wtx = 0;
+  t->txudfile = -1;              t->vp_cty = t->vp_wty = 0; TxMarks0(t);
+  memset(t->lastSynts, 0, sizeof(int) * MAXSYNTBUF);    wndop(TW_EM, t);
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void TxIL(txt *t, char *text, short len)

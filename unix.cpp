@@ -201,27 +201,14 @@ void tmshell (int kcode)
     wind = Twnd->wsibling;
     Ctxt = Twnd->wsibling->wtext; TxEmpt(Ctxt);
   }
-  else { for (Ctxt = texts; Ctxt; Ctxt = Ctxt->txnext)
-           if ((Ctxt->file && Ctxt->file->ft == QftNOFILE) &&
-               (Ctxt->txstat & TS_PSEUDO) &&
-              !(Ctxt->txstat & (TS_WND|TS_PERM)) ) break;
-//       ^^
-// Look for unattached PSEUDO text, clear existing one or create new (no UNDO),
-// and also create new window for the text by splitting current one (and attach
-// it to the text - vipBell is just for safety, we already checked possibility)
-//
-    if  (Ctxt)  TxEmpt(Ctxt);
-    else Ctxt = TxNew(FALSE);
+  else {
+    Ctxt = tmDesc(QfsELLIPSIS, false, Ttxt);
     wind = vipSplitWindow(Twnd, kcode == TM_F2EXEC ? TM_VFORK : TM_HFORK);
     if (wind) wattach(Ctxt, wind);
     else    { vipBell();   return; }
   }
-  Ctxt->txstat |= TS_PSEUDO|TS_FILE; Ctxt->txstat &= ~(TS_CHANGED|TS_RDONLY);
-  Ctxt->txredit = TXED_YES;
-  qfile *new_file = QfsNew(QfsELLIPSIS, Ttxt->file); // Ctxt may be the same as
-  QfsClear(Ctxt->file);       Ctxt->file = new_file; // Ttxt here (& that's Ok)
-  wind->wcx = wind->wtx = 0;
-  wind->wcy = wind->wty = 0; 
+  wind->ctx = wind->wtx = 0;
+  wind->cty = wind->wty = 0;
   if (Twnd == wind) Tx = Ty = 0;
   else        vipActivate(wind); vipUpdateWinTitle(wind);
 //

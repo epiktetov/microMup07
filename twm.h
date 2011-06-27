@@ -46,14 +46,20 @@ struct txt_tag
 #define TS_NEW    02000     /* - новый файл - записывать по FO_NEW           */
 #define TS_MCD    04000     /* - this file == micros.dir                     */
 #define TS_GITPL 010000     /* - this file == git pretty log or blame result */
-  short cx, tcx;            /* Последняя позиция курсора в тексте            */
-  long  cy, tcy;            /*                    и окна на тексте           */
+  short vp_ctx, vp_wtx;     /* Позиция курсора в тексте (cursor-in-text-x/y) */
+  long  vp_cty, vp_wty;     /* и окна (win-in-text) дла посл. активного окна */
   struct txt_tag *txnext;
   int thisSynts[MAXSYNTBUF];  /* Syntax info for after-line-on-top-of-txdstk */
   int prevSynts[MAXSYNTBUF];  /* Previos syntax info = between txustk/txdstk */
   long maxTy;                 /* max Ty (total number of lines in the text)  */
   int lastSynts[MAXSYNTBUF];  /* Last syntax info (from after the last line) */
+#ifdef UseLUA
+  int luaTxid; /* ссылка на элемент в Lua таблицe Txt (0 если нет), уникален */
+#endif         /* для данного состояния текста (меняется после перезагрузки) */
 };
+void wattach(txt *text, wnd *vp);
+void wupdate(txt *text, wnd *vp);
+void wdetach(txt *text);
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 struct dirstk_tag
 {
@@ -65,7 +71,7 @@ typedef struct dirstk_tag dirstk;
 struct wnd_tag 
 {
   short  wtx;   long  wty;  /* координаты левого верхнего угла окна в тексте */
-  short  wcx;   long  wcy;  /* курсор в связанном с окном тексте (inactive)  */
+  short  ctx;   long  cty;  /* курсор в связанном с окном тексте (inactive)  */
   int cx, cy;   tchar ctc;  /* - оконные координаты курсора и аттрибуты      */
   short wsh, wsw,  wspace;  /* высота и ширина окна, workspace (Mac only)    */
   txt              *wtext;  /* ссылка на описатель текста                    */
@@ -88,8 +94,6 @@ void tmCheckFiles();
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 bool tmStart (QString param);                   /* <-- начать редактирование */
 bool twStart (QString filename, long ipos);
-void wattach (txt *text, wnd *vp);
-void wdetach (txt *text, wnd *vp);
 bool twEdit  (wnd *vp, QString filename, txt *referer = 0, bool isNew = false);
 void twDirPush        (QString filename, txt *referer = 0); //  ^
 void twDirPop (void);                                       // new window, use
