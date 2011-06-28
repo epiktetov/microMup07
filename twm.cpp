@@ -578,9 +578,9 @@ int TmCommand (int kcode)
     wind = vipSplitWindow(Twnd, KbCode);
     if (wind) {
       wupdate  (Ttxt, Twnd);
-      wattach  (Ttxt, wind); vipActivate      (wind);
-      twDirCopy(Twnd, wind); vipUpdateWinTitle(wind);
-                             vipRedrawWindow  (wind); return E_OK;
+      wattach  (Ttxt, wind); vipUpdateWinTitle(wind);
+      twDirCopy(Twnd, wind); vipActivate      (wind);
+                             vipRedrawWindow  (Twnd); return E_OK;
     }
     else return E_SFAIL;
 

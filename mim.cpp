@@ -761,9 +761,12 @@ void MiScTwin::keyPressEvent (QKeyEvent *event)
     else for (int i=0; i<text.length(); i++)
        fprintf(stderr, ".%04x", text[i].unicode());
   //
+    if (!Mk_IsSHIFT(key))
+      fprintf(stderr, ",%s", MkToString(modMask|event->key()).cStr());
+  //
     fprintf(stderr, ")mods=%c%c%c%c,native=%x:%x:%x",
-       (modMask & mod_META)  ? 'M' : '.', (modMask & mod_ALT)   ? 'a' : '.',
-       (modMask & mod_CTRL)  ? 'c' : '.', (modMask & mod_SHIFT) ? 's' : '.',
+       (modMask & mod_META) ? 'M' : '.', (modMask & mod_CTRL)  ? 'c' : '.',
+       (modMask & mod_ALT)  ? 'a' : '.', (modMask & mod_SHIFT) ? 's' : '.',
        event->nativeScanCode(),
        event->nativeModifiers(), event->nativeVirtualKey());
   }

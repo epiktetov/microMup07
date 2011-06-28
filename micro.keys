@@ -48,7 +48,7 @@ k_(LE_NWORD, mod_ALT+Mk_RIGHT, 0xd0814) /* -> следующее слово     
 Ctrl+PageUp/PageDown - move cursor to very beginning / end of the document
 Ctrl+Up / Ctrl+Down  - move continuously up/down (stop by any key)
 Ctrl+[  / Ctrl+]     - move cursor to left / right edge of the current window
-Ctrl+Meta+{arrows}   - scroll text in given direction (cursor moves over text,
+Meta+Ctrl+{arrows}   - scroll text in given direction (cursor moves over text,
                        while remaining in the same position relative to window)
 */
 k_(TE_PPAGE,           Mk_PAGEUP,   0xd0016) /* на страницу вверх        ..0 */
@@ -158,7 +158,7 @@ by-step - that feature was introduced in early micromirs way before it become
 common, so MicrMir07 still uses traditional key mapping (but also supports now
 standard Ctrl/Command+Z alias):
                                              |
-  Ctrl+Backsp == Meta/Ctrl+Z - undo changes  |  Ctrl+Shift+Backsp - "slow" undo
+  Ctrl+Backsp == Ctrl/Meta+Z - undo changes  |  Ctrl+Shift+Backsp - "slow" undo
   Ctrl+Enter                 - redo changes  |  Ctrl+Shift+Enter  - "slow" redo
 */
 k_(TE_UNDO,    mod_CTRL+Mk_BACK,            0xc3403) /* откатка последней    */
@@ -259,8 +259,8 @@ wildcard mode (? matches any symbol and * matches any substring), or in regular
 expression mode: http://doc.qt.nokia.com/4.7/qregexp.html -- modes are selected
 when entering search/replace pattern.
 
-  Meta/Ctrl+F = Home End - edit search/replace pattern (start search by Enter)
-  Ctrl+Meta+End          - edit search pattern for 'grep' (MacOS X/Linux only)
+  Ctrl/Meta+F = Home End - edit search/replace pattern (start search by Enter)
+  Meta+Ctrl+End          - edit search pattern for 'grep' (MacOS X/Linux only)
        Ctrl+. (>)        - insert light blue '>' (marks start of replacement)
        Ctrl+/            - insert light blue '/' (start of filelist for 'grep')
        Ctrl+6 (^) - standard (text mode) search          ‹st·--›
@@ -301,13 +301,13 @@ at least two separate buffers (for character and lines), which made intergation
 with system clipboard problematic, but MicroMir07 has only 1 (kept in sync with
 clipboard by some magic that mostly works).
 
-  Meta/Ctrl+C ==       F1 - add current character to copy/paste buffer
-  Meta/Ctrl+X == Shift+F1 - save character and delete it from the text
+  Ctrl/Meta+C ==       F1 - add current character to copy/paste buffer
+  Ctrl/Meta+X == Shift+F1 - save character and delete it from the text
                        F2 - add word under cursor to copy/paste buffer
                  Shift+F2 - save word and delete it
                        F3 - add current line to copy/paste buffer
                  Shift+F3 - save line and delete it
-  Meta/Ctrl+V ==       F4 - paste the buffer content into text
+  Ctrl/Meta+V ==       F4 - paste the buffer content into text
                  Shift+F4 - mark the buffer as "used" (next save will clear it)
                   Ctrl+F1 - "re-open" copy/paste buffer (remove "used" mark)
 Note:
@@ -355,8 +355,8 @@ k_(TX_MCBLOCK,                     Mk_F5, 0xc8034) /* == "постоянный" 
 When selection (of either type) is active, some commands operate with selected
 text instead of character, namely:
 
-        F1 (Meta/Ctrl+C) - add selected text to copy/paste buffer
-  Shift+F1 (Meta/Ctrl+X) - save selection and delete from text
+        F1 (Ctrl/Meta+C) - add selected text to copy/paste buffer
+  Shift+F1 (Ctrl/Meta+X) - save selection and delete from text
   Insert                 - insert column of spaces at left edge of selection
   Delete                 - delete column at left edge of selection
   Shift+Delete           - clear the text covered by selection rectangle
@@ -366,8 +366,8 @@ text instead of character, namely:
 The following commands also can work with selections, but only with single-line
 ones (without selection, current character is converted and cursor moves right)
 
-  Alt+Meta+Up   - convert current character (or selected block) to uppercase
-  Alt+Meta+Down - convert current character (or selected block) to lowercase
+  Meta+Alt+Up   - convert current character (or selected block) to uppercase
+  Meta+Alt+Down - convert current character (or selected block) to lowercase
   Ctrl+B        - add / clear "bold" attribute
 
 NOTE: "bold" attribute is marked by Unicode chars U+281 / U+280 (which are very
@@ -389,8 +389,8 @@ it has '|' symbols in all lines in 64th position (and, optionally, in 69th one)
   Esc,PageUp  - up all levels (closing the window), with changes saved
   Esc,Ctrl+A  - abandon all changes and leave the file (up one level)
   Esc,Ctrl+B  - exit the file, save both original and new versions
-  Meta/Ctrl+R - reload the file (or directory contents) from disk
-  Meta/Ctrl+S - save all changes without leaving the file
+  Ctrl/Meta+R - reload the file (or directory contents) from disk
+  Ctrl/Meta+S - save all changes without leaving the file
 */
 k_(TM_INFILE, mod_ESC+Mk_RIGHT,     0xc9414) /* перейти к имени файла */
 k_(TM_FNEW,   mod_ESC+Mk_DOWN,      0xf9415) /* войти в новый файл    */
@@ -422,8 +422,8 @@ Special ʁFILESʀ (MacOS X/Linux only):
 MicroMir automatically detects read-only files and don't allow changing them...
 unless you insist: edit/view mode may be changed at any time (at your own risk)
 
-  Ctrl+Meta+Insert - set text edit mode (green or blue cursor, can change text)
-  Ctrl+Meta+Delete - set text view mode (no changes allowed, red cursor)
+  Meta+Ctrl+Insert - set text edit mode (green or blue cursor, can change text)
+  Meta+Ctrl+Delete - set text view mode (no changes allowed, red cursor)
 */
 k_(TE_SRW, mod_CTRL+mod_META+Mk_INSERT, 0xca506) /* режим редактирования     */
 a_(TE_SRW, mod_CTRL+mod_META+Mk_F13,    0xca506) /* - синоним для Mac KB     */
@@ -436,17 +436,17 @@ For example:                                   0ddd octal number such as 0176
   Esc,3,Shift+Delete - delete 3 lines
   Esc,5,*            - same as ***** (insert or replace, depending on the mode)
 
-  Esc,N,Alt+Meta+'<'  - convert word/selection from radix-N (hex) to decimal
-  Esc,N,Alt+Meta+'>'  - convert word/selection to radix-N (where N = 2..36)
+  Esc,N,Meta+Alt+'<'  - convert word/selection from radix-N (hex) to decimal
+  Esc,N,Meta+Alt+'>'  - convert word/selection to radix-N (where N = 2..36)
   Esc,N,Ctrl+Shift+Insert - insert character with given code
   Esc,N,Ctrl+Shift+]      - set the width (of editable part) of the text
-  Esc,N,Meta/Ctrl+E       - move cursor to Nth line in text
+  Esc,N,Ctrl/Meta+E       - move cursor to Nth line in text
   Esc,N,     Ctrl+H       - move cursor to Nth position in current line
 
 Note: without repetition prefix, the last two commands work differently, which
      is a special convenience feature to allow easy centering specific position
 
-  Meta/Ctrl+E - centers current line in the windows (vertically only)
+  Ctrl/Meta+E - centers current line in the windows (vertically only)
        Ctrl+H - centers curret position in the windows (horizontally)
 */
 k_(TK_HOME,   Mk_HOME,                     0xcc00a) /* Home префикс */
@@ -563,8 +563,8 @@ where:
    {command} = hexadecimal command code as found in this help text (3rd column)
    {keySequence} = assigned key sequence as understood by Qt, mostly consistent
       with notation used in this text, except that regular characters are never
-      quoted (Ctrl+-) and Esc should be spelled as Escape (in addition, "Ctrl+"
-      may be shortened to a single caret character, for example: ^A == Ctrl+A)
+      quoted ("Ctrl+-"), and, in addition, "Ctrl+" may be shortened to a single
+      caret character (for example: ^A == Ctrl+A)
 
 For example, the following table may be used to map Home, Insert & Delete keys
 (that may be missing on compact keyboard) to F10/F11/F12  (you can cut-n-paste
@@ -577,7 +577,7 @@ and Ctrl+V commands):
                     | 0xf3406:^F11           | 0xf3407:^F12
                     | 0xc4206:Shift+F11      | 0xf4207:Shift+F12
                     | 0xc5806:Home,F11       | 0xc5807:Home,F12
-                    | 0xca506:Ctrl+Meta+F11  | 0xca507:Ctrl+Meta+F12
+                    | 0xca506:Meta+Ctrl+F11  | 0xca507:Meta+Ctrl+F12
                     | 0xcb606:Ctrl+Shift+F11 | 0xc1007:Meta+F12
 
 Useful Alt+CHARs for Linux/Windows (already present on Mac):

@@ -72,6 +72,7 @@ typedef struct {
 #define mod_ESC   0x00e00000
 #ifdef QSTRING_H
   int MkFromString(QString keySequence);
+  QString MkToString(int kcode);
 #endif  /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #ifdef Q_OS_MAC
 #  define Mk_UP    (Qt::Key_Up   |Qt::KeypadModifier)

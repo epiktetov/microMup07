@@ -98,4 +98,19 @@ int MkFromString (QString keystr)  //  Conversion from user-readable/-writable
     }
   return 0;
 }
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+QString MkToString(int kcode)
+{
+  if (kcode == 0x4000041) kcode = 0x400004a;
+//+
+  int k1,k2;
+  switch (kcode & 0x00e00000) {
+  case mod_HOME: k1 = Qt::Key_Home;   k2 = kcode; break;
+  case mod_CtrJ: k1 = Qt::CTRL+'J';   k2 = kcode; break;
+  case mod_ESC:  k1 = Qt::Key_Escape; k2 = kcode; break;
+  default:       k1 = kcode;          k2 = 0;
+  }
+  QKeySequence SQ(k1,k2 & ~0x00e00000);
+  return SQ.toString(QKeySequence::PortableText);
+}
 //-----------------------------------------------------------------------------
