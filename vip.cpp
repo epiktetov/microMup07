@@ -359,9 +359,18 @@ static int vipExecuteMacro (wnd *vp, int N)
   } }                                             return E_OK;
 } 
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-int vipOnMimCmd (wnd *vp, int ev, int ca)        /* handling block selection */
-{                                                /* and macro execution      */
+int vipOnMimCmd(wnd *vp, int ev, /* handling block selections and macro exec */
+                         int ca) //+
+{
   last_MiCmd_time = pgtime();
+  if (Mk_IsCHAR(ev)) ca = KxSEL; // regular character should keep any selection
+  else switch (ev & 0xf0000) {           //
+  case 0xc0000: ca = 0;          break;  // NOTE: text/line editors do not care
+  case 0xd0000: ca =      KxBLK; break;  // about KxTS (same command's used for
+  case 0xf0000: ca =      KxSEL; break;  // Left and Shift+Left), so we have to
+  case 0xe0000: ca = KxTS|KxSEL;         //   convert the keycode appropriately
+    ev = (micom_enum)((ev & ~KxTMP) | KxBLK);
+  }
   switch (20*BlockMark+BlockTemp) {
   case 21:
     if (ev == TX_MCBLOCK) { BlockTemp = FALSE;

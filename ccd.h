@@ -28,6 +28,11 @@
 /*---------------------------------------------------------------------------*/
 #ifndef CCD_H_INCLUDED
 #define CCD_H_INCLUDED
+
+#ifdef MIM_H_INCLUDED
+  int MkConvertKeyMods (QKeyEvent *event, int &modMask);
+#endif
+
 void key2mimStart();
 int key2mimHomeEscMask();
 enum micom_enum key2mimCheckPrefix(int TK_HomeEscCtrJ);
@@ -74,7 +79,7 @@ typedef struct {
   int MkFromString(QString keySequence);
   QString MkToString(int kcode);
 #endif  /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-#ifdef Q_OS_MAC
+#ifdef Q_OS_MAC_modifier_removed //+
 #  define Mk_UP    (Qt::Key_Up   |Qt::KeypadModifier)
 #  define Mk_DOWN  (Qt::Key_Down |Qt::KeypadModifier)
 #  define Mk_LEFT  (Qt::Key_Left |Qt::KeypadModifier)

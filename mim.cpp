@@ -19,9 +19,9 @@ static QString MimVersion()
 bool dosEOL = false;                              /* Настраиваемые параметры */
 int TABsize = 4;
 QSize MiFrameSize;
-static bool MiApp_debugKB    = false;
+       bool MiApp_debugKB    = false;
 static bool MiApp_timeDELAYS = false;
-int      last_MiCmd_code;
+QString  last_MiCmd_key;
 quint64  last_MiCmd_time;
 QMap<int,int> MiApp_keyMapC; // two levels of key mapping: Config and Lua
 QMap<int,int> MiApp_keyMapL; //
@@ -745,31 +745,8 @@ void MiScTwin::Text (QPainter& dc, int x, int y, tchar *tp, int len)
 //-----------------------------------------------------------------------------
 void MiScTwin::keyPressEvent (QKeyEvent *event)
 {
-  int     key  = event->key() | int(event->modifiers() &  Qt::KeypadModifier);
-  QString text = event->text();
-  int  modMask = ((event->modifiers() & Qt::ShiftModifier) ? mod_SHIFT : 0)|
-                 ((event->modifiers() & Qt::AltModifier)   ? mod_ALT   : 0)|
-#ifdef Q_OS_MAC
-                 ((event->modifiers() & Qt::MetaModifier)    ? mod_CTRL : 0)|
-                 ((event->modifiers() & Qt::ControlModifier) ? mod_META : 0);
-#else
-                 ((event->modifiers() & Qt::ControlModifier) ? mod_CTRL : 0)|
-                 ((event->modifiers() & Qt::MetaModifier)    ? mod_META : 0);
-#endif
-  if (MiApp_debugKB) {            fprintf(stderr, "OnKey(%x",    key);
-    if (text[0].unicode() > 0x1f) fprintf(stderr, ":%s", text.cStr());
-    else for (int i=0; i<text.length(); i++)
-       fprintf(stderr, ".%04x", text[i].unicode());
-  //
-    if (!Mk_IsSHIFT(key))
-      fprintf(stderr, ",%s", MkToString(modMask|event->key()).cStr());
-  //
-    fprintf(stderr, ")mods=%c%c%c%c,native=%x:%x:%x",
-       (modMask & mod_META) ? 'M' : '.', (modMask & mod_CTRL)  ? 'c' : '.',
-       (modMask & mod_ALT)  ? 'a' : '.', (modMask & mod_SHIFT) ? 's' : '.',
-       event->nativeScanCode(),
-       event->nativeModifiers(), event->nativeVirtualKey());
-  }
+  QString text = event->text();  int modMask;
+  int key = MkConvertKeyMods(event, modMask); if (key < 0) return;
   if (vipOSmode) {
     switch (key) {
     case Qt::Key_Escape:    setkbhin   (4); return; // ^D = end-of-file
@@ -780,73 +757,27 @@ void MiScTwin::keyPressEvent (QKeyEvent *event)
     else   for (int i=0; i<text.length(); i++) setkbhin(text.at(i).toAscii());
     return;
   }
-#ifdef Q_OS_MAC                            // hack for KeyRemap4MacBook 5.1.0,
-  if (key == Mk_McENTER) key = Mk_INSERT;  // which can only remap Fn to Enter
-# if (QT_VERSION < 0x040500)
-    if (key == Qt::Key_unknown)            //- Legacy Qt version 4.3.3 does not
-      switch (event->nativeVirtualKey()) { // convert keys F13…F15 correctly on
-      case 0x69: key = Qt::Key_F13; break; // Apple new solid aluminum keyboard
-      case 0x6b: key = Qt::Key_F14; break; // (model A1243), fixing that, using
-      case 0x71: key = Qt::Key_F15; break; // native virtual key (which is Ok)
-      }
-# endif // Make MicroMir numpad commands work the same with any NumLock state
-#else   //                        (not applicble to Mac, which has no NumLock)
-  if (key & Qt::KeypadModifier) {
-# ifdef Q_OS_WIN                    // completely ignore Alt+Numpad keys,
-    if (modMask == mod_ALT) return; // let Windows handle them by itself
-# endif
-    int keyName = (key & ~Qt::KeypadModifier);
-    if (keyName == Qt::Key_Enter) keyName = Mk_PAD_ENTER; // merge numpad Enter
-    switch (modMask + keyName) {                          // to Return/Enter(↵)
-    case mod_CTRL+'8':
-    case mod_CTRL+          Qt::Key_Up:
-    case mod_CTRL+mod_SHIFT+Qt::Key_Up:    key = Mk_PAD_UP;    break;
-    case mod_CTRL+'2':
-    case mod_CTRL+          Qt::Key_Down:
-    case mod_CTRL+mod_SHIFT+Qt::Key_Down:  key = Mk_PAD_DOWN;  break;
-    case mod_CTRL+'4':
-    case mod_CTRL+          Qt::Key_Left:
-    case mod_CTRL+mod_SHIFT+Qt::Key_Left:  key = Mk_PAD_LEFT;  break;
-    case mod_CTRL+'6':
-    case mod_CTRL+          Qt::Key_Right:
-    case mod_CTRL+mod_SHIFT+Qt::Key_Right: key = Mk_PAD_RIGHT; break;
-    case mod_CTRL+'-': //
-    case mod_CTRL+'+': //
-    case mod_CTRL+'/': // these keys are already Ok, leave them alone
-    case mod_CTRL+'*': //
-    case mod_CTRL+Qt::Key_Return: break;
-    default:
-      if (modMask) {       // Force corresponding command with any modifier..
-        switch (keyName) { //
-        case '.': key = Mk_DELETE;   break;
-        case '0': key = Mk_INSERT;   break;   case '5': key = Mk_CLEAR;  break;
-        case '1': key = Mk_END;      break;   case '6': key = Mk_RIGHT;  break;
-        case '2': key = Mk_DOWN;     break;   case '7': key = Mk_HOME;   break;
-        case '3': key = Mk_PAGEDOWN; break;   case '8': key = Mk_UP;     break;
-        case '4': key = Mk_LEFT;     break;   case '9': key = Mk_PAGEUP; break;
-        default:  key = keyName;
-      } }
-      else key = keyName; // ..and ingnore Qt::KeypadModifier otherwise
-  } }
-#endif // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  last_MiCmd_code = key|modMask|key2mimHomeEscMask();
+  int kcode = key|modMask|key2mimHomeEscMask();
   micom *mk = NULL, userMk;
-  int         mk_ev = MiApp_keyMapL.value(last_MiCmd_code);
-  if (!mk_ev) mk_ev = MiApp_keyMapC.value(last_MiCmd_code);
+  int         mk_ev = MiApp_keyMapL.value(kcode);
+  if (!mk_ev) mk_ev = MiApp_keyMapC.value(kcode);
   if ( mk_ev) {
     userMk.ev  = key2mimCheckPrefix(mk_ev);   mk = &userMk;
-    userMk.kcode = last_MiCmd_code;
+    userMk.kcode = kcode;
+#ifdef notdef_moved_to_vip //+
     switch (mk_ev & 0xf0000) {                      // NOTE: text/line editors
     case 0xc0000: userMk.attr = 0;          break;  // do not care about KxTS,
     case 0xd0000: userMk.attr =      KxBLK; break;  // thus we must convert it
     case 0xf0000: userMk.attr =      KxSEL; break;  // to KxBLK (same for all)
     case 0xe0000: userMk.attr = KxTS|KxSEL;         //
       userMk.ev = (micom_enum)((userMk.ev & ~KxTMP) | KxBLK);
-  } }
+    }
+#endif
+  }
   else if (key && !Mk_IsSHIFT(key)) mk = key2mimCmd(key|modMask);
   //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   if (MiApp_debugKB) {
-            fprintf(stderr, ",micom=%x",            last_MiCmd_code);
+            fprintf(stderr, ",micom=%x",                      kcode);
     if (mk) fprintf(stderr, ":0x%x[%02x]\n", mk->ev, mk->attr >> 12);
     else    fprintf(stderr, "\n");                 info.updateInfo();
   }
@@ -938,14 +869,20 @@ void MiInfoWin::SetPalette (QColor bgnd, QColor text)
   QPalette palette(bgnd);
   palette.setColor(QPalette::WindowText, text); setPalette(palette);
 }
-void MiInfoWin::vpResize() { resize(2 * mimBORDER + sctw->Tw2qtW(9),
-                                    2 * mimBORDER + sctw->Th2qtH(1)); }
+void MiInfoWin::vpResize() // need plenty of room for key codes...
+{
+  resize(2 * mimBORDER + sctw->Tw2qtW(MiApp_debugKB ? 25 : 9),
+         2 * mimBORDER + sctw->Th2qtH(1));
+}
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiInfoWin::paintEvent (QPaintEvent *)
 {
   QPainter dc(this); int Y = sctw->Ty2qtY(0)+sctw->fontBaseline;
   QString info;                                      int dx, dy;
-  if (infoType == MitCHARK && sctw->vp->cx >= 0) {
+  if (MiApp_debugKB)
+    dc.drawText(sctw->Tx2qtX(0), Y, last_MiCmd_key);
+//
+  else if (infoType == MitCHARK && sctw->vp->cx >= 0) {
     tchar tc = 0, *textln;
     if (TxSetY(sctw->vp->wtext, sctw->vp->wty+sctw->vp->cy)) {
       textln = TxInfo(sctw->vp, sctw->vp->wty+sctw->vp->cy, &dx);

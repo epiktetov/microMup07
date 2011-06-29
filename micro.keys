@@ -208,7 +208,8 @@ should be pressed and released before the next key - unlike Shift/Ctrl/Alt/etc)
   Home,Delete - join back:  +---------
                             |like█      <-> |like█that     (both join commands
                             |     that      |               discard text right
-  Meta+Shift+<arrow> -                                      of cursor position)
+  Meta+Shift+{arrow} or                                     of cursor position)
+  Ctrl+Shift+Numpad{arrows}
     move selected text (or from cursor to end of the line)
     in given direction, overwriting whatever it moves over
 
@@ -224,8 +225,8 @@ k_(TE_NSLIN,    mod_HOME+Mk_DELETE, 0xc5807) /* склеить строки ве
 k_(LE_MOVLEFT,  mod_META+mod_SHIFT+Mk_LEFT,      0xf5312)
 a_(LE_MOVLEFT,  mod_CTRL+mod_SHIFT+Mk_PAD_LEFT,  0xf5312)
 k_(TE_MOVUP,    mod_META+mod_SHIFT+Mk_UP,        0xf5313) /* перетаскивание  */
-a_(TE_MOVUP,    mod_CTRL+mod_SHIFT+Mk_PAD_UP,    0xf5313) /*   текста вместе */
-k_(LE_MOVRIGHT, mod_META+mod_SHIFT+Mk_RIGHT,     0xf5314) /*     за кусором  */
+a_(TE_MOVUP,    mod_CTRL+mod_SHIFT+Mk_PAD_UP,    0xf5313) /*  текста вместе  */
+k_(LE_MOVRIGHT, mod_META+mod_SHIFT+Mk_RIGHT,     0xf5314) /*      с кусором  */
 a_(LE_MOVRIGHT, mod_CTRL+mod_SHIFT+Mk_PAD_RIGHT, 0xf5314)
 k_(TE_MOVDOWN,  mod_META+mod_SHIFT+Mk_DOWN,      0xf5315)
 a_(TE_MOVDOWN,  mod_CTRL+mod_SHIFT+Mk_PAD_DOWN,  0xf5315)

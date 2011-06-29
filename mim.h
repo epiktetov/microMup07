@@ -13,6 +13,7 @@ class QLabel;
 class QMessageBox; class QSpinBox;
 class QPushButton; class QSplitter;
 class QLineEdit;   class QTextEdit;
+extern bool MiApp_debugKB;
 extern int  MiApp_defWidth, MiApp_defHeight;
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #define defWinWIDTH  80 // default window width (in characters)
@@ -144,6 +145,7 @@ protected:
   int cmd2repeat, repeatCount, timerID, pastDue;
 };
 //-----------------------------------------------------------------------------
+extern QString last_MiCmd_key;
 extern quint64 last_MiCmd_time;
 #define pgt_1SEC 1000
 quint64 pgtime(void);   /* returns current time with "pretty good" precision */
