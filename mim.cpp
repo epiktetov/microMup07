@@ -756,46 +756,13 @@ void MiScTwin::keyPressEvent (QKeyEvent *event)
     if ((modMask & mod_CTRL) && 0x40 <= key && key < 0x60) setkbhin(key-0x40);
     else   for (int i=0; i<text.length(); i++) setkbhin(text.at(i).toAscii());
     return;
-  }
-  int kcode = key|modMask|key2mimHomeEscMask();
-  micom *mk = NULL, userMk;
-  int         mk_ev = MiApp_keyMapL.value(kcode);
-  if (!mk_ev) mk_ev = MiApp_keyMapC.value(kcode);
-  if ( mk_ev) {
-    userMk.ev  = key2mimCheckPrefix(mk_ev);   mk = &userMk;
-    userMk.kcode = kcode;
-#ifdef notdef_moved_to_vip //+
-    switch (mk_ev & 0xf0000) {                      // NOTE: text/line editors
-    case 0xc0000: userMk.attr = 0;          break;  // do not care about KxTS,
-    case 0xd0000: userMk.attr =      KxBLK; break;  // thus we must convert it
-    case 0xf0000: userMk.attr =      KxSEL; break;  // to KxBLK (same for all)
-    case 0xe0000: userMk.attr = KxTS|KxSEL;         //
-      userMk.ev = (micom_enum)((userMk.ev & ~KxTMP) | KxBLK);
-    }
-#endif
-  }
-  else if (key && !Mk_IsSHIFT(key)) mk = key2mimCmd(key|modMask);
-  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  if (MiApp_debugKB) {
-            fprintf(stderr, ",micom=%x",                      kcode);
-    if (mk) fprintf(stderr, ":0x%x[%02x]\n", mk->ev, mk->attr >> 12);
-    else    fprintf(stderr, "\n");                 info.updateInfo();
-  }
-  if ((mk != NULL && mk->ev == TK_NONE) ||
-      (mk == NULL && text.isEmpty() )) event->ignore();
-  else {                stopTimer();   event->accept();  setkbhin(0);
-    //
-    // Here we have either valid microMir command (mk != NULL) or non-empty
-    // text (otherwise) that should be fed char-by-char into same function:
-    //
-    if (mk) vipOnKeyCode(vp, mk->ev, mk->attr);
-    else {
-      for (int i=0; i<text.length(); i++) {
-        int k = text.at(i).unicode();
-        if (Mk_IsCHAR(k)) vipOnKeyCode(vp, k, KxSEL);
-    } }
-    vipReady();
-} }
+  }                                      // replace the key by user-configured
+  int mapped = MiApp_keyMapC.value(key); // mapping table (but leave modifiers
+  if (mapped)              key = mapped; // the same)
+  setkbhin(0);
+  stopTimer();         event->accept(); MkMimXEQ(key, modMask, text, vp);
+  if (MiApp_debugKB) info.updateInfo();                       vipReady();
+}
 //-----------------------------------------------------------------------------
 #define MiRPT_TIME 10
 //
@@ -824,7 +791,7 @@ void MiScTwin::timerEvent(QTimerEvent *)
       (repeatCount -= KbCount) <= 0) { stopTimer(); vipReady(); }
   else {
     info.updateInfo(MitLINE_BLOCK);
-    QApplication::syncX();   // only for X11 (does nothing on other platforms)
+    QApplication::syncX();  // only for X11 (does nothing on other platforms)
 } }
 //-----------------------------------------------------------------------------
 void MiScTwin::focusInEvent(QFocusEvent *) 

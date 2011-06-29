@@ -16,6 +16,7 @@ extern "C" {
 }
 lua_State *L = NULL;
 //-----------------------------------------------------------------------------
+#ifdef notdef_obsolete
 static int micomNextFn = TM_LUA_FUNC0;
 static int luMicomNewindex (lua_State *L)
 {
@@ -50,6 +51,7 @@ int luasFunc(int kcode)   // executing Lua-defined function as MicroMir command
     vipError(QString("LuaERROR: %1").arg(lua_tolstring(L,-1,0)));
     luaQn_pop(1);                                 return E_SFAIL;
 } }
+#endif
 //-----------------------------------------------------------------------------
 struct luTxtID { // userdata for safe reference to the particular text instance
   txt *t;        // - pointer (safe to use, since txt_tag structs never freed)
@@ -66,8 +68,8 @@ void luasNtxt (txt *newTxt)  // "new text" hook (called from tmDoLoad, twm.cpp)
     luaQQ_settable(iTxt); // Txt[oldTxid] = nil (remove the element)
   }
 //+
-  fprintf(stderr, "luasNtxt(%d,file=%s,top=%d)\n", atNextInst,
-                                    newTxt->file->name.cStr(), iTxt);
+//  fprintf(stderr, "luasNtxt(%d,file=%s,top=%d)\n", atNextInst,
+//                                    newTxt->file->name.cStr(), iTxt);
 //-
   luaP_pushinteger(newTxt->luaTxid = atNextInst++);
   luaP_newtable();
@@ -249,7 +251,8 @@ luaL_Reg luTxMetaFuncs[] =
 void luasInit(void)
 {
   L = luaL_newstate();
-  luaL_openlibs(L);
+      luaL_openlibs(L); MkInitCCD();
+#ifdef notdef
   luaP_newtable();        // 'Micom' table: Micom[kcode] = function ... end
   luaP_newtable();        //
   luaQ_setfield(-2,"_f"); // (private) Micom._f[n] == reference to that func
@@ -258,6 +261,7 @@ void luasInit(void)
   luaQ_setfield     (-2,"__newindex");
   luaQ_setmetatable (-2);
   luaQ_setglobal ("Micom");
+#endif
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // Txt table
 //   open(tn/f) - lazy constructor, by text name or int flags (EMPTY/PSEUDO)

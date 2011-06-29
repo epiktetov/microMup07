@@ -608,7 +608,7 @@ int TmCommand (int kcode)
 #ifdef UseLUA
   case TM_LUA: return luasExec();
   default:
-    if (TM_LUA_FUNC0 <= kcode && kcode <= TM_LUA_FnMAX) return luasFunc(kcode);
+//+ if (TM_LUA_FUNC0 <= kcode && kcode <= TM_LUA_FnMAX) return luasFunc(kcode);
 #else
   default:
 #endif

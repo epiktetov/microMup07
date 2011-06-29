@@ -1,12 +1,14 @@
 //------------------------------------------------------+----------------------
 // МикроМир07  Command Codes Definition / transcoding   | (c) Epi MG, 1998-2011
 //------------------------------------------------------+----------------------
-#include <stdio.h>
-#include <Qt>
+//include <qnamespace.h>
 #include <QKeyEvent>
 #include <QKeySequence>
 #include "mim.h"
 #include "ccd.h"
+#include "vip.h"
+#include "lua.hpp"
+#include "luas.h"
 #define MAKE_TRANS_TABLE
 #include "ccd.h"
 micom NoCMD = { TK_NONE, 0, KxSEL };
@@ -18,12 +20,14 @@ int KbRadix = 0;                       /* основание,   если не в
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 int MkConvertKeyMods (QKeyEvent *event, int &modMask)
 {
-  QString text = event->text();
-  int ev_key = event->key();
-  int    key = ev_key | int(event->modifiers() &  Qt::KeypadModifier);
+  bool  keypad = (event->modifiers() &  Qt::KeypadModifier);
+  int      key =  event->key();
+  QString text =  event->text();
 //
-  modMask = ((event->modifiers() & Qt::ShiftModifier) ? mod_SHIFT : 0)|
-            ((event->modifiers() & Qt::AltModifier)   ? mod_ALT   : 0)|
+// Revert the Qt intelligence: Ctrl should be Ctrl on any platform, I'm too old
+// to re-learn the keysequences twice a day switching from Mac to Linux to Win:
+//
+  modMask = (event->modifiers() & (Qt::AltModifier|Qt::ShiftModifier)) |
 #ifdef Q_OS_MAC
             ((event->modifiers() & Qt::MetaModifier)    ? mod_CTRL : 0)|
             ((event->modifiers() & Qt::ControlModifier) ? mod_META : 0);
@@ -31,84 +35,117 @@ int MkConvertKeyMods (QKeyEvent *event, int &modMask)
             ((event->modifiers() & Qt::ControlModifier) ? mod_CTRL : 0)|
             ((event->modifiers() & Qt::MetaModifier)    ? mod_META : 0);
 #endif
-  if (MiApp_debugKB) {            fprintf(stderr, "OnKey(%x",    key);
-    if (text[0].unicode() > 0x1f) fprintf(stderr, ":%s", text.cStr());
+  if (MiApp_debugKB) { fprintf(stderr, "OnKey(%s%x", keypad ? "#" : "", key);
+    if (text[0].unicode() > 0x1f)        fprintf(stderr, ":%s", text.cStr());
     else for (int i=0; i<text.length(); i++)
-       fprintf(stderr, ".%04x", text[i].unicode());
-  //
-    if (Mk_IsSHIFT(key)) last_MiCmd_key = "";
-    else {
-      last_MiCmd_key = MkToString(modMask|ev_key);
-      fprintf(stderr, ",%s", last_MiCmd_key.cStr());
-    }
-    fprintf(stderr, ")mods=%c%c%c%c,native=%x:%x:%x",
-       (modMask & mod_META) ? 'M' : '.', (modMask & mod_CTRL)  ? 'c' : '.',
-       (modMask & mod_ALT)  ? 'a' : '.', (modMask & mod_SHIFT) ? 's' : '.',
-       event->nativeScanCode(),
-       event->nativeModifiers(), event->nativeVirtualKey());
-  }
+           fprintf(stderr, ".%02x", text[i].unicode());
+
+    fprintf(stderr, "|%c%c%c%c),native=%x:%x:%x",
+        (modMask & mod_META) ? 'M' : '.', (modMask & mod_CTRL)  ? 'c' : '.',
+        (modMask & mod_ALT)  ? 'a' : '.', (modMask & mod_SHIFT) ? 's' : '.',
+                          event->nativeScanCode(), event->nativeModifiers(),
+                                                   event->nativeVirtualKey());
+    if (Mk_IsSHIFT(key)) fprintf(stderr, "\n");
+  } if (Mk_IsSHIFT(key)) return -1;
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #if defined(Q_OS_MAC) && (QT_VERSION < 0x040500)
-    if (key == Qt::Key_unknown)            //----- old Qt version 4.3.3 did not
+    if (key == Qt::Key_unknown)            //    old Qt version (4.3.3) did not
       switch (event->nativeVirtualKey()) { // convert keys F13…F15 correctly on
       case 0x69: key = Qt::Key_F13; break; // Apple new solid aluminum keyboard
       case 0x6b: key = Qt::Key_F14; break; // (model A1243), fixing that, using
       case 0x71: key = Qt::Key_F15; break; // native virtual key (which is Ok)
       }
 #endif
-  if (key & Qt::KeypadModifier) {          // For whatever reasons, Qt reports
-#ifdef Q_OS_MAC                            // arrows key always with KeypadMod
-    switch (ev_key) {                      // only on Mac, make it consistent
-    case Qt::Key_Up:   case Qt::Key_Left:  //
-    case Qt::Key_Down: case Qt::Key_Right: key = ev_key; break;
+  if (keypad) {    // For whatever reasons, Qt always reports arrow keys with
+#ifdef Q_OS_MAC    // KeypadMod on Mac, remove it for consistency..
+    switch (key) { //
+    case Qt::Key_Up:   case Qt::Key_Left:
+    case Qt::Key_Down: case Qt::Key_Right: return key;
     }
 #else
 # ifdef Q_OS_WIN                       // completely ignore Alt+Numpad keys,
     if (modMask == mod_ALT) return -1; // let Windows handle them by itself
 # endif
-// Make MicroMir Numpad commands work the same with any NumLock state (except
-//                                               for Mac, which has no NumLock)
-    int keyName = (key & ~Qt::KeypadModifier);
-    if (keyName == Qt::Key_Enter) keyName = Mk_PAD_ENTER; // merge numpad Enter
-    switch (modMask + keyName) {                          // to Return/Enter(↵)
-    case mod_CTRL+'8':
-    case mod_CTRL+mod_SHIFT+'8':
-    case mod_CTRL+          Qt::Key_Up:
-    case mod_CTRL+mod_SHIFT+Qt::Key_Up:    key = Mk_PAD_UP;    break;
-    case mod_CTRL+'2':
-    case mod_CTRL+mod_SHIFT+'2':
-    case mod_CTRL+          Qt::Key_Down:
-    case mod_CTRL+mod_SHIFT+Qt::Key_Down:  key = Mk_PAD_DOWN;  break;
-    case mod_CTRL+'4':
-    case mod_CTRL+mod_SHIFT+'4':
-    case mod_CTRL+          Qt::Key_Left:
-    case mod_CTRL+mod_SHIFT+Qt::Key_Left:  key = Mk_PAD_LEFT;  break;
-    case mod_CTRL+'6':
-    case mod_CTRL+mod_SHIFT+'6':
-    case mod_CTRL+          Qt::Key_Right:
-    case mod_CTRL+mod_SHIFT+Qt::Key_Right: key = Mk_PAD_RIGHT; break;
-    case mod_CTRL+'-': //
-    case mod_CTRL+'+': //
-    case mod_CTRL+'/': // these keys are already Ok, leave them alone
-    case mod_CTRL+'*': //
-    case mod_CTRL+Qt::Key_Return: break;
-    default:
-      if (modMask) {       // Force corresponding command with any modifier..
-        switch (keyName) { //
-        case '.': key = Mk_DELETE;   break;
-        case '0': key = Mk_INSERT;   break;   case '5': key = Mk_CLEAR;  break;
-        case '1': key = Mk_END;      break;   case '6': key = Mk_RIGHT;  break;
-        case '2': key = Mk_DOWN;     break;   case '7': key = Mk_HOME;   break;
-        case '3': key = Mk_PAGEDOWN; break;   case '8': key = Mk_UP;     break;
-        case '4': key = Mk_LEFT;     break;   case '9': key = Mk_PAGEUP; break;
-        default:  key = keyName;
-      } }
-      else key = keyName; // ..and ingnore Qt::KeypadModifier otherwise
+    switch (key) {
+    case Qt::Key_Delete:   key = '.'; break; // for consistency, ALWAYS convert
+    case Qt::Key_Insert:   key = '0'; break; // base key to digit, so Linux and
+    case Qt::Key_End:      key = '1'; break; // Windows behaves the same as Mac
+    case Qt::Key_Down:     key = '2'; break; //
+    case Qt::Key_PageDown: key = '3'; break; // (for those attached to standard
+    case Qt::Key_Left:     key = '4'; break; // OS-specific behavior, feel free
+    case Qt::Key_Clear:    key = '5'; break; // to remap command by Lua script)
+    case Qt::Key_Right:    key = '6'; break; //
+    case Qt::Key_Home:     key = '7'; break;
+    case Qt::Key_Up:       key = '8'; break;
+    case Qt::Key_PageUp:   key = '9'; break;
     }
-#endif // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  }
-  return key;
+#endif
+    return key | mod_KyPAD;
+  } return key;
 }
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+int MkFromString (QString keystr)  //  Conversion from user-readable/-writable
+{                                  //  string to the keycode as reported by Qt
+  keystr.replace("^", "Ctrl+");
+  QKeySequence SQ(keystr);
+  int mask = 0, kcode;
+  for (size_t i=0; i<SQ.count(); i++)
+    switch (( kcode = SQ[i] )) {
+    case Mk_ESCAPE:    mask = mod_ESC;  continue; //  NOTE: do not accumulate
+    case Mk_HOME:      mask = mod_HOME; continue; // mask, only the last valid
+    case mod_CTRL+'J': mask = mod_CtrJ; continue;
+    default:       return kcode | mask;
+    }
+  return 0;
+}
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+QString MkToString (int kcode)
+{
+  int k1,k2;
+  switch (kcode & 0x00e00000) {
+  case mod_HOME: k1 = Qt::Key_Home;   k2 = kcode; break;
+  case mod_CtrJ: k1 = Qt::CTRL+'J';   k2 = kcode; break;
+  case mod_ESC:  k1 = Qt::Key_Escape; k2 = kcode; break;
+  default:       k1 = kcode;          k2 = 0;
+  }
+  QKeySequence SQ(k1,k2 & ~0x00e00000);
+  return SQ.toString(QKeySequence::PortableText);
+}
+//-----------------------------------------------------------------------------
+void MkMimXEQ (int kcode, int modMask, QString text, wnd *vp)
+{
+  last_MiCmd_key = MkToString(kcode|modMask);
+  luaP_getglobal("MkCCD");  luaX_getfield_top(last_MiCmd_key.uStr());
+  if (MiApp_debugKB) fprintf(stderr, ",‹%s›", last_MiCmd_key.uStr());
+
+  if (lua_isnumber(L,-1)) {                            // must check before str
+    int mk = lua_tointeger(L,-1);        luaQn_pop(1); // (as number is string,
+    if (MiApp_debugKB) fprintf(stderr, ",0x%x\n", mk); // since its convertible
+    vipOnKeyCode(vp, mk, 0);                   return; // to string always)
+  }
+  else if (lua_isstring  (L,-1)) text = lua_tostring(L,-1);
+  else if (lua_isfunction(L,-1)) {
+    if (MiApp_debugKB) fprintf(stderr, ",lua\n");
+    // not implemented yet
+    return;
+  }
+  if (MiApp_debugKB) fprintf(stderr, ",'%s'\n", text.uStr());
+  luaQn_pop(1);
+  for (int i=0; i<text.length(); i++) {
+    int k = text.at(i).unicode();
+    if (Mk_IsCHAR(k)) vipOnKeyCode(vp, k, KxSEL);
+} }
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void MkInitCCD (void)          // move Command Codes Definitions into Lua table
+{
+  luaP_newtable();
+  for (microCCD *pt = CCD; pt->hexcode; pt++) {
+    if (pt->kseq) { luaP_pushstring (pt->kseq);
+                    luaP_pushinteger(pt->hexcode); luaQQ_rawset(-3); }
+  }
+  luaQ_setglobal("MkCCD");
+}
+//-----------------------------------------------------------------------------
 void key2mimStart()
 {
 #ifdef notdef_obsolete //+
@@ -129,6 +166,8 @@ int key2mimHomeEscMask()
                     default:      return           0;
                     case TK_ESC:  return KbRadix ? 0 : mod_ESC; } }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+static micom trans1[] = { {0,0,0} };
+//+
 static micom *translate_by_tbl (int key)
 {
   for (micom *pt = trans1; pt->ev; pt++) if (pt->kcode == key) return   pt;
@@ -179,35 +218,5 @@ micom *key2mimCmd (int key_mask)   /* returns NULL if not a microMir command */
     default:                       return     mk;
   } }
   return mk;
-}
-//-----------------------------------------------------------------------------
-int MkFromString (QString keystr)  //  Conversion from user-readable/-writable
-{                                  //  string to the keycode as reported by Qt
-  keystr.replace("^", "Ctrl+");
-  QKeySequence SQ(keystr);
-  int mask = 0, kcode;
-  for (size_t i=0; i<SQ.count(); i++)
-    switch (( kcode = SQ[i] )) {
-    case Mk_ESCAPE:    mask = mod_ESC;  continue; //  NOTE: do not accumulate
-    case Mk_HOME:      mask = mod_HOME; continue; // mask, only the last valid
-    case mod_CTRL+'J': mask = mod_CtrJ; continue;
-    default:       return kcode | mask;
-    }
-  return 0;
-}
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-QString MkToString(int kcode)
-{
-  if (kcode == 0x4000041) kcode = 0x400004a;
-//+
-  int k1,k2;
-  switch (kcode & 0x00e00000) {
-  case mod_HOME: k1 = Qt::Key_Home;   k2 = kcode; break;
-  case mod_CtrJ: k1 = Qt::CTRL+'J';   k2 = kcode; break;
-  case mod_ESC:  k1 = Qt::Key_Escape; k2 = kcode; break;
-  default:       k1 = kcode;          k2 = 0;
-  }
-  QKeySequence SQ(k1,k2 & ~0x00e00000);
-  return SQ.toString(QKeySequence::PortableText);
 }
 //-----------------------------------------------------------------------------

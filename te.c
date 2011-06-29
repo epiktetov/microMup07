@@ -400,12 +400,13 @@ static int tereplace()
 void terdown() { if (                   tereplace() < 0) tesdown(); }
 void terup()   { if (qTxBottom(Ttxt) || tereplace() < 0) tesup();   }
 /*---------------------------------------------------------------------------*/
-void teswidth (void)                              /* <- currently not mapped */
+void teswidth (void)
 {
-  short x = KbCount;
-  if (KbRadix == 0 || x < 0 || x > MAXLPAC) exc(E_BADPRM);
-  Ttxt->txrm = x;
-  if (Tx > x) Tx = x;
+  if (KbRadix) {
+         if (KbCount <=      0) Ttxt->txrm = MAXTXRM;
+    else if (KbCount > MAXLPAC) Ttxt->txrm = MAXLPAC;
+    else                        Ttxt->txrm = KbCount;
+  } else                        Ttxt->txrm = Tx;
 }
 void tesro() { if (Ttxt->txredit == TXED_YES) Ttxt->txredit = TXED_NO; }
 void tesrw() { if (Ttxt->txredit == TXED_NO) Ttxt->txredit = TXED_YES; }
