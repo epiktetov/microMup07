@@ -48,10 +48,7 @@ txt *TxNew (bool qundo)                        /* Создание / удале�
   memset(t->thisSynts, 0xDE, sizeof(int) * MAXSYNTBUF);
   memset(t->prevSynts,    0, sizeof(int) * MAXSYNTBUF);
   memset(t->lastSynts,    0, sizeof(int) * MAXSYNTBUF);
-#ifdef UseLUA
-  t->luaTxid = 0;
-#endif
-  return t;
+  t->luaTxid = 0;                             return t;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void TxEnableSynt (txt *t, short clang)       /* add deqs for syntax checker */

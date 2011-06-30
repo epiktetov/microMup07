@@ -11,13 +11,7 @@
 #include "luas.h"
 #define MAKE_TRANS_TABLE
 #include "ccd.h"
-micom NoCMD = { TK_NONE, 0, KxSEL };
 //-----------------------------------------------------------------------------
-static int kbMode = 0;
-int KbCode;                            /* код запроса                        */
-int KbCount = 1;                       /* повторитель, если не вводился то 1 */
-int KbRadix = 0;                       /* основание,   если не вводился то 0 */
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 int MkConvertKeyMods (QKeyEvent *event, int &modMask)
 {
   bool  keypad = (event->modifiers() &  Qt::KeypadModifier);
@@ -99,6 +93,14 @@ int MkFromString (QString keystr)  //  Conversion from user-readable/-writable
   return 0;
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+int MkToDigit (int kcode)
+{
+  int key = (kcode & ~mod_KyPAD);
+       if ('0' <= key && key <= '9') return key - '0';
+  else if ('A' <= key && key <= 'F') return key - 'A' + 10;
+  else                               return -1;
+}
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 QString MkToString (int kcode)
 {
   int k1,k2;
@@ -111,26 +113,56 @@ QString MkToString (int kcode)
   QKeySequence SQ(k1,k2 & ~0x00e00000);
   return SQ.toString(QKeySequence::PortableText);
 }
-//-----------------------------------------------------------------------------
+/*---------------------------------------------------------------------------*/
+int KbCode;                  /* код запроса (устанавливается в vipOnRegCmd)  */
+int KbCount =  1;            /* повторитель, если не вводился,         то 1  */
+int KbRadix =  0;            /* основание,   если не было повторителя, то 0  */
+QString MkPrefix;            /* текущий префикс (пустая строка если не было) */
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void MkMimXEQ (int kcode, int modMask, QString text, wnd *vp)
 {
-  last_MiCmd_key = MkToString(kcode|modMask);
-  luaP_getglobal("MkCCD");  luaX_getfield_top(last_MiCmd_key.uStr());
-  if (MiApp_debugKB) fprintf(stderr, ",‹%s›", last_MiCmd_key.uStr());
-
-  if (lua_isnumber(L,-1)) {                            // must check before str
-    int mk = lua_tointeger(L,-1);        luaQn_pop(1); // (as number is string,
-    if (MiApp_debugKB) fprintf(stderr, ",0x%x\n", mk); // since its convertible
-    vipOnKeyCode(vp, mk, 0);                   return; // to string always)
+  int digit = MkToDigit(kcode);
+  if (KbRadix && !modMask && digit >= 0) {
+    KbCount = KbRadix * KbCount + digit;
+    last_MiCmd_key = Utf8("×%1").arg(KbCount); return;
   }
+  luaP_getglobal("MkCCD");
+  if (MkPrefix.isEmpty()) { last_MiCmd_key = MkToString(kcode|modMask);
+                            luaP_getfield(-1,last_MiCmd_key.uStr()); }
+  else {
+    if (MkPrefix == "Esc" && !modMask) {
+      const char *radix;
+           if (kcode == 'X') { KbRadix = 16; KbCount = 0;     radix = "hex"; }
+      else if (digit ==  0 ) { KbRadix =  8; KbCount = 0;     radix = "oct"; }
+      else if (digit  >  0 ) { KbRadix = 10; KbCount = digit; radix = "dec"; }
+      if (KbRadix) {
+        last_MiCmd_key = Utf8("(%1)×%2…").arg(radix).arg(KbCount);
+        luaQn_pop(1);                            MkPrefix.clear(); return;
+    } }
+    QString MkStr = MkToString(kcode|modMask);
+    last_MiCmd_key = MkPrefix + "," + MkStr;
+    luaP_getfield(-1,last_MiCmd_key.uStr()); MkPrefix.clear();
+    if (lua_isnil(L,-1)) {
+      luaQn_pop(1);    last_MiCmd_key = MkStr; // Try finding CCD with prefix
+      luaP_getfield(-1,last_MiCmd_key.uStr()); // 1st, ignore it if not found
+  } }
+  if (MiApp_debugKB)  fprintf(stderr, ",‹%s›", last_MiCmd_key.uStr());
+  if (lua_isnumber(L,-1)) {
+    int mk = lua_tointeger(L,-1);        luaQn_pop(2); // must check before str
+    if (MiApp_debugKB) fprintf(stderr, ",0x%x\n", mk); // (as number is string,
+    switch (mk) {                                      // since its convertible
+    case TK_PREFIX: MkPrefix = last_MiCmd_key; return; // to string always)
+    case TK_ESC:    MkPrefix = "Esc";          return;
+    case TK_CtrJ:   MkPrefix = "^J";           return;
+    default:        vipOnKeyCode(vp, mk, 0);   return;
+  } }
   else if (lua_isstring  (L,-1)) text = lua_tostring(L,-1);
   else if (lua_isfunction(L,-1)) {
     if (MiApp_debugKB) fprintf(stderr, ",lua\n");
-    // not implemented yet
-    return;
+    luasFunc();                     luaQn_pop(1); return;
   }
   if (MiApp_debugKB) fprintf(stderr, ",'%s'\n", text.uStr());
-  luaQn_pop(1);
+  luaQn_pop(2);
   for (int i=0; i<text.length(); i++) {
     int k = text.at(i).unicode();
     if (Mk_IsCHAR(k)) vipOnKeyCode(vp, k, KxSEL);
@@ -144,79 +176,5 @@ void MkInitCCD (void)          // move Command Codes Definitions into Lua table
                     luaP_pushinteger(pt->hexcode); luaQQ_rawset(-3); }
   }
   luaQ_setglobal("MkCCD");
-}
-//-----------------------------------------------------------------------------
-void key2mimStart()
-{
-#ifdef notdef_obsolete //+
-  for (micom *pt = trans1; pt->ev; pt++)
-    if (( pt->attr &= KxSEL ) == KxTMP) pt->attr = KxTS|KxSEL;
-#endif
-}
-micom_enum key2mimCheckPrefix (int mk)
-{
-  if (mk == TK_ESC || mk == TK_HOME
-                   || mk == TK_CtrJ) { kbMode = mk; return TK_NONE;        }
-  else                               { kbMode =  0; return (micom_enum)mk; }
-}
-int key2mimHomeEscMask()
-{
-  switch (kbMode) { case TK_HOME: return mod_HOME;
-                    case TK_CtrJ: return mod_CtrJ;
-                    default:      return           0;
-                    case TK_ESC:  return KbRadix ? 0 : mod_ESC; } }
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-static micom trans1[] = { {0,0,0} };
-//+
-static micom *translate_by_tbl (int key)
-{
-  for (micom *pt = trans1; pt->ev; pt++) if (pt->kcode == key) return   pt;
-                                                               return NULL;
-}
-static micom *key_translate (int key_mask)
-{
-  micom *res;
-  if (kbMode == TK_ESC) {
-    if (Mk_IsCHAR(key_mask)) {
-      int digit = (key_mask > '@') ? ((key_mask&0xDF)-'A'+10) : (key_mask-'0');
-      if (KbRadix) {
-        if (0 <= digit && digit < KbRadix) {
-          KbCount = KbRadix * KbCount + digit; return &NoCMD;
-      } }
-      else { if (digit ==  0) { KbRadix =  8; return &NoCMD; }
-        else if (digit == 33) { KbRadix = 16; return &NoCMD; }
-        else
-        if (0 <= digit && digit <= 9) { KbRadix = 10;
-                                        KbCount = digit; return &NoCMD; }
-    } }              kbMode  = 0;
-    if (KbCount < 0) KbCount = 0;
-    if (KbRadix) return key_translate(key_mask);
-    else {
-      res =    translate_by_tbl(mod_ESC | key_mask);
-      return res ? res : translate_by_tbl(key_mask);
-  } }
-  if (kbMode == TK_CtrJ) {
-    res =   translate_by_tbl(mod_CtrJ | key_mask); kbMode = 0;
-    return res ? res : translate_by_tbl(key_mask);
-  }
-  if (kbMode == TK_HOME) {
-    res =   translate_by_tbl(mod_HOME | key_mask); kbMode = 0;
-    return res ? res : translate_by_tbl(key_mask);
-  }
-  else if (Mk_IsCHAR(key_mask)) return 0; // use standard translation
-  else return translate_by_tbl(key_mask); // translate by prim. table
-}
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-micom *key2mimCmd (int key_mask)   /* returns NULL if not a microMir command */
-{
-  micom *mk = key_translate(key_mask);
-  if (mk) {
-    switch (mk->ev) {
-    case TK_ESC:  KbCount = KbRadix = 0; // and FALL THROUGH
-    case TK_CtrJ:
-    case TK_HOME: kbMode = mk->ev; return &NoCMD;
-    default:                       return     mk;
-  } }
-  return mk;
 }
 //-----------------------------------------------------------------------------

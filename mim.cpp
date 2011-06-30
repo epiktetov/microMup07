@@ -760,8 +760,8 @@ void MiScTwin::keyPressEvent (QKeyEvent *event)
   int mapped = MiApp_keyMapC.value(key); // mapping table (but leave modifiers
   if (mapped)              key = mapped; // the same)
   setkbhin(0);
-  stopTimer();         event->accept(); MkMimXEQ(key, modMask, text, vp);
-  if (MiApp_debugKB) info.updateInfo();                       vipReady();
+  stopTimer();     event->accept(); if (MiApp_debugKB) info.updateInfo();
+  MkMimXEQ(key, modMask, text, vp);                           vipReady();
 }
 //-----------------------------------------------------------------------------
 #define MiRPT_TIME 10
@@ -838,7 +838,7 @@ void MiInfoWin::SetPalette (QColor bgnd, QColor text)
 }
 void MiInfoWin::vpResize() // need plenty of room for key codes...
 {
-  resize(2 * mimBORDER + sctw->Tw2qtW(MiApp_debugKB ? 25 : 9),
+  resize(2 * mimBORDER + sctw->Tw2qtW(MiApp_debugKB ? 20 : 9),
          2 * mimBORDER + sctw->Th2qtH(1));
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -846,9 +846,9 @@ void MiInfoWin::paintEvent (QPaintEvent *)
 {
   QPainter dc(this); int Y = sctw->Ty2qtY(0)+sctw->fontBaseline;
   QString info;                                      int dx, dy;
-  if (MiApp_debugKB)
-    dc.drawText(sctw->Tx2qtX(0), Y, last_MiCmd_key);
-//
+  if (MiApp_debugKB) {
+    dc.drawText(sctw->Tx2qtX(0), Y, last_MiCmd_key); return;
+  }
   else if (infoType == MitCHARK && sctw->vp->cx >= 0) {
     tchar tc = 0, *textln;
     if (TxSetY(sctw->vp->wtext, sctw->vp->wty+sctw->vp->cy)) {
@@ -1020,9 +1020,8 @@ void mimReadPreferences()
   MiApp_defFontAdjH = Qs.value("fontAdjH", "0/0").toString();
   MiApp_fontAdjOver = myUnpackAdj2int (MiApp_defFontAdjH, 0);
   MiApp_fontAdjUnder = myUnpackAdj2int(MiApp_defFontAdjH, 2);
-  MiApp_keyMaps  =  Qs.value("keyMaps", "").toString();
-  key2mimStart();                      myParseKeyMap();
   MiFrameSize = QSize(MiApp_defWidth, MiApp_defHeight);
+  MiApp_keyMaps  =  Qs.value("keyMaps", "").toString(); myParseKeyMap();
 #ifndef Q_OS_MAC
   menuBarHeight = Qs.value("private/menuBarHeight", -1).toInt();
 #endif

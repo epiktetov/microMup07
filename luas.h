@@ -7,7 +7,7 @@
 void luasInit(void);        // initialization
 void luasNtxt(txt *newTxt); // "new text" hook (called from tmDoLoad, twm.cpp)
 int  luasExec(void);
-int  luasFunc(int kcode);
+int  luasFunc(void); /* execute (and pop) Lua function on top of Lua stack   */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #ifdef lua_h         /* the problem with Lua function names is that it's not */
 extern lua_State *L; /* very clear how do they operate with the stack, fixin */

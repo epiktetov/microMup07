@@ -45,6 +45,7 @@
 #ifdef MIM_H_INCLUDED /*- - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   int     MkConvertKeyMods(QKeyEvent *event, int &modMask);
   int     MkFromString    (QString keySequence);
+  int     MkToDigit (int kcode);
   QString MkToString(int kcode);
   void    MkMimXEQ  (int kcode, int modMask, QString text, wnd *vp);
 #endif

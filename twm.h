@@ -53,9 +53,9 @@ struct txt_tag
   int prevSynts[MAXSYNTBUF];  /* Previos syntax info = between txustk/txdstk */
   long maxTy;                 /* max Ty (total number of lines in the text)  */
   int lastSynts[MAXSYNTBUF];  /* Last syntax info (from after the last line) */
-#ifdef UseLUA
+
   int luaTxid; /* ссылка на элемент в Lua таблицe Txt (0 если нет), уникален */
-#endif         /* для данного состояния текста (меняется после перезагрузки) */
+               /* для данного состояния текста (меняется после перезагрузки) */
 };
 void wattach(txt *text, wnd *vp);
 void wupdate(txt *text, wnd *vp);

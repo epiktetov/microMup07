@@ -16,43 +16,6 @@ extern "C" {
 }
 lua_State *L = NULL;
 //-----------------------------------------------------------------------------
-#ifdef notdef_obsolete
-static int micomNextFn = TM_LUA_FUNC0;
-static int luMicomNewindex (lua_State *L)
-{
-  int key, mk; // 1st argument is a reference to Micom table itself (not used,
-               //                                         that table is unique)
-  if (lua_isnumber(L,2)) key = lua_tointeger(L,2);
-  else   key = MkFromString(luaL_checkstring(L,2));
-
-  if (lua_isnumber(L,3)) MicomSetMapL(key, lua_tointeger(L,3));
-  else {
-    luaL_checktype(L,3,LUA_TFUNCTION);  mk = MicomGetMapL(key);
-    if (!mk) {                          mk = micomNextFn++;
-      if (mk > TM_LUA_FnMAX) return luaL_error(L, "no room in micom table");
-    }
-    MicomSetMapL  (key, mk); luaP_getglobal("Micom"); luaX_getfield_top("_f");
-                             luaP_pushvalue(3);
-                             luaQ_rawseti(-2, mk); // Micom._f[mk] = arg3
-                             luaQn_pop(1);
-  } return 0;
-}
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-int luasFunc(int kcode)   // executing Lua-defined function as MicroMir command
-{
-  luaP_getglobal("Micom"); luaX_getfield_top("_f"); // function == Micom._f[mk]
-                           luaX_rawgeti_top(kcode);
-  luaP_getglobal("Txt");   luaX_rawgeti_top(Ttxt->luaTxid);
-  if (KbRadix)
-       luaP_pushinteger(KbCount);         // function(Ttxt,kbCount/nil)
-  else luaP_pushnil();                    //   no return if Ok
-  if (luaQX_pcall(2,0) == 0) return E_OK; //   errof msg if fails
-  else {
-    vipError(QString("LuaERROR: %1").arg(lua_tolstring(L,-1,0)));
-    luaQn_pop(1);                                 return E_SFAIL;
-} }
-#endif
-//-----------------------------------------------------------------------------
 struct luTxtID { // userdata for safe reference to the particular text instance
   txt *t;        // - pointer (safe to use, since txt_tag structs never freed)
   int id;        // - expected value of luaTxid in that text
@@ -252,16 +215,6 @@ void luasInit(void)
 {
   L = luaL_newstate();
       luaL_openlibs(L); MkInitCCD();
-#ifdef notdef
-  luaP_newtable();        // 'Micom' table: Micom[kcode] = function ... end
-  luaP_newtable();        //
-  luaQ_setfield(-2,"_f"); // (private) Micom._f[n] == reference to that func
-  luaP_newtable();
-  luaP_pushCfunction(luMicomNewindex);
-  luaQ_setfield     (-2,"__newindex");
-  luaQ_setmetatable (-2);
-  luaQ_setglobal ("Micom");
-#endif
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // Txt table
 //   open(tn/f) - lazy constructor, by text name or int flags (EMPTY/PSEUDO)
@@ -307,4 +260,16 @@ int luasExec (void)
     return E_SFAIL;
   } return E_OK;
 }
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+int luasFunc (void)     // executing Lua-defined function (on top of Lua stack)
+{
+  luaP_getglobal("Txt"); luaX_rawgeti_top(Ttxt->luaTxid);
+  if (KbRadix)
+       luaP_pushinteger(KbCount);         // function(Ttxt,kbCount/nil)
+  else luaP_pushnil();                    //   no return if Ok
+  if (luaQX_pcall(2,0) == 0) return E_OK; //   errof msg if fails
+  else {
+    vipError(QString("LuaERROR: %1").arg(lua_tolstring(L,-1,0)));
+    luaQn_pop(1);                                 return E_SFAIL;
+} }
 //-----------------------------------------------------------------------------

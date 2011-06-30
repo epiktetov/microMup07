@@ -5,8 +5,8 @@
  * "nanoMir" implementation (c) Attic (Д.В.Варсанофьев, А.Г.Дымченко) 1989-1991
  * "nanoMir" and МикроМир07 (c) EpiMG (М.Г.Эпиктетов)       1998-2001,2006-2011
 -------------------------------------------------------------------------------
- Insert is "Help" key on MacPro keyboard, missing on A1243, use F13 key instead
- Delele is "Delete⌦" on Mac keyboard ("delete" key is Backspace)
+ Ins is "Help" key on MacPro keyboard, missing on A1243 (use F13 key instead)
+ Del is "Delete⌦" on Mac keyboard ("delete" key is Backspace)
  Return is either "Enter↵" or "Return" on main keyboard (not "enter" on numpad)
  Alt  == ⌥/option  key on Mac keyboard, Alt key elsewhere
  Meta == ⌘/command key on Mac keyboard, "WinKey" key on Windows-compatible one
@@ -44,17 +44,17 @@ k_(TW_DOWN,   "Alt+Down",   0xd0815) /* на несколько строк вн�
 k_(LE_PWORD,  "Alt+Left",   0xd0812) /* -> предыдущее слово                  */
 k_(LE_NWORD,  "Alt+Right",  0xd0814) /* -> следующее слово                   */
 /*
-     PageUp/PageDown - scroll text one page (= windows height - 1) up/down
-Ctrl+PageUp/PageDown - move cursor to very beginning / end of the document
-Ctrl+Up / Ctrl+Down  - move continuously up/down (stop by any key)
-Ctrl+[  / Ctrl+]     - move cursor to left / right edge of the current window
-Meta+Ctrl+{arrows}   - scroll text in given direction (cursor moves over text,
-                       while remaining in the same position relative to window)
+     PgUp/PgDown    - scroll text one page (= windows height - 1) up/down
+Ctrl+PgUp/PgDown    - move cursor to very beginning / end of the document
+Ctrl+Up / Ctrl+Down - move continuously up/down (stop by any key)
+Ctrl+[  / Ctrl+]    - move cursor to left / right edge of the current window
+Meta+Ctrl+{arrows}  - scroll text in given direction (cursor moves over text,
+                      while remaining in the same position relative to window)
 */
-k_(TE_PPAGE,         "PageUp",     0xd0016) /* на страницу вверх         ..0 */
-k_(TE_NPAGE,         "PageDown",   0xd0017) /* на страницу вниз          ..1 */
-k_(TE_TBEG,     "Ctrl+PageUp",     0xd0416) /* в самое начало текста         */
-k_(TE_TEND,     "Ctrl+PageDown",   0xd0417) /* в самый конец текста          */
+k_(TE_PPAGE,         "PgUp",       0xd0016) /* на страницу вверх         ..0 */
+k_(TE_NPAGE,         "PgDown",     0xd0017) /* на страницу вниз          ..1 */
+k_(TE_TBEG,     "Ctrl+PgUp",       0xd0416) /* в самое начало текста         */
+k_(TE_TEND,     "Ctrl+PgDown",     0xd0417) /* в самый конец текста          */
 k_(TW_CUP,      "Ctrl+Up",         0xc0413) /* непрерывно вверх              */
 k_(TW_CDOWN,    "Ctrl+Down",       0xc0415) /* непрерывно вниз               */
 k_(LE_WLEFT,    "Ctrl+[",          0xd045b) /* в самую левую / правую        */
@@ -72,21 +72,21 @@ replaces anything, it just pushes current text into stack like Esc <down> does)
 
   Meta+'+'('=')/F11 - open new window with the same contents as in current one
   Meta+'-'          - split the window into two panes, forking the contents
-  Meta+Delete/F12   - ask for filename and enter that file (see FILES below)
+  Meta+Del/F12      - ask for filename and enter that file (see FILES below)
 
   Meta+{arrow} - move cursor to closest window in given direction
   Meta+Return  - SyncPos(tm) - open (in upper pane) file mentioned here
 */
-k_(TM_VFORK,   "Meta+=",      0xc103d) /* открыть новое окно с тем   */
-a_(TM_VFORK,   "Meta+F11",    0xc103d) /*        же самым содержимым */
-a_(TM_VFORK,   "Ctrl+[+]",    0xc103d) /*                            */
-k_(TM_HFORK,   "Meta+-",      0xc102d) /* поделить окно пополам      */
-a_(TM_HFORK,   "Ctrl+[-]",    0xc102d) /*                            */
-k_(TM_FENTR,   "Meta+Delete", 0xc1007) /* ввести имя и войти         */
-a_(TM_FENTR,   "Meta+F12",    0xc1007) /*           в указанный файл */
-a_(TM_FENTR,   "Ctrl+[*]",    0xc1007) /*                            */
-k_(TM_F1ENTR,        NULL,    0xc10f1) /* в том же окне:      Return */
-k_(TM_F2ENTR,        NULL,    0xc10f2) /* в новом окне: Shift+Return */
+k_(TM_VFORK,   "Meta+=",   0xc103d) /* открыть новое окно с тем   */
+a_(TM_VFORK,   "Meta+F11", 0xc103d) /*        же самым содержимым */
+a_(TM_VFORK,   "Ctrl+[+]", 0xc103d) /*                            */
+k_(TM_HFORK,   "Meta+-",   0xc102d) /* поделить окно пополам      */
+a_(TM_HFORK,   "Ctrl+[-]", 0xc102d) /*                            */
+k_(TM_FENTR,   "Meta+Del", 0xc1007) /* ввести имя и войти         */
+a_(TM_FENTR,   "Meta+F12", 0xc1007) /*           в указанный файл */
+a_(TM_FENTR,   "Ctrl+[*]", 0xc1007) /*                            */
+k_(TM_F1ENTR,        NULL, 0xc10f1) /* в том же окне:      Return */
+k_(TM_F2ENTR,        NULL, 0xc10f2) /* в новом окне: Shift+Return */
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 k_(TM_LWINDOW, "Meta+Left",   0xc1012) /* перейти к левому окну      */
 k_(TM_UWINDOW, "Meta+Up",     0xc1013) /* - к верхнему окну          */
@@ -145,13 +145,13 @@ k_(TE_RCR,    "Shift+Return", 0xc2204) /* - - с выравниванием     
 Typing either replaces text or insert characters before cursor position (moving
 exising text right), depending on the current editing mode:
 
-  Ctrl+Insert - set insert mode (text inserted before gradient cursor)
-  Ctrl+Delele - set replace mode (replaces existing text, solid cursor)
+  Ctrl+Ins - set insert mode (text inserted before cursor, gradient cursor)
+  Ctrl+Del - - replace mode (replaces existing text, indicated by solid cursor)
 */
-k_(LE_CHAR,          NULL, 0xf3000) /* ввести обычный символ    */
-k_(LE_RINS, "Ctrl+Insert", 0xf3406) /* установить режим вставки */
-a_(LE_RINS, "Ctrl+F13",    0xf3406) /* - синоним для Mac KB     */
-k_(LE_RREP, "Ctrl+Delete", 0xf3407) /* установить режим замены  */
+k_(LE_CHAR,       NULL, 0xf3000) /* ввести обычный символ    */
+k_(LE_RINS, "Ctrl+Ins", 0xf3406) /* установить режим вставки */
+a_(LE_RINS, "Ctrl+F13", 0xf3406) /* - синоним для Mac KB     */
+k_(LE_RREP, "Ctrl+Del", 0xf3407) /* установить режим замены  */
 /*
 Of course, any chages made to a text may be undone (and then re-applied) step-
 by-step - that feature was introduced in early micromirs way before it become
@@ -173,8 +173,8 @@ that's not how it is usually done in MicroMir, since there are special commands
 for text modification:
                                                  |  +Shift (stronger)
   ------------+----------------------------------+--------------------------
-  Insert (F13)| insert empty character (space)   | insert empty line
-  Delete      | delete current character         | delete current line
+  Ins    (F13)| insert empty character (space)   | insert empty line
+  Del         | delete current character         | delete current line
   Backspace   | delete/clear char left of cursor | delete/clear word on left
   ------------+----------------------------------+--------------------------
   Ctrl+D     - delete from cursor to end of line
@@ -183,12 +183,12 @@ for text modification:
   Esc,Ctrl+D - delete everything from cursor to end of file
   Esc,Ctrl+U - delete everything from the beginning up to cursor (very strong)
 */
-k_(LE_IC,     "Insert",          0xf4006) /* вставить пробел на месте      */
+k_(LE_IC,     "Ins",             0xf4006) /* вставить пробел на месте      */
 a_(LE_IC,     "F13",             0xf4006) /*   курсора, сдвинуть все влево */
-k_(LE_DC,     "Delete",          0xf4007) /* удалить символ под курсором   */
-k_(TE_IL,     "Shift+Insert",    0xc4206) /* вставить пустую строку        */
+k_(LE_DC,     "Del",             0xf4007) /* удалить символ под курсором   */
+k_(TE_IL,     "Shift+Ins",       0xc4206) /* вставить пустую строку        */
 a_(TE_IL,     "Shift+F13",       0xc4206)
-k_(TE_DL,     "Shift+Delete",    0xf4207) /* удалить текущую строку        */
+k_(TE_DL,     "Shift+Del",       0xf4207) /* удалить текущую строку        */
 k_(LE_BS,           "Backspace", 0xc4003) /* удалить/очистить символ слева */
 k_(LE_DLWORD, "Shift+Backspace", 0xc4203) /* удалить слово влево           */
 k_(LE_DEOL,   "Ctrl+D",          0xc4444) /* - конец строки за курсором    */
@@ -201,14 +201,14 @@ For those who are used to Return splitting text line - it can work that way,
 if you press Home before Return (MicroMir uses Home & Esc keyes as prefixes,
 both should be pressed and released before the next key (unlike Shift/Ctrl/…)
 
-  Home,Return - split the line, moving right part to the beginning of new line
-  Home,Backsp - join lines back, moving text as shown:  +------
-                                                        |like█  <-> |like█this
-  Home,Insert - split the line vertically               |this       |
-  Home,Delete - join back:  +---------
-                            |like█      <-> |like█that     (both join commands
-                            |     that      |               discard text right
-  Meta+Shift+{arrow} or                                     of cursor position)
+  Home,Return    - split the line, moving right part to beginning of new line
+  Home,Backspace - join lines back, moving text as:    +------     +----------
+                                                       |like█  <-> |like█this
+  Home,Ins - split the line vertically                 |this       |
+  Home,Del - join back:  +---------     +----------
+                         |like█     <-> |like█that       (both join commands
+                         |     that     |                 discard text right
+  Meta+Shift+{arrow} or                                   of cursor position)
   Ctrl+Shift+Numpad{arrows}
     move selected text (or from cursor to end of the line)
     in given direction, overwriting whatever it moves over
@@ -218,10 +218,10 @@ both should be pressed and released before the next key (unlike Shift/Ctrl/…)
        with the next line (separating them by space), i.e. do some formatting
 */
 k_(TE_BLIN,     "Home,Return",      0xc5804) /* разрезать строку в начало    */
-k_(TE_SLIN,     "Home,Insert",      0xc5806) /* разрезать строку вертикально */
+k_(TE_SLIN,     "Home,Ins",         0xc5806) /* разрезать строку вертикально */
 a_(TE_SLIN,     "Home,F13",         0xc5806) /* - синоним для Mac KB         */
 k_(TE_NBLIN,    "Home,Backspace",   0xc5803) /* склеить строки               */
-k_(TE_NSLIN,    "Home,Delete",      0xc5807) /* склеить строки вертикально   */
+k_(TE_NSLIN,    "Home,Del",         0xc5807) /* склеить строки вертикально   */
 k_(LE_MOVLEFT,  "Meta+Shift+Left",  0xf5312)
 a_(LE_MOVLEFT,  "Ctrl+Shift+[4]",   0xf5312)
 k_(TE_MOVUP,    "Meta+Shift+Up",    0xf5313) /* перетаскивание  */
@@ -289,8 +289,8 @@ k_(TE_SUP,         "Shift+End", 0xd6211) /* повторить поиск вве
 k_(TE_RUP,    "Ctrl+Shift+End", 0xc6611) /* замена/поиск вверх     */
 k_(TE_RDOWN,  "Ctrl+End",       0xc6411) /* замена/поиск вниз      */
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-k_(TE_GENTR,  "Ctrl+Meta+F",    0xc6511) /* глобальный поиск (grep, по всем  */
-a_(TE_GENTR,  "Ctrl+Meta+End",  0xc6511) /*                файлам из списка) */
+k_(TE_GENTR,  "Meta+Ctrl+F",    0xc6511) /* глобальный поиск (grep, по всем  */
+a_(TE_GENTR,  "Meta+Ctrl+End",  0xc6511) /*                файлам из списка) */
 k_(TM_GREP,              NULL,  0xc65f1) /* в том же окне:            Return */
 k_(TM_GREP2,             NULL,  0xc65f2) /* в новом окне:       Shift+Return */
 /*
@@ -358,9 +358,9 @@ text instead of character, namely:
 
         F1 (Ctrl/Meta+C) - add selected text to copy/paste buffer
   Shift+F1 (Ctrl/Meta+X) - save selection and delete from text
-  Insert                 - insert column of spaces at left edge of selection
-  Delete                 - delete column at left edge of selection
-  Shift+Delete           - clear the text covered by selection rectangle
+  Ins                    - insert column of spaces at left edge of selection
+  Del                    - delete column at left edge of selection
+  Shift+Del              - clear the text covered by selection rectangle
   {character}            - insert character at block position in all lines
   (last command works only when block width is 1 column, "tall cursor" mode)
 
@@ -387,7 +387,7 @@ it has '|' symbols in all lines in 64th position (and, optionally, in 69th one)
   Esc,Right   - move right to the filename field (return back by Return)
   Esc,Down    - down into file (filename taken from the text, see below)
   Esc,Up      - up one level = normal exit (with changes automatically saved)
-  Esc,PageUp  - up all levels (closing the window), with changes saved
+  Esc,PgUp    - up all levels (closing the window), with changes saved
   Esc,Ctrl+A  - abandon all changes and leave the file (up one level)
   Esc,Ctrl+B  - exit the file, save both original and new versions
   Ctrl/Meta+R - reload the file (or directory contents) from disk
@@ -396,7 +396,7 @@ it has '|' symbols in all lines in 64th position (and, optionally, in 69th one)
 k_(TM_INFILE, "Esc,Right",  0xc9414) /* перейти к имени файла */
 k_(TM_FNEW,   "Esc,Down",   0xf9415) /* войти в новый файл    */
 k_(TM_EXIT,   "Esc,Up",     0xc9413) /* выйти с сохранением   */
-k_(TM_QUIT,   "Esc,Pageup", 0xc9416) /* выйти совсем          */
+k_(TM_QUIT,   "Esc,PgUp",   0xc9416) /* выйти совсем          */
 k_(TM_EXOLD,  "Esc,Ctrl+A", 0xc9c41) /* выйти без сохранения  */
 k_(TM_EXBACK, "Esc,Ctrl+B", 0xc9c42) /* - сохранив обе версии */
 k_(TM_RELOAD, "Meta+R",     0xc9452)
@@ -423,26 +423,26 @@ Special ʁFILESʀ (MacOS X/Linux only):
 MicroMir automatically detects read-only files and don't allow changing them...
 unless you insist: edit/view mode may be changed at any time (at your own risk)
 
-  Meta+Ctrl+Insert - set text edit mode (green or blue cursor, can change text)
-  Meta+Ctrl+Delete - set text view mode (no changes allowed, red cursor)
+  Meta+Ctrl+Ins - set text edit mode (green or blue cursor, can change text)
+  Meta+Ctrl+Del - set text view mode (no changes allowed, red cursor)
 */
-k_(TE_SRW, "Meta+Ctrl+Insert", 0xca506) /* режим редактирования     */
-a_(TE_SRW, "Meta+Ctrl+F13",    0xca506) /* - синоним для Mac KB     */
-k_(TE_SRO, "Meta+Ctrl+Delete", 0xca507) /* режим просмотра текста   */
+k_(TE_SRW, "Meta+Ctrl+Ins", 0xca506) /* установить режим редактирования   */
+a_(TE_SRW, "Meta+Ctrl+F13", 0xca506) /* - синоним для Mac KB              */
+k_(TE_SRO, "Meta+Ctrl+Del", 0xca507) /* установить режим просмотра текста */
 /*
 ʁREPETITION:ʀ Esc,N - enter repetition counter (or argument) for the next command
                               where N is either ddd decimal number like   126
 For example:                                   0ddd octal number such as 0176
                                                xddd hexadecimal number    x7e
-  Esc,3,Shift+Delete - delete 3 lines
-  Esc,5,*            - same as ***** (insert or replace, depending on the mode)
+  Esc,3,Shift+Del - delete 3 lines
+  Esc,5,*         - same as typing ***** (insert/replace depending on the mode)
 
-  Esc,N,Meta+Alt+'<'  - convert word/selection from radix-N (hex) to decimal
-  Esc,N,Meta+Alt+'>'  - convert word/selection to radix-N (where N = 2..36)
-  Esc,N,Ctrl+Shift+Insert - insert character with given code
-  Esc,N,Ctrl+Shift+]      - set the width (of editable part) of the text
-  Esc,N,Ctrl/Meta+E       - move cursor to Nth line in text
-  Esc,N,     Ctrl+H       - move cursor to Nth position in current line
+  Esc,N,Meta+Alt+'<'   - convert word/selection from radix-N (hex) to decimal
+  Esc,N,Meta+Alt+'>'   - convert word/selection to radix-N (where N = 2..36)
+  Esc,N,Ctrl+Shift+Ins - insert character with given code
+  Esc,N,Ctrl+Shift+]   - set the width (of editable part) of the text
+  Esc,N,Ctrl/Meta+E    - move cursor to Nth line in text
+  Esc,N,     Ctrl+H    - move cursor to Nth position in current line
 
 Note: without repetition prefix, the last two commands work differently, which
      is a special convenience feature to allow easy centering specific position
@@ -450,17 +450,17 @@ Note: without repetition prefix, the last two commands work differently, which
   Ctrl/Meta+E - centers current line in the windows (vertically only)
        Ctrl+H - centers curret position in the windows (horizontally)
 */
-k_(TK_HOME,   "Home",              0xcc00a) /* Home префикс */
-k_(TK_ESC,    "Esc",               0xcc00e) /* Esc префикс  */
-k_(TK_CtrJ,   "Ctrl+J",            0xcc010) /* ^J префикс   */
-k_(LE_CWDEC,  "Meta+Alt+,",        0xfb92c)
-k_(LE_CWHEX,  "Meta+Alt+.",        0xfb92e)
-k_(LE_SPCHAR, "Ctrl+Shift+Insert", 0xcb606) /* ввести символ по коду */
-a_(LE_SPCHAR, "Ctrl+Shift+F13",    0xcb606) /* - синоним для Mac     */
-k_(TE_SWIDTH, "Ctrl+Shift+}",      0xcb65d) /* установить ширину     */
-k_(TE_CENTR,  "Ctrl+E",            0xfb445) /* в середину окна       */
-a_(TE_CENTR,  "Meta+E",            0xfb445) /* - по вертикали        */
-k_(LE_CENTR,  "Ctrl+H",            0xfb448) /* - по горизонтали      */
+k_(TK_PREFIX, "Home",           0xcc00a) /* Home (generic) префикс          */
+k_(TK_ESC,    "Esc",            0xcc00e) /* Esc префикс (повторитель и пр.) */
+k_(TK_CtrJ,   "Ctrl+J",         0xcc010) /* ^J префикс (используется в Lua) */
+k_(LE_CWDEC,  "Meta+Alt+,",     0xfb92c)
+k_(LE_CWHEX,  "Meta+Alt+.",     0xfb92e)
+k_(LE_SPCHAR, "Ctrl+Shift+Ins", 0xcb606) /* ввести символ по коду */
+a_(LE_SPCHAR, "Ctrl+Shift+F13", 0xcb606) /* - синоним для Mac     */
+k_(TE_SWIDTH, "Ctrl+Shift+}",   0xcb65d) /* установить ширину     */
+k_(TE_CENTR,  "Ctrl+E",         0xfb445) /* в середину окна       */
+a_(TE_CENTR,  "Meta+E",         0xfb445) /* - по вертикали        */
+k_(LE_CENTR,  "Ctrl+H",         0xfb448) /* - по горизонтали      */
 /*
 ʁMACRO:ʀ Shift+F7/F8/F9 - start recording macro
              F7/F8/F9 - finish recording / execute
@@ -478,9 +478,9 @@ k_(TK_EMX,       NULL, 0xfd038)
 /*
 Lua
 */
-k_(TM_LUA, "CtrJ,Ctrl+J", 0xfc000)
-k_(TM_LUA_FUNC0,    NULL, 0xfc100)
-k_(TM_LUA_FnMAX,    NULL, 0xfc1ff)
+k_(TM_LUA, "^J,Ctrl+J", 0xfc000)
+k_(TM_LUA_FUNC0,  NULL, 0xfc100)
+k_(TM_LUA_FnMAX,  NULL, 0xfc1ff)
 /*
 ʁSYNTAX CHECKER:ʀ Automatically does minimal syntax check (mostly bracket balance
 and proper quoting) and highlights keywords and comments, depending on language
@@ -563,23 +563,8 @@ mapping per line as following:
 where:
    {command} = hexadecimal command code as found in this help text (3rd column)
    {keySequence} = assigned key sequence as understood by Qt, mostly consistent
-      with notation used in this text, except that regular characters are never
-      quoted ("Ctrl+-"), and, in addition, "Ctrl+" may be shortened to a single
-      caret character (for example: ^A == Ctrl+A)
-
-For example, the following table may be used to map Home, Insert & Delete keys
-(that may be missing on compact keyboard) to F10/F11/F12  (you can cut-n-paste
-this mapping from this text into Preferences, using block selection and Ctrl+C
-and Ctrl+V commands):
-
-        Home prefix | Insert replacements    | Delete replacements
-        ------------+------------------------+----------------------
-        0xcc00a:F10 | 0xf4006:F11            | 0xf4007:F12
-                    | 0xf3406:^F11           | 0xf3407:^F12
-                    | 0xc4206:Shift+F11      | 0xf4207:Shift+F12
-                    | 0xc5806:Home,F11       | 0xc5807:Home,F12
-                    | 0xca506:Meta+Ctrl+F11  | 0xca507:Meta+Ctrl+F12
-                    | 0xcb606:Ctrl+Shift+F11 | 0xc1007:Meta+F12
+      with notation used in this text
+                                      ...
 
 Useful Alt+CHARs for Linux/Windows (already present on Mac):
 */

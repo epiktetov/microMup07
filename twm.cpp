@@ -11,6 +11,7 @@
 #include "vip.h"
 #include "clip.h"
 #include "synt.h"
+#include "luas.h"
 extern "C" {
 #include "dq.h"
 #include "le.h" // uses Lebuf for dirlist generation
@@ -18,11 +19,6 @@ extern "C" {
 #include "tx.h"
 #include "ud.h"
 }
-#ifdef UseLUA
-# include "luas.h"
-#else
-# define luasInit()
-#endif
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tmInitialize (void)
 {
@@ -310,9 +306,7 @@ bool tmDoLoad (txt *t)  /*- - - - - - - - - - - - - - - - - - - - - - - - - -*/
   t->txstat &= ~TS_CHANGED;     check_MCD(t);  // double-check file type
   t->txstat |=  TS_FILE;                       //
   if (t->clang == CLangNONE) TxEnableSynt(t, SyntSniffText(t));
-#ifdef UseLUA
-  luasNtxt(t); // (re-)create Lua table for the text
-#endif
+  luasNtxt(t);
   if (t->txudeq != NIL) { t->txstat  |= TS_UNDO;
                           t->txudfile = t->txudcptr; } TxRecalcMaxTy(t);
   return true;
@@ -605,13 +599,8 @@ int TmCommand (int kcode)
   case TW_GRAD1: case TW_GRAD3:
   case TW_GRAD2: case TW_GRAD4: Twnd->sctw->SetGradFromPool(kcode - TW_GRAD1);
     break;
-#ifdef UseLUA
   case TM_LUA: return luasExec();
   default:
-//+ if (TM_LUA_FUNC0 <= kcode && kcode <= TM_LUA_FnMAX) return luasFunc(kcode);
-#else
-  default:
-#endif
     return E_NOCOM;
   } return E_OK;
 }
