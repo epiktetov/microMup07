@@ -1,20 +1,22 @@
 #!qmake -- Qt project file for µMup07
 TEMPLATE = app
-#+CONFIG += release
-CONFIG += debug
-unix:QtPLATF = unix# must be the first (as 'unix' condition's true on macx too)
+CONFIG += release
 macx {
   TARGET = µMup07
   ICON = microMir.icns
+  LIBS += -llua -framework Cocoa
   QtPLATF = macx
   QMAKE_INFO_PLIST = mim.Info.plist
   QMAKE_PKGINFO_TYPEINFO = "~epi"
+} else:unix {
+  INCLUDEPATH += /usr/include/lua5.1
+  LIBS += -llua5.1
+  QtPLATF = unix
+} else:win32 {
+  QtPLATF = win32
+  RC_FILE = qtmim.rc
 }
 !macx:TARGET = mim
-win32 {
-  RC_FILE = qtmim.rc
-  QtPLATF = win32
-}
 !win32:DEFINES += UNIX
 QMAKE_CFLAGS   += -std=c99
 QMAKE_CXXFLAGS += -DQtPLATF=\'\"$$QtPLATF\"\'
@@ -23,19 +25,12 @@ HEADERS += micro.keys mic.h mim.h   ccd.h   qfs.h   twm.h   clip.h   synt.h
 SOURCES +=                  mim.cpp ccd.cpp qfs.cpp twm.cpp clip.cpp synt.cpp
 HEADERS += macs.h
 macx:OBJECTIVE_SOURCES += macs.mm
-macx:LIBS += -framework Cocoa
 !win32 {
   HEADERS += unix.h
   SOURCES += unix.cpp
 }
 HEADERS += luas.h   vip.h   te.h le.h tx.h dq.h ud.h
 SOURCES += luas.cpp vip.cpp te.c le.c tx.c dq.c ud.c rt.c
-macx {
-  LIBS += -llua
-} else:unix {
-  LIBS += -llua5.1
-  INCLUDEPATH += /usr/include/lua5.1
-}
 DEPENDPATH += .
 INCLUDEPATH += .
 OBJECTS_DIR = obj

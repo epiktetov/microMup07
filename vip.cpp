@@ -610,7 +610,7 @@ void vipFileTooBigError (qfile *f, long size)
 }
 void vipBell() { QApplication::beep(); }
 /*---------------------------------------------------------------------------*/
-QString vipQstrX (QString str)
+QString vipQstrX (QString str)                /* currently not used anywhere */
 {
   QString Xstr; Xstr.sprintf("[%d]'", str.length());
   for (int i = 0; i < str.length(); i++)

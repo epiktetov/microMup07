@@ -23,8 +23,7 @@ QSize MiFrameSize;
 static bool MiApp_timeDELAYS = false;
 QString  last_MiCmd_key;
 quint64  last_MiCmd_time;
-QMap<int,int> MiApp_keyMapC; // two levels of key mapping: Config and Lua
-QMap<int,int> MiApp_keyMapL; //
+QMap<int,int> MiApp_keyMap;
 QString MiApp_defaultFont, MiApp_defFontAdjH, MiApp_keyMaps, MiApp_gradDescr;
 int     MiApp_defFontSize;
 int     MiApp_fontAdjOver, MiApp_fontAdjUnder, MiApp_defWidth, MiApp_defHeight;
@@ -434,7 +433,8 @@ void MiScTwin::SetGradient(const QString grad)
   mimSetNamedColor(gradPool[2], Utf8("200°")); // very light sky blue
   mimSetNamedColor(gradPool[3], "mistyrose" );
   QRegExp gf("([^/;,]+)(?:/([^/;,]+))?(?:,([0-9.]+)-([0-9.]+))?(?:;([0-4]))?"
-             "(?:,2nd:([^/;,]+))?(?:,3rd:([^/;,]+))?(?:,4th:([^/;,]+))?");
+             "(?:,?\\s*2nd:([^/;,]+))?"
+             "(?:,?\\s*3rd:([^/;,]+))?(?:,?\\s*4th:([^/;,]+))?");
 //
   if (gf.exactMatch(grad)) { mimSetNamedColor(gradColor, gf.cap(1));
     if (gf.cap(2).isEmpty()) mimSetNamedColor(  bgColor,   "white");
@@ -756,9 +756,9 @@ void MiScTwin::keyPressEvent (QKeyEvent *event)
     if ((modMask & mod_CTRL) && 0x40 <= key && key < 0x60) setkbhin(key-0x40);
     else   for (int i=0; i<text.length(); i++) setkbhin(text.at(i).toAscii());
     return;
-  }                                      // replace the key by user-configured
-  int mapped = MiApp_keyMapC.value(key); // mapping table (but leave modifiers
-  if (mapped)              key = mapped; // the same)
+  }                                     // replace the key by user-configured
+  int mapped = MiApp_keyMap.value(key); // mapping table (but leave modifiers
+  if (mapped)             key = mapped; // untouched)
   setkbhin(0);
   stopTimer();     event->accept(); if (MiApp_debugKB) info.updateInfo();
   MkMimXEQ(key, modMask, text, vp);                           vipReady();
@@ -883,19 +883,18 @@ void MiInfoWin::updateInfo (MiInfoType mit) { if (mit) infoType = mit;
 //-----------------------------------------------------------------------------
 static void myParseKeyMap() // parse QString MiApp_keyMaps -> QMap MiApp_keyMap
 {
-  QRegExp re("(?:0x)?([0-9A-F]+):(.+)", Qt::CaseInsensitive);
-  QStringList lines = MiApp_keyMaps.split(QChar('\n'));
-  MiApp_keyMapC.clear();
-  for (QStringList::const_iterator it  = lines.constBegin();
-                                   it != lines.constEnd(); it++) {
-    if (re.exactMatch(*it)) {
-      int mk = re.cap(1).toInt(0,16);
-      int key = MkFromString(re.cap(2));
-      if (key && mk) MiApp_keyMapC.insert(key, mk);
-      else fprintf(stderr, "Bad mapping %s (%x:%x)\n", it->cStr(), mk, key);
-} } }
-void MicomSetMapL (int key, int mk) { MiApp_keyMapL.insert  (key, mk); }
-int  MicomGetMapL (int key)         { return MiApp_keyMapL.value(key); }
+  QRegExp kvpair("(\\S+)\\s*=\\s*(\\S+)");
+  QStringList maps = MiApp_keyMaps.split(QRegExp("\\s*(,|;|\\n)\\s*"),
+                                         QString::SkipEmptyParts);
+  MiApp_keyMap.clear();
+  for (QStringList::iterator it = maps.begin(); it != maps.end(); it++) {
+    if (kvpair.exactMatch(*it)) {
+      int key = MkFromString(kvpair.cap(1));
+      int val = MkFromString(kvpair.cap(2));
+      MiApp_keyMap.insert(key, val); *it = MkToString(key)+"="+MkToString(val);
+  } }
+  MiApp_keyMaps = maps.join(", ");
+}
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 inline QString myPackAdj2string (int X, int Y)
 {
@@ -916,12 +915,6 @@ MiConfigDlg::MiConfigDlg(QWidget *parent) : QDialog(parent)
   microLabel->setPixmap(*microIcon);
   leftLayout->addWidget(microLabel); leftLayout->addStretch(1);
   //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  gradDescr = new QLineEdit(MiApp_gradDescr);
-  QLabel *grad = new QLabel(tr("Gradient:")); grad->setBuddy(gradDescr);
-  QHBoxLayout *layoutH1 = new QHBoxLayout;
-  layoutH1->addWidget(grad);
-  layoutH1->addWidget(gradDescr);  leftLayout->addLayout(layoutH1);
-  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   fontButton = new QPushButton(tr("Font"));
   fontLabel  = new QLabel();
   fontLabel->setMinimumWidth(150);              setFontLabelText();
@@ -937,9 +930,23 @@ MiConfigDlg::MiConfigDlg(QWidget *parent) : QDialog(parent)
   static QString fontHelpString("<small>Font height adjustment parameter on "
     "right alllows adding (+) or removing (-) one pixel on top (first symbol) "
     "or bottom (second one) of character glyph; use 0/0 to leave the height "
-    "unchanged</small><hr>");
+    "unchanged</small>");
   QLabel *fontHelpLabel = new QLabel(fontHelpString);
   fontHelpLabel->setWordWrap(true);  leftLayout->addWidget(fontHelpLabel);
+  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  QVBoxLayout *rightLayout = new QVBoxLayout;
+  gradDescr = new QTextEdit(MiApp_gradDescr);
+  gradDescr->setAcceptRichText(false);
+  gradDescr->setMaximumHeight(75);
+  QLabel *grad = new QLabel(tr("Gradients:")); grad->setBuddy(gradDescr);
+  rightLayout->addWidget(grad);
+  rightLayout->addWidget(gradDescr);
+  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  keymapLabl = new QLabel(tr("Key mapping:"));
+  keymapEdit = new QTextEdit();
+  keymapEdit->setAcceptRichText(false);
+  keymapEdit->setMaximumHeight(75);        rightLayout->addWidget(keymapLabl);
+  keymapEdit->setPlainText(MiApp_keyMaps); rightLayout->addWidget(keymapEdit);
   //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   tabSizeBox = new QSpinBox(); QLabel *tabl = new QLabel(tr("TAB size:"));
   tabSizeBox->setRange(2, 8);          tabl->setBuddy(tabSizeBox);
@@ -947,18 +954,8 @@ MiConfigDlg::MiConfigDlg(QWidget *parent) : QDialog(parent)
   tabSizeBox->setValue(TABsize);
   QHBoxLayout *layoutH3 = new QHBoxLayout;
   layoutH3->addWidget(tabl);
-  layoutH3->addWidget(tabSizeBox);
-  layoutH3->addStretch(1);    leftLayout->addLayout(layoutH3);
-  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  QVBoxLayout *rightLayout = new QVBoxLayout;
-  keymapLabl = new QLabel(tr("Keycodes mapping (see help):"));
-  keymapEdit = new QTextEdit();
-  keymapEdit->setAcceptRichText(false);
-  keymapEdit->setLineWrapMode(QTextEdit::NoWrap);
-  keymapEdit->setPlainText(MiApp_keyMaps);
-  keymapEdit->setMaximumWidth  (250); keymapEdit->setMinimumWidth (250);
-  rightLayout->addWidget(keymapLabl); keymapEdit->setMinimumHeight(320);
-  rightLayout->addWidget(keymapEdit);
+  layoutH3->addWidget(tabSizeBox); rightLayout->addLayout(layoutH3);
+  layoutH3->addStretch(1);         rightLayout->addStretch(1);
   //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   QHBoxLayout *outerLayout = new QHBoxLayout;
   outerLayout->addLayout(leftLayout);
@@ -979,7 +976,7 @@ bool MiConfigDlg::Ask()
 {
   if (exec() != QDialog::Accepted) return false;
   TABsize = tabSizeBox->value();
-  MiApp_gradDescr = gradDescr->text();
+  MiApp_gradDescr = gradDescr->toPlainText();
   MiApp_defFontAdjH = fontAdjust->text();
   MiApp_fontAdjOver = myUnpackAdj2int(MiApp_defFontAdjH, 0);
   MiApp_fontAdjUnder = myUnpackAdj2int(MiApp_defFontAdjH, 2);

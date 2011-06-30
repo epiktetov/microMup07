@@ -12,6 +12,7 @@
 #include "vip.h"
 extern "C" {
 #include "dq.h"
+#include "le.h"
 #include "tx.h"
 }
 lua_State *L = NULL;
@@ -68,8 +69,8 @@ static txt *luasN_gettext (int ix)  // returns txt from Lua reference on given
 static void luas_UpdateTxy (txt *t) { if (t == Ttxt) { Tx = Ttxt->vp_ctx;
                                                        Ty = Ttxt->vp_cty; } }
 //-----------------------------------------------------------------------------
-// Text lazy constructor by text name or bool flags: EMPTY = "real text" (true)
-//                                                   PSEUDO = not real  (false)
+// Text lazy constructor by text name or bool flags: true = "real text" (save)
+//                                                   false = not real (discard)
 //   Tx.open("name"/true/false) --> text object
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 static int luTxOpen (lua_State *L)
@@ -177,7 +178,20 @@ static int luTxGo (lua_State *L) // Tx:go([dx,]dy) == Tx.go(Tx,[dx,]dy)
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 static int luTxIC (lua_State *L) // Tx:IC("text") = insert given text at cursor
 {
+#ifdef notdef_incorrect
+//
+// FIXME: EnterLEmode() only works with Ttxt, need either switch current text,
+// or (better yet) re-implement IC using TxSomething (that way, text will be
+// always inserted regardless of edit mode, as the function name suggests)
+//
+  txt *t = luasN_gettext(1);          size_t len;
+  const char *text = luaL_checklstring(L,2,&len);
+  const tchar *tcp = lfbuf;        EnterLEmode();
+  len = aftotc(text, len, lfbuf);
+  while  (len--)  leLLCE(*tcp++); return 0;
+#else
   return luaL_error(L,"not implemented");
+#endif
 }
 static int luTxIL (lua_State *L) // Tx:IL("text") = insert given line at cursor
 {
@@ -189,12 +203,17 @@ static int luTxIL (lua_State *L) // Tx:IL("text") = insert given line at cursor
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 int luTxDC (lua_State *L) // Tx:DC(N) = delete N character (default = 1)
 {
+#ifdef notdef_incorrect
+  txt *t = luasN_gettext(1); int N = luaL_optinteger(L,2,1);
+  EnterLEmode();
+  while (N--) leDC(); return 0;
+#else
   return luaL_error(L,"not implemented");
+#endif
 }
 int luTxDL (lua_State *L) // Tx:DL(N) = delete N lines (default = 1) at cursor
 {
-  txt *t = luasN_gettext(1);
-  int N = luaL_optinteger(L,2,1);
+  txt *t = luasN_gettext(1); int N = luaL_optinteger(L,2,1);
   TxSetY(t, t->vp_cty);
   while (!qTxBottom(t) && N--) TxDL(t); return 0;
 }
@@ -217,9 +236,7 @@ void luasInit(void)
       luaL_openlibs(L); MkInitCCD();
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // Txt table
-//   open(tn/f) - lazy constructor, by text name or int flags (EMPTY/PSEUDO)
-//   EMPTY      - empty unnamed text (= true)
-//   PSEUDO     - empty pseudo-text (= false)
+//   open(tn/f) - lazy constructor, by text name or bool flag (true/false)
 //   functions  - other instance functions (line,lines,go,IC,IL,DC,DL)
 //   _mt        - metatable for instance objects (class methods & inst vars)
 //     __index    - read access to instance variables (X,Y,maxY;ref->Txt)
@@ -229,8 +246,6 @@ void luasInit(void)
 //     [k].id   -- instance id as userdata == { &txt_tag, txt_tag.luaTxid }
 //
   luaP_newtable(); luaL_register(L,NULL,luTxFuncs);
-  luaP_pushboolean(1);  luaQ_setfield(-2, "EMPTY");
-  luaP_pushboolean(0);  luaQ_setfield(-2,"PSEUDO");
   luaP_pushstring("_mt");
   luaP_newtable(); luaL_register(L,NULL,luTxMetaFuncs); luaQQ_settable(-3);
   luaQ_setglobal("Txt");
@@ -261,7 +276,7 @@ int luasExec (void)
   } return E_OK;
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-int luasFunc (void)     // executing Lua-defined function (on top of Lua stack)
+int luasFunc (void)   // executing Lua-defined function (from top of Lua stack)
 {
   luaP_getglobal("Txt"); luaX_rawgeti_top(Ttxt->luaTxid);
   if (KbRadix)

@@ -62,7 +62,7 @@
            Public License version 2.1.
 
  ------------------------------------------------------------------------
- This software also uses Lua (when build with LUA=1 option), www.lua.org:
+ This software also uses Lua scripting language: -- http://www.lua.org --
 
     Copyright (C) 1994-2008 Lua.org, PUC-Rio.  All rights reserved.
 

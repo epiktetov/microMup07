@@ -74,10 +74,10 @@ public:    MiInfoWin(MiScTwin *parent);
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 class MiConfigDlg : public QDialog
 {
-  Q_OBJECT QPushButton *fontButton; QTextEdit *keymapEdit;
+  Q_OBJECT QPushButton *fontButton; QTextEdit *gradDescr;
            QLabel      *fontLabel,            *keymapLabl;
-           QLineEdit   *fontAdjust; QSpinBox  *tabSizeBox;
-           QLineEdit   *gradDescr;
+           QLineEdit   *fontAdjust; QTextEdit *keymapEdit;
+                                    QSpinBox  *tabSizeBox;
 protected:
   void setFontLabelText();
 public slots:

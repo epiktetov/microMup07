@@ -110,10 +110,7 @@ void vipError (const char *message);                              /* vip.cpp */
 #ifdef QFS_H_INCLUDED
   void vipFileTooBigError(qfile *f, long size);
 #endif
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-#ifdef __cplusplus                  /* mim.cpp (used by luas.cpp, which does */
-void MicomSetMapL(int key, int mk); /* not need other stuff from mim.h file) */
-int  MicomGetMapL(int key);
+#ifdef __cplusplus
 }
 #endif
 /*---------------------------------------------------------------------------*/

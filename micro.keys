@@ -5,7 +5,7 @@
  * "nanoMir" implementation (c) Attic (Д.В.Варсанофьев, А.Г.Дымченко) 1989-1991
  * "nanoMir" and МикроМир07 (c) EpiMG (М.Г.Эпиктетов)       1998-2001,2006-2011
 -------------------------------------------------------------------------------
- Ins is "Help" key on MacPro keyboard, missing on A1243 (use F13 key instead)
+ Ins is "Help" key on MacPro keyboard, missing on A1243 (see KEY MAPPING below)
  Del is "Delete⌦" on Mac keyboard ("delete" key is Backspace)
  Return is either "Enter↵" or "Return" on main keyboard (not "enter" on numpad)
  Alt  == ⌥/option  key on Mac keyboard, Alt key elsewhere
@@ -150,7 +150,6 @@ exising text right), depending on the current editing mode:
 */
 k_(LE_CHAR,       NULL, 0xf3000) /* ввести обычный символ    */
 k_(LE_RINS, "Ctrl+Ins", 0xf3406) /* установить режим вставки */
-a_(LE_RINS, "Ctrl+F13", 0xf3406) /* - синоним для Mac KB     */
 k_(LE_RREP, "Ctrl+Del", 0xf3407) /* установить режим замены  */
 /*
 Of course, any chages made to a text may be undone (and then re-applied) step-
@@ -173,7 +172,7 @@ that's not how it is usually done in MicroMir, since there are special commands
 for text modification:
                                                  |  +Shift (stronger)
   ------------+----------------------------------+--------------------------
-  Ins    (F13)| insert empty character (space)   | insert empty line
+  Ins         | insert empty character (space)   | insert empty line
   Del         | delete current character         | delete current line
   Backspace   | delete/clear char left of cursor | delete/clear word on left
   ------------+----------------------------------+--------------------------
@@ -183,19 +182,17 @@ for text modification:
   Esc,Ctrl+D - delete everything from cursor to end of file
   Esc,Ctrl+U - delete everything from the beginning up to cursor (very strong)
 */
-k_(LE_IC,     "Ins",             0xf4006) /* вставить пробел на месте      */
-a_(LE_IC,     "F13",             0xf4006) /*   курсора, сдвинуть все влево */
-k_(LE_DC,     "Del",             0xf4007) /* удалить символ под курсором   */
-k_(TE_IL,     "Shift+Ins",       0xc4206) /* вставить пустую строку        */
-a_(TE_IL,     "Shift+F13",       0xc4206)
-k_(TE_DL,     "Shift+Del",       0xf4207) /* удалить текущую строку        */
-k_(LE_BS,           "Backspace", 0xc4003) /* удалить/очистить символ слева */
-k_(LE_DLWORD, "Shift+Backspace", 0xc4203) /* удалить слово влево           */
-k_(LE_DEOL,   "Ctrl+D",          0xc4444) /* - конец строки за курсором    */
-k_(LE_DBGOL,  "Ctrl+U",          0xc4455) /* - начало строки до курсора    */
-k_(LE_DWORD,  "Ctrl+W",          0xc4457) /* - слово и пробелы за ним      */
-k_(TE_CLRBEG, "Esc,Ctrl+U",      0xc4c55) /* удалить текст за курсором     */
-k_(TE_CLREND, "Esc,Ctrl+D",      0xc4c44) /* - до курсора    (много строк) */
+k_(LE_IC,     "Ins",          0xf4006) /* вставить пробел на месте курсора   */
+k_(LE_DC,     "Del",          0xf4007) /*    удалить символ под курсором     */
+k_(TE_IL,     "Shift+Ins",       0xc4206) /* вставить пустую строку          */
+k_(TE_DL,     "Shift+Del",       0xf4207) /* удалить текущую строку          */
+k_(LE_BS,           "Backspace", 0xc4003) /* удалить/очистить символ слева   */
+k_(LE_DLWORD, "Shift+Backspace", 0xc4203) /* удалить слово влево от курсора  */
+k_(LE_DEOL,   "Ctrl+D",          0xc4444) /* - конец строки за курсором      */
+k_(LE_DBGOL,  "Ctrl+U",          0xc4455) /* - начало строки до курсора      */
+k_(LE_DWORD,  "Ctrl+W",          0xc4457) /* - слово и пробелы за ним        */
+k_(TE_CLRBEG, "Esc,Ctrl+U",      0xc4c55) /* удалить текст за курсором       */
+k_(TE_CLREND, "Esc,Ctrl+D",      0xc4c44) /* - до курсора      (много строк) */
 /*
 For those who are used to Return splitting text line - it can work that way,
 if you press Home before Return (MicroMir uses Home & Esc keyes as prefixes,
@@ -219,7 +216,6 @@ both should be pressed and released before the next key (unlike Shift/Ctrl/…)
 */
 k_(TE_BLIN,     "Home,Return",      0xc5804) /* разрезать строку в начало    */
 k_(TE_SLIN,     "Home,Ins",         0xc5806) /* разрезать строку вертикально */
-a_(TE_SLIN,     "Home,F13",         0xc5806) /* - синоним для Mac KB         */
 k_(TE_NBLIN,    "Home,Backspace",   0xc5803) /* склеить строки               */
 k_(TE_NSLIN,    "Home,Del",         0xc5807) /* склеить строки вертикально   */
 k_(LE_MOVLEFT,  "Meta+Shift+Left",  0xf5312)
@@ -229,7 +225,7 @@ a_(TE_MOVUP,    "Ctrl+Shift+[8]",   0xf5313) /*  текста вместе  */
 k_(LE_MOVRIGHT, "Meta+Shift+Right", 0xf5314) /*      с кусором  */
 a_(LE_MOVRIGHT, "Ctrl+Shift+[6]",   0xf5314)
 k_(TE_MOVDOWN,  "Meta+Shift+Down",  0xf5315)
-a_(TE_MOVDOWN,  "Ctrl+Shift+[3]",   0xf5315)
+a_(TE_MOVDOWN,  "Ctrl+Shift+[2]",   0xf5315)
 /*
 Rudimental text formatting:
 
@@ -303,7 +299,7 @@ with system clipboard problematic, but MicroMir07 has only 1 (kept in sync with
 clipboard by some magic that mostly works).
 
   Ctrl/Meta+C ==       F1 - add current character to copy/paste buffer
-  Ctrl/Meta+X == Shift+F1 - save character and delete it from the text
+                 Shift+F1 - save character and delete it from the text
                        F2 - add word under cursor to copy/paste buffer
                  Shift+F2 - save word and delete it
                        F3 - add current line to copy/paste buffer
@@ -320,8 +316,6 @@ k_(LE_CCHAR,        "F1", 0xf7030) /* добавить символ в буфе�
 a_(LE_CCHAR,    "Meta+C", 0xf7030) /*         копирования ("запомнить") */
 a_(LE_CCHAR,    "Ctrl+C", 0xf7030)
 k_(LE_CDCHAR, "Shift+F1", 0xf7230) /* запомнить символ с удалением      */
-a_(LE_CDCHAR,   "Meta+X", 0xf7230)
-a_(LE_CDCHAR,   "Ctrl+X", 0xf7230)
 k_(LE_CWORD,        "F2", 0xc7031) /* запомнить текущее слово           */
 k_(LE_CDWORD, "Shift+F2", 0xc7231) /* - - текущее слово с удалением     */
 k_(TE_CLIN,         "F3", 0xc7032) /* запомнить строку                  */
@@ -357,7 +351,7 @@ When selection (of either type) is active, some commands operate with selected
 text instead of character, namely:
 
         F1 (Ctrl/Meta+C) - add selected text to copy/paste buffer
-  Shift+F1 (Ctrl/Meta+X) - save selection and delete from text
+  Shift+F1               - save selection and delete from text
   Ins                    - insert column of spaces at left edge of selection
   Del                    - delete column at left edge of selection
   Shift+Del              - clear the text covered by selection rectangle
@@ -427,7 +421,6 @@ unless you insist: edit/view mode may be changed at any time (at your own risk)
   Meta+Ctrl+Del - set text view mode (no changes allowed, red cursor)
 */
 k_(TE_SRW, "Meta+Ctrl+Ins", 0xca506) /* установить режим редактирования   */
-a_(TE_SRW, "Meta+Ctrl+F13", 0xca506) /* - синоним для Mac KB              */
 k_(TE_SRO, "Meta+Ctrl+Del", 0xca507) /* установить режим просмотра текста */
 /*
 ʁREPETITION:ʀ Esc,N - enter repetition counter (or argument) for the next command
@@ -456,7 +449,6 @@ k_(TK_CtrJ,   "Ctrl+J",         0xcc010) /* ^J префикс (использу�
 k_(LE_CWDEC,  "Meta+Alt+,",     0xfb92c)
 k_(LE_CWHEX,  "Meta+Alt+.",     0xfb92e)
 k_(LE_SPCHAR, "Ctrl+Shift+Ins", 0xcb606) /* ввести символ по коду */
-a_(LE_SPCHAR, "Ctrl+Shift+F13", 0xcb606) /* - синоним для Mac     */
 k_(TE_SWIDTH, "Ctrl+Shift+}",   0xcb65d) /* установить ширину     */
 k_(TE_CENTR,  "Ctrl+E",         0xfb445) /* в середину окна       */
 a_(TE_CENTR,  "Meta+E",         0xfb445) /* - по вертикали        */
@@ -550,23 +542,25 @@ Color:
   Ctrl+Alt+3 - switch to palette 3 (default is 200° sky blue)
   Ctrl+Alt+4 - switch to palette 4 (default is "mistyrose")
 */
-k_(TW_GRAD1, "Ctrl+Alt+1", 0xcfc31) /* включить палитру 1 в текущем  */
-k_(TW_GRAD2, "Ctrl+Alt+2", 0xcfc32) /* - палитру 2 (зеленая)    окне */
-k_(TW_GRAD3, "Ctrl+Alt+3", 0xcfc33) /* - палитру 3 (голубая)         */
-k_(TW_GRAD4, "Ctrl+Alt+4", 0xcfc34) /* - палитру 4 (розовая)         */
+k_(TW_GRAD1, "Ctrl+Alt+1", 0xcfc31) /* включить палитру 1 в текущем окне */
+k_(TW_GRAD2, "Ctrl+Alt+2", 0xcfc32) /* - палитру 2 (зеленая)             */
+k_(TW_GRAD3, "Ctrl+Alt+3", 0xcfc33) /* - палитру 3 (голубая)             */
+k_(TW_GRAD4, "Ctrl+Alt+4", 0xcfc34) /* - палитру 4 (розовая)             */
 /*
-ʁKEYCODES MAPPINGʀ. Any MicroMir command may be remapped to different key (useful
-for compact keyboards that lack specific keys or have them at the wrong place),
-using Preferences menu. That list in the Key mapping pane should consist of one
-mapping per line as following:
-                                        0x{command}:{keySequence}
-where:
-   {command} = hexadecimal command code as found in this help text (3rd column)
-   {keySequence} = assigned key sequence as understood by Qt, mostly consistent
-      with notation used in this text
-                                      ...
+ʁKEY MAPPINGʀ. In order to accommodate different keyboards, MicroMir provides key
+aliases that may be specified in the Preferences dialog as comma-separated list
+of "alias=key" pairs. Syntax for both elements is consistent with this document
+(if you are not sure what is the name of particular key,  try starting MicroMir
+with '-kb' option, the names of keys will be displayed in the Info window), and
+the alias automatically works with any modifier. For example, if keyboard lacks
+Ins/Del keys, but have extra function or numpad keys, one can use these config:
 
-Useful Alt+CHARs for Linux/Windows (already present on Mac):
+  F11=Ins,F12=Del   -- use F11 as alias for Ins and F12 as alias for Del
+  [0]=Ins,[.]=Del   -- use numpad keys for Ins and Del
+
+See "Lua scripting" for remapping MicroMir commands to different key sequences.
+-------------------------------------------------------------------------------
+      Some useful Alt+CHARs for Linux/Windows (already present on Mac):
 */
 #ifndef Q_OS_MAC
 a_(0, "Alt+2",  0x2122) /* ™ */   a_(0, "Alt+Shift+#", 0x2039) /* ‹ */
@@ -577,15 +571,13 @@ a_(0, "Alt+-",  0x2013) /* – */   a_(0, "Alt+Shift++", 0x00B1) /* ± */
 a_(0, "Alt+R",  0x00AE) /* ® */
 a_(0, "Alt+T",  0x2020) /* † */
 a_(0, "Alt+O",  0x00F8) /* ø */   a_(0, "Alt+Shift+O", 0x00D8) /* Ø */
-a_(0, "Alt+P",  0x03C0) /* π */
 a_(0, "Alt+[",  0x201C) /* “ */   a_(0, "Alt+Shift+{", 0x201D) /* ” */
 a_(0, "Alt+]",  0x2018) /* ‘ */   a_(0, "Alt+Shift+}", 0x2019) /* ’ */
 a_(0, "Alt+\\", 0x00AB) /* « */   a_(0, "Alt+Shift+|", 0x00BB) /* » */
 a_(0, "Alt+G",  0x00A9) /* © */
 a_(0, "Alt+J",  0x2206) /* ∆ */   a_(0, "Alt+Shift+K", 0xF8FF) /*  */
 a_(0, "Alt+;",  0x2026) /* … */
-a_(0, "Alt+X",  0x2248) /* ≈ */
-a_(0, "Alt+V",  0x221A) /* √ */   a_(0, "Alt+Shift+V", 0x25CA) /* ◊ */
+a_(0, "Alt+X",  0x2248) /* ≈ */   a_(0, "Alt+Shift+V", 0x25CA) /* ◊ */
 a_(0, "Alt+M",  0x00B5) /* µ */
 a_(0, "Alt+,",  0x2264) /* ≤ */
 a_(0, "Alt+.",  0x2265) /* ≥ */

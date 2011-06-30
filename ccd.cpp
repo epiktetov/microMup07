@@ -29,12 +29,12 @@ int MkConvertKeyMods (QKeyEvent *event, int &modMask)
             ((event->modifiers() & Qt::ControlModifier) ? mod_CTRL : 0)|
             ((event->modifiers() & Qt::MetaModifier)    ? mod_META : 0);
 #endif
-  if (MiApp_debugKB) { fprintf(stderr, "OnKey(%s%x", keypad ? "#" : "", key);
-    if (text[0].unicode() > 0x1f)        fprintf(stderr, ":%s", text.cStr());
-    else for (int i=0; i<text.length(); i++)
-           fprintf(stderr, ".%02x", text[i].unicode());
+  if (MiApp_debugKB) {            fprintf(stderr, "OnKey(%x",    key);
+    if (text[0].unicode() > 0x1f) fprintf(stderr, ":%s", text.cStr());
+    else for (int i=0; i<text.size(); i++)
+            fprintf(stderr, ".%02x", text[i].unicode());
 
-    fprintf(stderr, "|%c%c%c%c),native=%x:%x:%x",
+    fprintf(stderr, "|%c%c%c%c%c),native=%x:%x:%x",      keypad ? '#' : '.',
         (modMask & mod_META) ? 'M' : '.', (modMask & mod_CTRL)  ? 'c' : '.',
         (modMask & mod_ALT)  ? 'a' : '.', (modMask & mod_SHIFT) ? 's' : '.',
                           event->nativeScanCode(), event->nativeModifiers(),
@@ -80,17 +80,12 @@ int MkConvertKeyMods (QKeyEvent *event, int &modMask)
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 int MkFromString (QString keystr)  //  Conversion from user-readable/-writable
 {                                  //  string to the keycode as reported by Qt
-  keystr.replace("^", "Ctrl+");
-  QKeySequence SQ(keystr);
-  int mask = 0, kcode;
-  for (size_t i=0; i<SQ.count(); i++)
-    switch (( kcode = SQ[i] )) {
-    case Mk_ESCAPE:    mask = mod_ESC;  continue; //  NOTE: do not accumulate
-    case Mk_HOME:      mask = mod_HOME; continue; // mask, only the last valid
-    case mod_CTRL+'J': mask = mod_CtrJ; continue;
-    default:       return kcode | mask;
-    }
-  return 0;
+  int keypad = 0;
+  int N = keystr.length() - 1;
+  if (keystr[0].unicode() == '[' && keystr[N].unicode() == ']') {
+      keystr = keystr.mid(1,N-1);   keypad = mod_KyPAD;
+  }
+  QKeySequence ks(keystr); return keypad | ks[0];
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 int MkToDigit (int kcode)
@@ -103,15 +98,12 @@ int MkToDigit (int kcode)
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 QString MkToString (int kcode)
 {
-  int k1,k2;
-  switch (kcode & 0x00e00000) {
-  case mod_HOME: k1 = Qt::Key_Home;   k2 = kcode; break;
-  case mod_CtrJ: k1 = Qt::CTRL+'J';   k2 = kcode; break;
-  case mod_ESC:  k1 = Qt::Key_Escape; k2 = kcode; break;
-  default:       k1 = kcode;          k2 = 0;
-  }
-  QKeySequence SQ(k1,k2 & ~0x00e00000);
-  return SQ.toString(QKeySequence::PortableText);
+  bool keypad  =  kcode &  mod_KyPAD;
+  QKeySequence ks(kcode & ~mod_KyPAD);
+  QString st = ks.toString();
+  if (keypad && st.size() > 0) { int N = st.size() - 1;
+              return st.left(N) + "[" + st.at(N) + "]";
+  } else      return st;
 }
 /*---------------------------------------------------------------------------*/
 int KbCode;                  /* код запроса (устанавливается в vipOnRegCmd)  */
