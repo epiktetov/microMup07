@@ -494,8 +494,8 @@ comdesc lecmds[] =
   { LE_RREP,   lerrep,   0                        }, /* режим замены         */
   { LE_CCUP,   leccup,          CA_CHANGE|CA_NEND }, /* -> прописная         */
   { LE_CCDWN,  leccdwn,         CA_CHANGE|CA_NEND }, /* -> строчная          */
-  { LE_CWDEC,  lecwdec,         CA_CHANGE         }, /* word -> decimal      */
-  { LE_CWHEX,  lecwhex,         CA_CHANGE         }, /* word -> hex               */
+  { LE_CWDEC,  lecwdec,  CA_RPT|CA_CHANGE         }, /* word -> decimal      */
+  { LE_CWHEX,  lecwhex,  CA_RPT|CA_CHANGE         }, /* word -> hex               */
   { LE_CBOLD,  lecbold,         CA_CHANGE|CA_NEND }, /* сделать жирным       */
   { LE_MOVRIGHT, lemovright,    CA_CHANGE|CA_NEND }, /* сдвинуть вправо      */
   { LE_MOVLEFT,  lemovleft,     CA_CHANGE|CA_NBEG }, /* сдвинуть влево       */

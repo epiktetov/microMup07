@@ -101,10 +101,6 @@ wnd *vipFindWindow (wnd *wbase, int kcode) /* rel.direction TM_U/L/D/RWINDOW */
   int dx = 0, dy = 0, xb, yb, x, y, xt, yt, delta;
   wnd *w, *wt = NULL;        xt = yt = 2147483647; /* infinity */
   macs_update_all_wspaces();
-#ifdef Q_OS_MAC_notdef
-  for (w = windows; w != NULL; w = w->wdnext)
-    w->wspace = macs_get_wspace((void*)( w->sctw->mf->winId() ));
-#endif
   vipGetPosition(wbase, xb, yb);
   switch (kcode) {
   case TM_UWINDOW: dx =  0; dy = -1; break;
@@ -310,11 +306,11 @@ void vipGotoXY (int x, int y)           /* click in the active window (Twnd) */
   vipOnFocus (Twnd);
 }
 /*---------------------------------------------------------------------------*/
-struct KeyTuple { int ev, ca, count, radix; };          /*                   */
+struct KeyTuple { int ev, count, radix; };              /*                   */
 KeyTuple *pMacro,     macroBuf[TK_SMX-TK_SM0][MAXTXRM]; /*  ʁK E Y B O A R Dʀ  */
 int enterinMacro = 0, macroLen[TK_SMX-TK_SM0] ={ 0,0 }; /*                   */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void vipOnKeyCode (wnd *vp, int ev, int ca)  /* from MiScTwin::keyPressEvent */
+void vipOnKeyCode (wnd *vp, int ev)   /* called from MkMimXEQ (file ccd.cpp) */
 {
        if (ev == TK_LINFO) vp->sctw->info.updateInfo(MitLINE_BLOCK);
   else if (ev == TK_CHARK) vp->sctw->info.updateInfo(MitCHARK);
@@ -332,17 +328,17 @@ void vipOnKeyCode (wnd *vp, int ev, int ca)  /* from MiScTwin::keyPressEvent */
       if ((TK_SM0 <= ev && ev <= TK_SMX) ||
                            ev == enterinMacro) enterinMacro = 0;
       else {
-        pMacro->ev = ev; pMacro->count = KbCount;
-        pMacro->ca = ca; pMacro->radix = KbRadix;
+        pMacro->count = KbCount; pMacro->ev = ev;
+        pMacro->radix = KbRadix;
         pMacro++;
         if (++macroLen[N] >= MAXTXRM) { vipBell(); enterinMacro = 0; }
-        else vipOnMimCmd(vp, ev, ca);
+        else vipOnMimCmd(vp, ev);
     } }
     else if (TK_SM0 <= ev && ev <= TK_SMX) { N = ev - TK_SM0;
       macroLen[N] = 0;
       pMacro = macroBuf[N]; enterinMacro = TK_EM0 + N;
     }
-    else vipOnMimCmd(vp, ev, ca);
+    else vipOnMimCmd(vp, ev);
 } }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static int vipExecuteMacro (wnd *vp, int N)
@@ -352,17 +348,17 @@ static int vipExecuteMacro (wnd *vp, int N)
     KeyTuple *pM = macroBuf[N];
     int       nM = macroLen[N];
     while (nM-- && !qkbhin()) {
-      int ev = pM->ev, ca = pM->ca; KbCount = pM->count;
-                                    KbRadix = pM->radix;
+      int ev = pM->ev; KbCount = pM->count;
+                       KbRadix = pM->radix;
       pM++;
-      if ((rc = vipOnMimCmd(vp, ev, ca)) != E_OK) return   rc;
-  } }                                             return E_OK;
+      if ((rc = vipOnMimCmd(vp, ev)) != E_OK) return   rc;
+  } }                                         return E_OK;
 } 
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-int vipOnMimCmd(wnd *vp, int ev, /* handling block selections and macro exec */
-                         int ca) //+
+int vipOnMimCmd(wnd *vp, int ev) /* handling block selections and macro exec */
 {
   last_MiCmd_time = pgtime();
+  int ca = 0;
   if (Mk_IsCHAR(ev)) ca = KxSEL; // regular character should keep any selection
   else switch (ev & 0xf0000) {           //
   case 0xc0000: ca = 0;          break;  // NOTE: text/line editors do not care
@@ -504,13 +500,22 @@ inline int vipDoFind (QString line, int st_len, int from_pos, bool backward)
 int vipFind (char *str, int st_len, int from_pos, bool backward)
 {
   QString line = QString::fromUtf8(str, st_len);
+  int pos, i;
+  for (pos = i = 0; i < st_len && pos < from_pos; pos++,i++)
+    if (line.at(i).unicode() == 9) pos += TABsize - (pos % TABsize) - 1;
+  from_pos = i;
+// ^
+// workaround for TABs (and, below, text attributes) in the search string, fix
+// the position difference between packed as-in-file line and unpacked tstring
+//
   int X = vipDoFind(line, st_len, from_pos, backward);
-//
-// Fix for bold (or any other) attr in the searched string: adjust by number of
-// switchers in the part of string before found position
-//
-  for (int i = X-1; i >= 0; i--)
-    if ((line.at(i).unicode() & 0x0FFE0) == 0x280) X--;  return X;
+  if (X > 0) {
+    for (pos = i = 0; i < X; pos++,i++) {
+      int t = line.at(i).unicode();
+      if ((t & 0x0FFE0) == 0x280) pos--;
+      else if (t == 9) pos += TABsize - (pos % TABsize) - 1;
+    }                                               X = pos;
+  } return X;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 int vipFindReplace (tchar *str, int st_len, int at_pos,  /* "find a replace" */

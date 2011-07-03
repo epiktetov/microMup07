@@ -123,7 +123,7 @@ void MkMimXEQ (int kcode, int modMask, QString text, wnd *vp)
                             luaP_getfield(-1,last_MiCmd_key.uStr()); }
   else {
     if (MkPrefix == "Esc" && !modMask) {
-      const char *radix;
+      const char *radix = "";
            if (kcode == 'X') { KbRadix = 16; KbCount = 0;     radix = "hex"; }
       else if (digit ==  0 ) { KbRadix =  8; KbCount = 0;     radix = "oct"; }
       else if (digit  >  0 ) { KbRadix = 10; KbCount = digit; radix = "dec"; }
@@ -146,7 +146,7 @@ void MkMimXEQ (int kcode, int modMask, QString text, wnd *vp)
     case TK_PREFIX: MkPrefix = last_MiCmd_key; return; // to string always)
     case TK_ESC:    MkPrefix = "Esc";          return;
     case TK_CtrJ:   MkPrefix = "^J";           return;
-    default:        vipOnKeyCode(vp, mk, 0);   return;
+    default:        vipOnKeyCode(vp, mk);      return;
   } }
   else if (lua_isstring  (L,-1)) text = lua_tostring(L,-1);
   else if (lua_isfunction(L,-1)) {
@@ -157,7 +157,7 @@ void MkMimXEQ (int kcode, int modMask, QString text, wnd *vp)
   luaQn_pop(2);
   for (int i=0; i<text.length(); i++) {
     int k = text.at(i).unicode();
-    if (Mk_IsCHAR(k)) vipOnKeyCode(vp, k, KxSEL);
+    if (Mk_IsCHAR(k)) vipOnKeyCode(vp, k);
 } }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MkInitCCD (void)          // move Command Codes Definitions into Lua table

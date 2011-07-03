@@ -1,8 +1,12 @@
-Test ʁboldʀ test                          el-i-one   oh-zero
-ʂepi/Dvlm/mim->ʀ sky ʈ>>>ʀ blue ʄredʀ normal  ll-II-11   OOO-000   $QT_END_LICENSE$
+The quick brown fox jumped over the lazy dog's back.
+test,test,  test;test;  single[test]  double((test))
+1	tab
+12	tab      $QT_END_LICENSE$
+123	tab                           just_in_time   el-i-one   oh-zero
+	tab,	tab,	tab   -NOT-   for_holidays   ll-II-11   OOO-000
 
-The quick brown fox jumped over the lazy dog's back. -NOT- just_in_time
-test,test,  test;test;  single[test]  double((test))       for_holidays
+Test ʁboldʀ test
+ʂepi/Dvlm/mim->ʀ sky ʈ>>>ʀ blue ʄredʀ normal
 
 ┌───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┐
 │~Ю`│!! │@@€│#ё‹│$$›│%%ﬁ│^^ﬂ│&&‡│**°│((·│))‚│_ъ │+Ь±│

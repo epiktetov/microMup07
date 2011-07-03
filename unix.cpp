@@ -57,17 +57,6 @@ void x2enter (void)           /* command line enter (2) ввести коман�
   }
   qstr2tcs(prompt,           tcmdbuffer,      AT_PROMPT);
   aftotc(AF_PROMPT "->", -1, tcmdbuffer+tcmdpromptlen-2);
-/*
- * If invoked from command window, copy the current line (excluding old prompt)
- * as initial value for new command:
- */
-  if ((Ttxt->txstat & TS_PSEUDO) && tleread()) {
-    tchar      *p, *pend;
-    for (p = Lebuf, pend = p+Lleng; p < pend && (*p & AT_PROMPT); p++) ;
-    if (p < pend) {
-      blktmov(p, tcmdbuffer + tcmdpromptlen, pend-p);
-      tcmdbuflen = tcmdpromptlen + (pend-p);
-  } }
   LenterARG(tcmdbuffer, &tcmdbuflen, tcmdpromptlen, tcmdHistory,
                         &tcmdbufFlag, TM_FEXEC, TM_F2EXEC, 0);
 }
@@ -210,7 +199,7 @@ void tmshell (int kcode)
   wind->ctx = wind->wtx = 0;
   wind->cty = wind->wty = 0;
   if (Twnd == wind) Tx = Ty = 0;
-  else        vipActivate(wind); vipUpdateWinTitle(wind);
+  else        vipActivate(wind); vipFocus(wind); vipUpdateWinTitle(wind);
 //
 // Now insert the command (along with the prompt == current directory) into the
 // text and execute UNIX shell command... then check if any files were changed

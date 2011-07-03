@@ -412,7 +412,8 @@ void tmSaveAll (void)                    /* сохранить ВСЕ измен
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 bool twSafeClose (txt *t, wnd *vp)
 {
-  if ((t->txstat & TS_CHANGED) && t->txwndptr->wnext == NULL) return false;
+  if ((t->txstat & TS_CHANGED) && !(t->txstat & (TS_PSEUDO|TS_DIRLST))
+                               && t->txwndptr->wnext == NULL) return false;
   Twnd =  vp;
   wdetach(t); twExit(); return true; /* NOTE: directory stack is NOT checked */
 }

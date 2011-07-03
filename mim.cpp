@@ -768,7 +768,7 @@ void MiScTwin::keyPressEvent (QKeyEvent *event)
 //
 void MiScTwin::repeatCmd (int kcode, int count)
 {
-  if (vipOnMimCmd(vp, kcode, 0)) return; // <- sets initial last_MiCmd_time
+  if (vipOnMimCmd(vp, kcode)) return; // <- sets initial last_MiCmd_time
   if (count > 1) {
     repeatCount = count - 1;
     cmd2repeat = kcode;
@@ -787,8 +787,8 @@ void MiScTwin::timerEvent(QTimerEvent *)
     KbCount = elapsed / MiRPT_TIME;
     pastDue = elapsed - MiRPT_TIME*KbCount;
   }
-  if (vipOnMimCmd(vp, cmd2repeat, 0) ||
-      (repeatCount -= KbCount) <= 0) { stopTimer(); vipReady(); }
+  if (vipOnMimCmd(vp, cmd2repeat) ||
+         (repeatCount -= KbCount) <= 0) { stopTimer(); vipReady(); }
   else {
     info.updateInfo(MitLINE_BLOCK);
     QApplication::syncX();  // only for X11 (does nothing on other platforms)
@@ -821,7 +821,7 @@ void MiScTwin::wheelEvent (QWheelEvent *ev)
     bool fast = (prev_event && (now - prev_event) < 250); setkbhin(0);
     prev_event = now;
     vipOnKeyCode(vp, (delta > 0) ? (fast ? TW_SCROLUPN : TW_SCROLUP) :
-                                   (fast ? TW_SCROLDNN : TW_SCROLDN), KxBLK);
+                                   (fast ? TW_SCROLDNN : TW_SCROLDN));
     vipReady(); ev->accept();
 } }
 //=============================================================================
