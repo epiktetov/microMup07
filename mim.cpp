@@ -846,7 +846,10 @@ void MiInfoWin::paintEvent (QPaintEvent *)
 {
   QPainter dc(this); int Y = sctw->Ty2qtY(0)+sctw->fontBaseline;
   QString info;                                      int dx, dy;
-  if (MiApp_debugKB) {
+  if (!displayText.isEmpty()) {
+    dc.drawText(sctw->Tx2qtX(0), Y, displayText); displayText.clear();
+  }
+  else if (MiApp_debugKB) {
     dc.drawText(sctw->Tx2qtX(0), Y, last_MiCmd_key); return;
   }
   else if (infoType == MitCHARK && sctw->vp->cx >= 0) {

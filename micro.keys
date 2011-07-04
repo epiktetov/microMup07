@@ -295,36 +295,41 @@ basic operations being "add something to the buffer" and "paste the buffer into
 text". Once the buffer is used, it can be pasted again, but the very next "add"
 command will clear it, starting saving anew. Older micromir clones used to have
 at least two separate buffers (for character and lines), which made intergation
-with system clipboard problematic, but MicroMir07 has only 1 (kept in sync with
-clipboard by some magic that mostly works).
+with system clipboard problematic, but MicroMir07 has only 1, kept in sync with
+clipboard by some magic that mostly works (if it does not, manual sync commands
+are provided for your convenience):
 
-  Ctrl/Meta+C ==       F1 - add current character to copy/paste buffer
-                 Shift+F1 - save character and delete it from the text
-                       F2 - add word under cursor to copy/paste buffer
-                 Shift+F2 - save word and delete it
-                       F3 - add current line to copy/paste buffer
-                 Shift+F3 - save line and delete it
-  Ctrl/Meta+V ==       F4 - paste the buffer content into text
-                 Shift+F4 - mark the buffer as "used" (next save will clear it)
-                  Ctrl+F1 - "re-open" copy/paste buffer (remove "used" mark)
-Note:
+        F1 - add ("save") current character (or selection) to copy/paste buffer
+  Shift+F1 - save character (selection) and then delete it from the text
+        F2 - add ("save") word under cursor to copy/paste buffer
+  Shift+F2 - save word and delete it
+        F3 - add ("save") current line to copy/paste buffer
+  Shift+F3 - save line and delete it
+        F4 - paste the buffer content into text (does not clear the buffer)
+Note
   Multi-line text in c/p-buffer inserted depending on where it came from: block
   selection pasted alighed over existing text, for clipboard contents new empty
   line is inserted on each CR/LF (and text starts at left margin)
 */
-k_(LE_CCHAR,        "F1", 0xf7030) /* добавить символ в буфер           */
-a_(LE_CCHAR,    "Meta+C", 0xf7030) /*         копирования ("запомнить") */
-a_(LE_CCHAR,    "Ctrl+C", 0xf7030)
-k_(LE_CDCHAR, "Shift+F1", 0xf7230) /* запомнить символ с удалением      */
-k_(LE_CWORD,        "F2", 0xc7031) /* запомнить текущее слово           */
-k_(LE_CDWORD, "Shift+F2", 0xc7231) /* - - текущее слово с удалением     */
-k_(TE_CLIN,         "F3", 0xc7032) /* запомнить строку                  */
-k_(TE_CDLIN,  "Shift+F3", 0xc7232) /* - - строку с удалением            */
-k_(LE_PASTE,        "F4", 0xc7033) /* вспомнить все запомненное         */
-a_(LE_PASTE,    "Meta+V", 0xc7033)
-a_(LE_PASTE,    "Ctrl+V", 0xc7033)
-k_(LE_CPCLOS, "Shift+F4", 0xf7233) /* начнем запоминать по новой        */
-k_(LE_CPOPEN,  "Ctrl+F1", 0xf7430) /* наоборот, будем добавлять         */
+k_(LE_CCHAR,        "F1", 0xf7030) /* добавить символ в буфер ("запомнить") */
+k_(LE_CDCHAR, "Shift+F1", 0xf7230) /* запомнить символ с удалением          */
+k_(LE_CWORD,        "F2", 0xc7031) /* запомнить текущее слово               */
+k_(LE_CDWORD, "Shift+F2", 0xc7231) /* - - текущее слово с удалением         */
+k_(TE_CLIN,         "F3", 0xc7032) /* добавить строку в буфер ("запомнить") */
+k_(TE_CDLIN,  "Shift+F3", 0xc7232) /* - - запомнить строку с удалением      */
+k_(LE_PASTE,        "F4", 0xc7033) /* вспомнить все запомненное             */
+/*
+  Ctrl/Meta+C - save selection (if any), and force copy to system clipboard
+  Ctrl/Meta+V - paste from system clipboard
+     Shift+F4 - mark the buffer as "used" (next save will clear it)
+      Ctrl+F1 - "re-open" copy/paste buffer (remove "used" mark)
+*/
+k_(TE_TOCLIP,   "Ctrl+C", 0xf7443)
+a_(TE_TOCLIP,   "Meta+C", 0xf7443)
+k_(TE_FROMCB,   "Ctrl+V", 0xc7456)
+a_(TE_FROMCB,   "Meta+V", 0xc7456)
+k_(LE_CPCLOS, "Shift+F4", 0xf7233) /* начнем запоминать по новой */
+k_(LE_CPOPEN,  "Ctrl+F1", 0xf7430) /* наоборот, будем добавлять  */
 /*
 Yes, MicroMir has selections as well -- as a matter of fact, two kinds of them;
 however it is always a rectangle in the text. Shift+movements makes "temporary"
@@ -454,25 +459,60 @@ k_(TE_CENTR,  "Ctrl+E",         0xfb445) /* в середину окна       *
 a_(TE_CENTR,  "Meta+E",         0xfb445) /* - по вертикали        */
 k_(LE_CENTR,  "Ctrl+H",         0xfb448) /* - по горизонтали      */
 /*
-ʁMACRO:ʀ Shift+F7/F8/F9 - start recording macro
-             F7/F8/F9 - finish recording / execute
+ʁLua SCRIPTING:ʀ MicroMir embeds Lua scripting language (see http://www.lua.org),
+with only one command currently defined:
+
+        Ctrl+J,Ctrl+J - load and executes current text as Lua script
 */
-k_(TK_SM0,       NULL, 0xfd236)
-k_(TK_SM1, "Shift+F7", 0xfd236)
-k_(TK_SM2, "Shift+F8", 0xfd237)
-k_(TK_SM3, "Shift+F9", 0xfd238)
-k_(TK_SMX,       NULL, 0xfd238)
-k_(TK_EM0,       NULL, 0xfd036)
-k_(TK_EM1, "F7",       0xfd036)
-k_(TK_EM2, "F8",       0xfd037)
-k_(TK_EM3, "F9",       0xfd038)
-k_(TK_EMX,       NULL, 0xfd038)
-/*
-Lua
+k_(TM_LUA, "^J,Ctrl+J", 0xfc000) /* - загрузить и выполнить программу
+                                      на языке Lua из текущего текста
+MicroMir-specific Lua operations:
+
+  MkCCD["keysequence"] = MkCCD["existing-sequence"] -- remap MicroMir command
+  MkCCD["keysequence"] = function(Tx,count)         -- map Lua function to
+    ...                                                  given key sequence
+  end
+  Tx = Txt.open("filename") -- create/open given file in new window
+  Tx = Txt.open(true)       -- open new window with unnamed file (saveable)
+  Tx = Txt.open(false)      -- open new window with throw-away text
+  Tx = Txt.this             -- reference to "this" text (not from functions)
+
+  Tx:focus() -- focus last opened window, associated with the text
+  Tx:line(N) -- content of Nth line in given text (= nil if past end-of-text)
+  Tx:lines() -- iterator over the text:  for N,line in Tx:lines() do ... end
+  Tx.X, Tx.Y -- current cursor position  (setting new value will move cursor)
+  Tx.maxY    -- max valid value of Y  (= total number of lines in given text)
+  Tx:go(dy)
+  Tx:go(dx,dy) = convenience methods to move cursor around (because Lua does
+                                      not allow 'Tx.Y++' or even 'Tx.Y += k')
+NOTE:
+  attempt to move cursor past out of text borders does not generate any error,
+  cursor just moves as far as possible in requested direction
+
+  Tx:IC("text") -- insert text into current line | move cursor past
+  Tx:IL("line") -- insert given line at cursor   |    inserted text
+  Tx:DC(N) -- delete N characters at cursor
+  Tx:DL(N) -- delete N lines at cursor (default = 1)
+  Tx:gtl() -- get-text-left convenience method = gets first chunk of non-spaces
+                                       from text to the left of cursor position
+Example (auto-loaded at startup):
+
+  MkCCD["Ctrl+Shift+T"] = function(Tx) Tx:IC(os.date()) end
+  MkCCD["Ctrl+Shift++"] = function(Tx)
+    local result = loadstring("local X="..Tx:gtl()..";return X")()
+    Tx:IC("= "..tostring(result))
+  end
 */
-k_(TM_LUA, "^J,Ctrl+J", 0xfc000)
-k_(TM_LUA_FUNC0,  NULL, 0xfc100)
-k_(TM_LUA_FnMAX,  NULL, 0xfc1ff)
+k_(TK_SM0,       NULL, 0xfd236) /* ʁMACRO:ʀ In addition to universal scripts, */
+k_(TK_SM1, "Shift+F7", 0xfd236) /* MikroMir provides quick method to repeat */
+k_(TK_SM2, "Shift+F8", 0xfd237) /* simple sequence of action several times: */
+k_(TK_SM3, "Shift+F9", 0xfd238) /*                                          */
+k_(TK_SMX,       NULL, 0xfd238) /*   Shift+F7/F8/F9 - start recording macro */
+k_(TK_EM0,       NULL, 0xfd036) /*         F7/F8/F9 - finish recording or   */
+k_(TK_EM1, "F7",       0xfd036) /*                       execute previously */
+k_(TK_EM2, "F8",       0xfd037) /*                       recorded macro     */
+k_(TK_EM3, "F9",       0xfd038) /*                                          */
+k_(TK_EMX,       NULL, 0xfd038) /* TODO: add conversion between Lua & macro */
 /*
 ʁSYNTAX CHECKER:ʀ Automatically does minimal syntax check (mostly bracket balance
 and proper quoting) and highlights keywords and comments, depending on language
@@ -512,14 +552,6 @@ k_(TM_SHELL,  "Ctrl+Q", 0xce451) /* ввести и выполнить кома�
 k_(TM_FEXEC,  NULL,     0xceef1) /* в том же окне:                    Return */
 k_(TM_F2EXEC, NULL,     0xceef2) /* в новом окне:               Shift+Return */
 /*
-   Ctrl+Shift+'=' - Calculator (MacOS X/Linux only), courtesy of /usr/bin/bc,
-
-input: from block selection (if active),    output: inserted to the right of
-    or from '«' mark in text to cursor,             cursor position (exsting
-    or from first word left of cursor               text there will be DELETED)
-*/
-k_(TM_CALC, "Ctrl+Shift++", 0xce63d) /* калькулятор */
-/*
 ʁGRADIENTS:ʀ By default MicroMir07 fills background with linear gradient (because
 solid background is just too boring), which may be configured using Preferences
 dialog. Full format of gradient specification is the following (square brackets
@@ -558,7 +590,7 @@ Ins/Del keys, but have extra function or numpad keys, one can use these config:
   F11=Ins,F12=Del   -- use F11 as alias for Ins and F12 as alias for Del
   [0]=Ins,[.]=Del   -- use numpad keys for Ins and Del
 
-See "Lua scripting" for remapping MicroMir commands to different key sequences.
+See "Lua SCRIPTING" for remapping MicroMir commands to different key sequences.
 -------------------------------------------------------------------------------
       Some useful Alt+CHARs for Linux/Windows (already present on Mac):
 */

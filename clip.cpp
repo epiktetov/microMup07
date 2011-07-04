@@ -201,7 +201,7 @@ void cpaste()                              /* Paste: called either from te.c */
     if (cb_new_data) fromClipboard();
   }
   else   clearClipboard(); // clear system Clipboard to avoid inconsistency
-  if (cpempt) exc(E_NOOP); // (first paste resets ccopen, so the second one
+  if (cpempt) exc(E_NOOP); // (first paste resets cpopen, so the second one
   int oldLx = Lx;          // gets data from Clipboard instead of LCtxt)
   cptinit(true);
   cpclose(); TxTop(LCtxt); if (qTxBottom(LCtxt)) return;
@@ -313,4 +313,11 @@ void teclrblock()
     Lleng = TxFRead(Ttxt, Lebuf); blktspac(Lebuf+blkXmin, blkXsize);
             TxFRep (Ttxt, Lebuf);
 } }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+void clipToCB()                      /* forced to/from clipboard operation   */
+{
+  if (BlockMark) tecsblock(); // save the block only when 1 currently selected
+               toClipboard(); // but copy c/p buffer into clipboard regardless
+}
+void clipFromCB() { fromClipboard(); cpaste(); }
 /*---------------------------------------------------------------------------*/

@@ -240,28 +240,6 @@ void tmLoadXeq (txt *t) /* load text by executing command from t->file->name */
                 cmd.remove(0,1).remove(-1,1); //  remove() changes the argument
   shellexec(t, Sx, Sy, cmd.cStr());
 }
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void tmCalcBC (void)      /* Calculator -- using POSIX (or GNU) 'bc' utility */
-{
-  bool multiBlock = (BlockMark && BlockTy != Ty);
-  if (!tleread()) exc(E_MOVDOWN);
-  if (!BlockMark) {
-    for (Lx = Tx; Lx >= 0 && (uchar)Lebuf[Lx] != 0xAB;) Lx--;
-    if (Lx < 0) { Lx = Tx;  lepword();   BlockTx = Lx;     }
-    else                                 BlockTx = Lx+1;
-    if (Tx-BlockTx < 2) exc(E_NOBLOCK);
-    else { BlockTy = Ty; BlockMark = TRUE; }
-  }
-  cpclose(); tecsblock(); // save the block into (empty) cut/paste buffer, and
-  cpsave();               // flush that buffer to file (use it as input to bc)
-  if (multiBlock) Tx++;
-  short save_Tx = Tx;
-  long  save_Ty = Ty;
-  EnterLEmode(); ledeol(); leLLCE(LeSCH_REPL_BEG);  Lchange = TRUE;
-  ExitLEmode();
-  shellexec (Ttxt, Tx,  Ty, "bc -l " SAVFILNAM "</dev/null", Twnd);
-  tesetxy(save_Tx, save_Ty);
-}
 /*---------------------------------------------------------------------------*/
 static int scan_lines_up (char c1st, char *line_buffer)       /* SyncPos(tm) */
 {

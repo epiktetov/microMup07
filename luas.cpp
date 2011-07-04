@@ -3,7 +3,7 @@
 //------------------------------------------------------+--------------------*/
 #include <QString>
 #include <QRegExp>
-#include "mic.h"
+#include "mim.h"
 #include "ccd.h"
 #include "lua.hpp"
 #include "luas.h"
@@ -47,13 +47,13 @@ void luasNtxt (txt *newTxt)  // "new text" hook (called from tmDoLoad, twm.cpp)
   luaQ_setmetatable(-2);
   luaQQ_rawset   (iTxt); luaQn_pop(1);
 }
-static void luasN_setTxt_this (bool set_to_Ttxt) // - - - - - - - - - - - - - -
+static void luasN_setTxt_this (txt *Tx) //- - - - - - - - - - - - - - - - - - -
 {
   luaP_getglobal  ("Txt"); // Txt.this = Txt[ Ttxt->luaTxid ] or nil (clear)
   luaP_pushstring("this"); //
-  if (set_to_Ttxt) luaP_rawgeti(-2,Ttxt->luaTxid);
-  else             luaP_pushnil();
-  luaQQ_rawset(-3);  luaQn_pop(1);
+  if (Tx) luaP_rawgeti(-2,Tx->luaTxid);
+  else    luaP_pushnil();
+          luaQQ_rawset(-3); luaQn_pop(1);
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 static txt *luasN_gettext (int ix)  // returns txt from Lua reference on given
@@ -66,8 +66,11 @@ static txt *luasN_gettext (int ix)  // returns txt from Lua reference on given
   if (txtID->t == Ttxt) { Ttxt->vp_ctx = Tx;
                           Ttxt->vp_cty = Ty; }  return txtID->t;
 }
-static void luas_UpdateTxy (txt *t) { if (t == Ttxt) { Tx = Ttxt->vp_ctx;
-                                                       Ty = Ttxt->vp_cty; } }
+static void luas_UpdateTxy (txt *t, bool changed = false)
+{
+  if (changed) t->txstat |= TS_CHANGED; if (t == Ttxt) { Tx = Ttxt->vp_ctx;
+                                                         Ty = Ttxt->vp_cty; }
+}
 //-----------------------------------------------------------------------------
 // Text lazy constructor by text name or bool flags: true = "real text" (save)
 //                                                   false = not real (discard)
@@ -79,12 +82,22 @@ static int luTxOpen (lua_State *L)
   if (lua_isboolean(L,1))
      { tname = lua_toboolean(L,1) ? QfsEMPTY_NAME : QfsELLIPSIS; init = true; }
   else tname = luaL_checkstring(L,1);
-  if (tmStart(tname)) {
+  vipFocusOff(Twnd); Twnd = vipSplitWindow(Twnd, TM_VFORK);
+  if (Twnd && twEdit(Twnd, tname)) {
     if (init) luasNtxt(Ttxt); // tmDoLoad does nothing for ÷/… files, add table
     luaP_getglobal("Txt");
     luaX_rawgeti_top(Ttxt->luaTxid); return 1;
   }
   else return luaL_error(L,"cannot open %s", tname.uStr());
+}
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+int luTxFocus (lua_State*)            // Tx:focus() = focus last opened window,
+{                                     //              associated with the text
+  txt *tx = luasN_gettext(1);
+  wnd *vp = tx->txwndptr;
+  if (vp) { vipActivate(vp);
+            vipFocus   (vp);   return 0; }
+  else return luaL_error(L,"no window");
 }
 //-----------------------------------------------------------------------------
 // Methods and instance variables (members) of Txt class, text access/movements
@@ -103,7 +116,7 @@ static int luTxOpen (lua_State *L)
 static int luTxLine (lua_State *L) // Tx:line(N) == Tx.line(Tx,N)
 {
   txt *t = luasN_gettext(1);
-  long Y = (long)luaL_optnumber(L,2,t->vp_cty);
+  long Y = (long)luaL_optnumber(L,2,t->vp_cty+1);
   int len;
   if (TxSetY(t, Y-1)) { char *line = TxGetLn(t, &len);
                          luaP_pushlstring(line,  len); } else luaP_pushnil();
@@ -146,16 +159,18 @@ static int luTxIndex (lua_State *L) // Tx.X and Tx.Y - read/write access
 }
 static int luTxNewindex (lua_State *L)
 {
-  txt *t = luasN_gettext(1);
+  long N;       txt *t = luasN_gettext(1);
   const char *var = luaL_checkstring(L,2);
-  long N =    (long)luaL_checknumber(L,3);
-       if (strcmp(var,"X") == 0) t->vp_ctx = my_max(my_min(N-1,0),t->txrm);
-  else if (strcmp(var,"Y") == 0) {
-    if (N < 0) t->vp_cty = my_min(t->maxTy-N+1,0);
-    else       t->vp_cty = my_max(my_min(N-1,0),t->maxTy);
+  if (strcmp(var,"X") == 0) {
+    N = (long)luaL_checknumber(L,3); t->vp_ctx = my_min(my_max(N-1,0),t->txrm);
   }
-  else return luaL_error(L,"unknown property");
-  luas_UpdateTxy(t);                  return 0;
+  else if (strcmp(var,"Y") == 0) {             // negative value means counting
+    if ((N = (long)luaL_checknumber(L,3)) < 1) // from bottom (0 == after text)
+         t->vp_cty = my_max(t->maxTy-N+1,0);   //
+    else t->vp_cty = my_min(my_max(N-1,0),t->maxTy);
+  }
+  else { luaQQ_rawset(1); return 0; } // fall back to (raw) Lua settable
+  luas_UpdateTxy(t);      return 0;   //      for all unknown properties
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 static int luTxGo (lua_State *L) // Tx:go([dx,]dy) == Tx.go(Tx,[dx,]dy)
@@ -178,52 +193,70 @@ static int luTxGo (lua_State *L) // Tx:go([dx,]dy) == Tx.go(Tx,[dx,]dy)
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 static int luTxIC (lua_State *L) // Tx:IC("text") = insert given text at cursor
 {
-#ifdef notdef_incorrect
-//
-// FIXME: EnterLEmode() only works with Ttxt, need either switch current text,
-// or (better yet) re-implement IC using TxSomething (that way, text will be
-// always inserted regardless of edit mode, as the function name suggests)
-//
   txt *t = luasN_gettext(1);          size_t len;
   const char *text = luaL_checklstring(L,2,&len);
-  const tchar *tcp = lfbuf;        EnterLEmode();
-  len = aftotc(text, len, lfbuf);
-  while  (len--)  leLLCE(*tcp++); return 0;
-#else
-  return luaL_error(L,"not implemented");
-#endif
+  int tlen = aftotc(text, len, lfbuf);
+  int ctx = t->vp_ctx;
+  TxSetY(t, t->vp_cty); Lleng = TxFRead(t, Lebuf);
+//
+// Make room for new text, moving the tail tlen positions right (but check 1st
+// that resulting line will not overflow the buffer), then copy new text there:
+//
+  int tail = (Lleng > ctx) ? (Lleng - ctx) : 0;
+  if (ctx+tlen+tail > MAXLPAC) luaL_error(L,"line too long");
+  if (tail) blktmov(Lebuf+ctx, Lebuf+ctx+tlen, tail);
+            blktmov(lfbuf,     Lebuf+ctx,      tlen); TxFRep(t, Lebuf);
+  t->vp_ctx += tlen;
+  luas_UpdateTxy(t, true); return 0;
 }
 static int luTxIL (lua_State *L) // Tx:IL("text") = insert given line at cursor
 {
   txt *t = luasN_gettext(1);          size_t len;
   const char *text = luaL_checklstring(L,2,&len);
   TxSetY(t, t->vp_cty++);
-  TxIL  (t, (char*)text, len); luas_UpdateTxy(t); return 0;
+  TxIL  (t, (char*)text, len); luas_UpdateTxy(t, true); return 0;
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 int luTxDC (lua_State *L) // Tx:DC(N) = delete N character (default = 1)
 {
-#ifdef notdef_incorrect
   txt *t = luasN_gettext(1); int N = luaL_optinteger(L,2,1);
-  EnterLEmode();
-  while (N--) leDC(); return 0;
-#else
-  return luaL_error(L,"not implemented");
-#endif
+  int ctx = t->vp_ctx;
+  TxSetY(t, t->vp_cty);
+  if ((Lleng = TxFRead(t, Lebuf)) < ctx) return 0;
+  int tail = (Lleng > ctx+N) ?  (Lleng-ctx-N) : 0;
+  if (tail) blktmov(Lebuf+ctx+N, Lebuf+ctx, tail);
+            blktspac(Lebuf+ctx+tail, N);
+  TxFRep(t, Lebuf);
+  luas_UpdateTxy(t, true); return 0;
 }
 int luTxDL (lua_State *L) // Tx:DL(N) = delete N lines (default = 1) at cursor
 {
   txt *t = luasN_gettext(1); int N = luaL_optinteger(L,2,1);
   TxSetY(t, t->vp_cty);
-  while (!qTxBottom(t) && N--) TxDL(t); return 0;
+  while (!qTxBottom(t) && N--) TxDL(t); luas_UpdateTxy(t, true); return 0;
+}
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+int luGetTextLeft (lua_State*) // Tx:gtl() = get first chunk of non-spaces from
+{                              //           text to the left of cursor position
+  txt *t = luasN_gettext(1);
+  int ctx = t->vp_ctx;
+  TxSetY(t, t->vp_cty); Lleng = TxFRead(t, Lebuf);
+  int N = ctx;
+  while (N > 0 &&  tcharIsBlank(Lebuf[N])) N--;
+  while (N > 0 && !tcharIsBlank(Lebuf[N])) N--;
+  if (N) N++;
+  if (N < ctx) { N = tctoaf(Lebuf+N, ctx-N, afbuf);
+                 luaP_pushlstring(afbuf, N); return 1; }
+  else         { luaP_pushnil();             return 0; }
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 luaL_Reg luTxFuncs[] =
-{
+{                         { "go", luTxGo }, { "gtl", luGetTextLeft },
   { "open",  luTxOpen  }, { "IL", luTxIL },
-  { "line",  luTxLine  }, { "IC", luTxIC },
-  { "lines", luTxLines }, { "DL", luTxDL },
-  {    "go", luTxGo    }, { "DC", luTxDC }, { NULL, NULL   }
+  { "focus", luTxFocus }, { "IC", luTxIC },
+  { "line",  luTxLine  }, { "DL", luTxDL },
+  { "lines", luTxLines }, { "DC", luTxDC }, { NULL, NULL   }
+
 };
 luaL_Reg luTxMetaFuncs[] =
 {
@@ -249,36 +282,42 @@ void luasInit(void)
   luaP_pushstring("_mt");
   luaP_newtable(); luaL_register(L,NULL,luTxMetaFuncs); luaQQ_settable(-3);
   luaQ_setglobal("Txt");
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  txt *autoLua = tmDesc(":/auto.lua", false); // do not need UNDO (read-only)
+  if (autoLua) { tmLoad  (autoLua);
+                 luasExec(autoLua); }
 }
 //-----------------------------------------------------------------------------
-int luasExec (void)
+int luasExec (txt *Tx)
 {
-  int len;    TxTop(Ttxt);
-  while (!qTxBottom(Ttxt)) {
-    char *pl = TxGetLn(Ttxt, &len);
-    if (*pl == '^' || *pl == ACPR || *pl == '\xE2') TxDL  (Ttxt);
-    else                                            TxDown(Ttxt);
+  int len;    TxTop(Tx);
+  while (!qTxBottom(Tx)) {
+    char *pl = TxGetLn(Tx, &len);
+    if (*pl == '^' || *pl == ACPR || *pl == '\xE2') TxDL  (Tx);
+    else                                            TxDown(Tx);
   }
-  char *buffer = Ttxt->txustk->dbeg;
-  len = Ttxt->txustk->dend - buffer;    luasN_setTxt_this(true);
-  int rc = luaL_loadbuffer(L,buffer,len,Ttxt->file->name.uStr())
-              || lua_pcall(L,0,0,0);   luasN_setTxt_this(false);
+  char *buffer = Tx->txustk->dbeg;
+  len = Tx->txustk->dend - buffer;      luasN_setTxt_this(Tx);
+  int rc = luaL_loadbuffer(L,buffer,len,Tx->file->name.uStr())
+              || lua_pcall(L,0,0,0);  luasN_setTxt_this(NULL);
   if (rc) {
     const char *luaError = lua_tostring(L,-1);
     QRegExp re("\\[.+\\]:(\\d+):(.+)");
     QString mimErr;
-    if (re.exactMatch(luaError)) {    TxSetY(Ttxt, re.cap(1).toInt());
+    if (re.exactMatch(luaError)) {      TxSetY(Tx, re.cap(1).toInt());
       QString mimErr = Utf8("^" AF_ERROR "%1" AF_NONE).arg(re.cap(2));
-      TxIL(Ttxt, mimErr.uStr(), mimErr.length());
+      TxIL(Tx, mimErr.uStr(), mimErr.length());
     }
     else vipError(QString("LuaERROR: %1").arg(lua_tolstring(L,-1,0)));
     return E_SFAIL;
-  } return E_OK;
+  }
+  else if (Tx == Ttxt) Twnd->sctw->DisplayInfo("ok");     return E_OK;
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-int luasFunc (void)   // executing Lua-defined function (from top of Lua stack)
-{
-  luaP_getglobal("Txt"); luaX_rawgeti_top(Ttxt->luaTxid);
+int luasFunc (void)       // executing Lua function (from the top of Lua stack)
+{                         // (for consistency always run it outside of LE mode)
+  if (Lwnd) ExitLEmode();
+  luaP_getglobal ("Txt"); luaX_rawgeti_top(Ttxt->luaTxid);
   if (KbRadix)
        luaP_pushinteger(KbCount);         // function(Ttxt,kbCount/nil)
   else luaP_pushnil();                    //   no return if Ok

@@ -52,7 +52,7 @@ wnd *vipNewWindow (wnd *wbase, int sw, int sh, int kcode)
   if (wbase) vipFocusOff(wbase); return w;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-wnd *vipSplitWindow (wnd *wbase, int kcode)   /* TE_VFORK creates new window */
+wnd *vipSplitWindow (wnd *wbase, int kcode)   /* TM_VFORK creates new window */
 {
   if (kcode == TM_VFORK) return vipNewWindow(wbase, wbase->wsw,
                                                     wbase->wsh, kcode);

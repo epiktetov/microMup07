@@ -459,6 +459,8 @@ comdesc tecmds[] =
   { TE_CLIN,   teclin,     CA_LCUT |          CA_NEND }, /* запомнить строку */
   { TE_CDLIN,  tecdlin,    CA_LCUT |CA_CHANGE|CA_NEND }, /* - с удалением    */
   { LE_PASTE,  cpaste,              CA_CHANGE         }, /* вспомнить        */
+  { TE_TOCLIP, clipToCB,            0                 },
+  { TE_FROMCB, clipFromCB,          CA_CHANGE         },
 /*
  * Implemented in ud.c (declaration in "ud.h"), the same functions as in le.c
  */

@@ -19,6 +19,7 @@ void cpclose(), cpreopen();          /* close/re-open CP-buffer for savings  */
 void lecchar(), lecdchar();          /* le "copy character", "copy & delete" */
 void lecword(), lecdword();          /* le "copy word", "copy & delete word" */
 void cpaste();                       /* paste anything (works in LE/TE mode) */
+void clipToCB(), clipFromCB();       /* forced to/from clipboard operation   */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void teclin(), tecdlin();            /* te "copy line" and "copy & delete"   */
 void teicblock(), tedcblock();       /*                     IC/DC for blocks */

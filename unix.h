@@ -8,7 +8,6 @@ void x2enter(void);           /* command line enter (2) ввести коман�
 void tmshell(int kcode);
 int tmGrep  (int kcode);
 int tmSyncPos(void);
-void tmCalcBC(void);
 void tmLoadXeq(txt *t); /* load text by executing command from t->file->name */
 #else /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #define tmLoadXeq(t) vipError("LoadXEQ not supported on Windows")

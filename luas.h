@@ -3,11 +3,11 @@
 //------------------------------------------------------+--------------------*/
 #ifndef LUAS_H_INCLUDED
 #define LUAS_H_INCLUDED
-
-void luasInit(void);        // initialization
-void luasNtxt(txt *newTxt); // "new text" hook (called from tmDoLoad, twm.cpp)
-int  luasExec(void);
-int  luasFunc(void); /* execute (and pop) Lua function on top of Lua stack   */
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+void luasInit(void);       /* initialization (also load/executes "auto.lua") */
+void luasNtxt(txt*newTxt); /*  new-text hook (called from tmDoLoad, twm.cpp) */
+int  luasExec(txt*);
+int  luasFunc(void); /* execute (and pop) Lua function from top of Lua stack */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #ifdef lua_h         /* the problem with Lua function names is that it's not */
 extern lua_State *L; /* very clear how do they operate with the stack, fixin */
@@ -35,7 +35,7 @@ inline void luaP_pushnumber   (lua_Number    n)   { lua_pushnumber   (L,n); }
 inline void luaP_pushnil(void)                    { lua_pushnil(L);         }
 inline void luaP_pushlstring(const char *s, size_t len)
 {
-  lua_pushlstring(L,s,len); //
+  lua_pushlstring(L,s,len); // makes (or reuse) an internal copy of the string
 }
 inline void luaP_pushstring(const char *s)        { lua_pushstring(L,s);    }
 inline void luaP_pushvalue(int ix)                { lua_pushvalue(L,ix);    }
@@ -48,9 +48,9 @@ inline void luaQ_setglobal(const char *name)      { lua_setglobal(L, name); }
 inline int luaQ_setmetatable(int ix)       { return lua_setmetatable(L,ix); }
 inline void luaQQ_settable  (int ix)              { lua_settable    (L,ix); }
 //
-// Additional convenience method(s):
+// Additional convenience methods:
 //
-inline void luaX_getfield_top(const char *fn) {          luaP_getfield(-1,fn);
+inline void luaX_getfield_top (const char *fn)      { luaP_getfield(-1,fn);
                                                            luaQ_remove(-2); }
 inline void luaX_rawgeti_top(int n) { luaP_rawgeti (-1,n); luaQ_remove(-2); }
 #endif

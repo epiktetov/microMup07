@@ -63,13 +63,14 @@ class MacEvents : public QObject { Q_OBJECT
 enum MiInfoType { MitUSE_CURRENT = 0, MitLINE_BLOCK = 1, MitCHARK = 2 };
 class MiInfoWin : public QWidget
 {
-  MiInfoType infoType;
+  MiInfoType infoType; QString displayText;
   MiScTwin *sctw;
 public:    MiInfoWin(MiScTwin *parent);
   virtual ~MiInfoWin() { }
   void SetPalette(QColor bgnd, QColor text); void vpResize();
   void paintEvent(QPaintEvent *ev);
   void updateInfo(MiInfoType mit = MitUSE_CURRENT);
+  void display (QString text) { displayText = text; }
 };
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 class MiConfigDlg : public QDialog
@@ -143,6 +144,8 @@ public:
   void focusOutEvent(QFocusEvent *ev);  void wheelEvent     (QWheelEvent *ev);
 protected:
   int cmd2repeat, repeatCount, timerID, pastDue;
+public:
+  void DisplayInfo(QString text) { info.display(text); }
 };
 //-----------------------------------------------------------------------------
 extern QString last_MiCmd_key;
