@@ -29,11 +29,12 @@ int MkConvertKeyMods (QKeyEvent *event, int &modMask)
             ((event->modifiers() & Qt::ControlModifier) ? mod_CTRL : 0)|
             ((event->modifiers() & Qt::MetaModifier)    ? mod_META : 0);
 #endif
-  if (MiApp_debugKB) {            fprintf(stderr, "OnKey(%x",    key);
-    if (text[0].unicode() > 0x1f) fprintf(stderr, ":%s", text.cStr());
-    else for (int i=0; i<text.size(); i++)
-            fprintf(stderr, ".%02x", text[i].unicode());
-
+  if (MiApp_debugKB) { fprintf(stderr, "OnKey(%x", key);
+    if (!text.isEmpty()) {
+      if (text.at(0).unicode() >= ' ') fprintf(stderr, ":%s", text.cStr());
+      else for (int i = 0; i < text.size(); i++)
+                               fprintf(stderr, ".%02x", text[i].unicode());
+    }
     fprintf(stderr, "|%c%c%c%c%c),native=%x:%x:%x",      keypad ? '#' : '.',
         (modMask & mod_META) ? 'M' : '.', (modMask & mod_CTRL)  ? 'c' : '.',
         (modMask & mod_ALT)  ? 'a' : '.', (modMask & mod_SHIFT) ? 's' : '.',
@@ -82,8 +83,8 @@ int MkFromString (QString keystr)  //  Conversion from user-readable/-writable
 {                                  //  string to the keycode as reported by Qt
   int keypad = 0;
   int N = keystr.length() - 1;
-  if (keystr[0].unicode() == '[' && keystr[N].unicode() == ']') {
-      keystr = keystr.mid(1,N-1);   keypad = mod_KyPAD;
+  if (keystr.at(0).unicode() == '[' && keystr.at(N).unicode() == ']') {
+      keystr = keystr.mid(1,N-1);      keypad = mod_KyPAD;
   }
   QKeySequence ks(keystr); return keypad | ks[0];
 }
@@ -106,6 +107,29 @@ QString MkToString (int kcode)
   } else      return st;
 }
 /*---------------------------------------------------------------------------*/
+#define MkMAX_MACRO_SIZE 350 /* the only limitation is to be able editing it */
+QString MkMacro;             /*  (so Mk.Fn="value" should fit under MAXTXRM) */
+int MkRecording = 0;
+inline QString MacroName(int N) { return QString("F%1").arg(N+6); }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+void MkStartRecording (int N)
+{
+  QString macro = MacroName( MkRecording = N );
+  luaP_getglobal("Mk");
+  luaP_pushstring (macro.cStr());
+  luaP_pushinteger    (TK_EM0+N);
+  luaQQ_rawset(-3); luaQn_pop(1);
+}
+void MkStopRecording (void) //- - - - - - - - - - - - - - - - - - - - - - - - -
+{                                                // make sure there's no self-
+  QString macro = MacroName(MkRecording);        // references in the string,
+  MkMacro.replace(Utf8("‹")+macro+Utf8("›"),""); // to avoid infinite recursion
+  luaP_getglobal("Mk");                          // (one such reference always
+  luaP_pushstring(  macro.cStr());               //  recorded just before stop)
+  luaP_pushstring(MkMacro.uStr()); MkMacro.clear();
+  luaQQ_rawset(-3);  luaQn_pop(1); MkRecording = 0;
+}
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 int KbCode;                  /* код запроса (устанавливается в vipOnRegCmd)  */
 int KbCount =  1;            /* повторитель, если не вводился,         то 1  */
 int KbRadix =  0;            /* основание,   если не было повторителя, то 0  */
@@ -118,7 +142,7 @@ void MkMimXEQ (int kcode, int modMask, QString text, wnd *vp)
     KbCount = KbRadix * KbCount + digit;
     last_MiCmd_key = Utf8("×%1").arg(KbCount); return;
   }
-  luaP_getglobal("MkCCD");
+  luaP_getglobal("Mk");
   if (MkPrefix.isEmpty()) { last_MiCmd_key = MkToString(kcode|modMask);
                             luaP_getfield(-1,last_MiCmd_key.uStr()); }
   else {
@@ -139,34 +163,79 @@ void MkMimXEQ (int kcode, int modMask, QString text, wnd *vp)
       luaP_getfield(-1,last_MiCmd_key.uStr()); // 1st, ignore it if not found
   } }
   if (MiApp_debugKB)  fprintf(stderr, ",‹%s›", last_MiCmd_key.uStr());
-  if (lua_isnumber(L,-1)) {
-    int mk = lua_tointeger(L,-1);        luaQn_pop(2); // must check before str
-    if (MiApp_debugKB) fprintf(stderr, ",0x%x\n", mk); // (as number is string,
-    switch (mk) {                                      // since its convertible
-    case TK_PREFIX: MkPrefix = last_MiCmd_key; return; // to string always)
+  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  if (MkRecording) {
+    if (KbRadix) MkMacro.append(Utf8("×")+QString::number(KbCount)+Utf8("⁝"));
+    int t1 = text.isEmpty() ? 0 : text.at(0).unicode();
+    if (t1 < ' ') MkMacro.append(Utf8("‹")+last_MiCmd_key+Utf8("›"));
+    else switch (t1) {
+      case 0x00D7: // × ← these two characters have special meaning in macros
+      case 0x2039: // ‹
+               MkMacro.append(Utf8("⑆")+text); break;
+      default: MkMacro.append          (text); break;
+    }
+    if (MkMacro.size() > MkMAX_MACRO_SIZE) { vipBell(); MkStopRecording(); }
+  }
+  MkLuaXEQ(text, vp);   // Lua stack here: [-2] global "Mk" (not used below)
+}                       //                 [-1] command code definition value
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void MkLuaXEQ (QString text, wnd *vp)
+{
+  if (lua_isnumber(L,-1)) {                            // MUST check before str
+    int mk = lua_tointeger(L,-1);        luaQn_pop(2); // as number is str too,
+    if (MiApp_debugKB) fprintf(stderr, ",0x%x\n", mk); // since its convertible
+    switch (mk) {                                      // always to string
+    case TK_PREFIX: MkPrefix = last_MiCmd_key; return;
     case TK_ESC:    MkPrefix = "Esc";          return;
     case TK_CtrJ:   MkPrefix = "^J";           return;
-    default:        vipOnKeyCode(vp, mk);      return;
+    case TK_SM1:
+    case TK_SM2:
+    case TK_SM3: if (MkRecording) { MkStopRecording();  vipBell(); }
+                                    MkStartRecording(mk - TK_SM0); return;
+    case TK_EM1:
+    case TK_EM2:
+    case TK_EM3: MkStopRecording();    return;
+    default:     vipOnKeyCode(vp, mk); return;
   } }
-  else if (lua_isstring  (L,-1)) text = lua_tostring(L,-1);
+  else if (lua_isstring(L,-1)) text = Utf8(lua_tostring(L,-1));
   else if (lua_isfunction(L,-1)) {
     if (MiApp_debugKB) fprintf(stderr, ",lua\n");
     luasFunc();                     luaQn_pop(1); return;
   }
-  if (MiApp_debugKB) fprintf(stderr, ",'%s'\n", text.uStr());
-  luaQn_pop(2);
-  for (int i=0; i<text.length(); i++) {
+  if (MiApp_debugKB) fprintf (stderr, ",'%s'\n", text.uStr());
+  if (!text.isEmpty()) MkStrXEQ(text,vp);        luaQn_pop(2);
+}
+static int luMkXEQ (lua_State *L) { luaL_checktype(L, 1, LUA_TTABLE);
+                                    luaL_checkany (L, 2);
+                                    MkLuaXEQ ("",  Twnd);   return 0; }
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void MkStrXEQ (QString text, wnd *vp)
+{
+  int N, len = text.length();
+  for (int i = 0; i < len; i++) {
     int k = text.at(i).unicode();
-    if (Mk_IsCHAR(k)) vipOnKeyCode(vp, k);
+    if (k == 0x2446 && i+1 < len) vipOnKeyCode(vp, text.at(++i).unicode()); //⑆
+    else if (k ==  0x2039) {                                                //‹
+      if ((N = text.indexOf(Utf8("›"),i+1)) > 0) {
+        luaP_getglobal("Mk");
+        luaP_getfield(-1,text.mid(i+1,N-i-1).cStr()); i=N; MkLuaXEQ("", vp);
+    } }
+    else if (k == 0xD7) { //×
+      if ((N = text.indexOf(Utf8("⁝"),i+1)) > 0) {
+        KbRadix = 1;                                // applied to next command
+        KbCount = text.mid(i+1,N-i-1).toInt(); i=N; // (radix does not matter)
+    } }
+    else if (Mk_IsCHAR(k)) vipOnKeyCode(vp, k);
 } }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-void MkInitCCD (void)          // move Command Codes Definitions into Lua table
+void MkInitCCD (void)   // move Command Codes Definitions into global Lua table
 {
   luaP_newtable();
   for (microCCD *pt = CCD; pt->hexcode; pt++) {
     if (pt->kseq) { luaP_pushstring (pt->kseq);
                     luaP_pushinteger(pt->hexcode); luaQQ_rawset(-3); }
   }
-  luaQ_setglobal("MkCCD");
+  luaP_pushstring     ("XEQ");
+  luaP_pushCfunction(luMkXEQ); luaQQ_rawset(-3); luaQ_setglobal("Mk");
 }
 //-----------------------------------------------------------------------------

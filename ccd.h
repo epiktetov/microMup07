@@ -41,6 +41,8 @@
   int     MkToDigit (int kcode);
   QString MkToString(int kcode);
   void    MkMimXEQ  (int kcode, int modMask, QString text, wnd *vp);
+  void    MkStrXEQ                          (QString text, wnd *vp);
+  void    MkLuaXEQ                          (QString text, wnd *vp);
 #endif
 struct microCCD {
   int ev;             /* keyboard event (usually micom_enum)          */

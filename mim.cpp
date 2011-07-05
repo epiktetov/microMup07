@@ -24,6 +24,7 @@ static bool MiApp_timeDELAYS = false;
 QString  last_MiCmd_key;
 quint64  last_MiCmd_time;
 QMap<int,int> MiApp_keyMap;
+QString MiApp_autoLoadLua;
 QString MiApp_defaultFont, MiApp_defFontAdjH, MiApp_keyMaps, MiApp_gradDescr;
 int     MiApp_defFontSize;
 int     MiApp_fontAdjOver, MiApp_fontAdjUnder, MiApp_defWidth, MiApp_defHeight;
@@ -86,18 +87,20 @@ int main(int argc, char *argv[])
 // when using "native" graphics, scroll() posts update requeston on all widgets
 // (comments says "This is a hack around Apple's missing functionality, pending
 // the toolbox team fix. --Sam"), resulting in full window update and rendering
-// our efforts to optimize repaint useless; setting "raster" system explicitly
-// seems to fix that (must be called before QApplication constructor)
+// our efforts to optimize repaint irrelevant; setting "raster" system seems to
+// fix that (must be called before QApplication constructor to take effect)
 //
   QApplication app(argc, argv);
-  QCoreApplication::setOrganizationDomain("epiktetov.com"); tmInitialize();
+  QCoreApplication::setOrganizationDomain("epiktetov.com");
   QCoreApplication::setOrganizationName("EpiMG");
-  QCoreApplication::setApplicationName("micro7");     mimReadPreferences();
+  QCoreApplication::setApplicationName("micro7"); mimReadPreferences();
 #ifdef Q_OS_MAC
   app.installEventFilter(new MacEvents);
 #elif defined(UNIX)
   app.setWindowIcon(QIcon(":/qtmim.png"));
 #endif
+  tmInitialize(); // init everything (and run 'auto.lua' and configured script)
+  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   for (int i = 1; i < argc; i++) {
     QString param = Utf8(argv[i]);
          if (param.compare("-dos",IGNORE_CASE) == 0) dosEOL           =  TRUE;
@@ -933,23 +936,9 @@ MiConfigDlg::MiConfigDlg(QWidget *parent) : QDialog(parent)
   static QString fontHelpString("<small>Font height adjustment parameter on "
     "right alllows adding (+) or removing (-) one pixel on top (first symbol) "
     "or bottom (second one) of character glyph; use 0/0 to leave the height "
-    "unchanged</small>");
+    "unchanged</small><hr>");
   QLabel *fontHelpLabel = new QLabel(fontHelpString);
   fontHelpLabel->setWordWrap(true);  leftLayout->addWidget(fontHelpLabel);
-  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  QVBoxLayout *rightLayout = new QVBoxLayout;
-  gradDescr = new QTextEdit(MiApp_gradDescr);
-  gradDescr->setAcceptRichText(false);
-  gradDescr->setMaximumHeight(75);
-  QLabel *grad = new QLabel(tr("Gradients:")); grad->setBuddy(gradDescr);
-  rightLayout->addWidget(grad);
-  rightLayout->addWidget(gradDescr);
-  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  keymapLabl = new QLabel(tr("Key mapping:"));
-  keymapEdit = new QTextEdit();
-  keymapEdit->setAcceptRichText(false);
-  keymapEdit->setMaximumHeight(75);        rightLayout->addWidget(keymapLabl);
-  keymapEdit->setPlainText(MiApp_keyMaps); rightLayout->addWidget(keymapEdit);
   //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   tabSizeBox = new QSpinBox(); QLabel *tabl = new QLabel(tr("TAB size:"));
   tabSizeBox->setRange(2, 8);          tabl->setBuddy(tabSizeBox);
@@ -957,8 +946,28 @@ MiConfigDlg::MiConfigDlg(QWidget *parent) : QDialog(parent)
   tabSizeBox->setValue(TABsize);
   QHBoxLayout *layoutH3 = new QHBoxLayout;
   layoutH3->addWidget(tabl);
-  layoutH3->addWidget(tabSizeBox); rightLayout->addLayout(layoutH3);
-  layoutH3->addStretch(1);         rightLayout->addStretch(1);
+  layoutH3->addWidget(tabSizeBox);
+  layoutH3->addStretch(1); leftLayout->addLayout(layoutH3);
+  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  QVBoxLayout *rightLayout = new QVBoxLayout;
+  gradDescr = new QTextEdit(MiApp_gradDescr);
+  gradDescr->setAcceptRichText(false);
+  gradDescr->setMaximumHeight(42);
+  QLabel *grad = new QLabel(tr("Gradients:")); grad->setBuddy(gradDescr);
+  rightLayout->addWidget(grad);
+  rightLayout->addWidget(gradDescr);
+  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  QLabel *keymapLabl = new QLabel(tr("Key mapping:"));
+  keymapEdit = new QTextEdit();
+  keymapEdit->setAcceptRichText(false);
+  keymapEdit->setMaximumHeight(42);        rightLayout->addWidget(keymapLabl);
+  keymapEdit->setPlainText(MiApp_keyMaps); rightLayout->addWidget(keymapEdit);
+  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  QLabel *luaLabl = new QLabel(tr("Lua auto-load script:"));
+  luaEdit = new QTextEdit();
+  luaEdit->setAcceptRichText(false);
+  luaEdit->setMaximumHeight(125);           rightLayout->addWidget(luaLabl);
+  luaEdit->setPlainText(MiApp_autoLoadLua); rightLayout->addWidget(luaEdit);
   //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   QHBoxLayout *outerLayout = new QHBoxLayout;
   outerLayout->addLayout(leftLayout);
@@ -979,6 +988,7 @@ bool MiConfigDlg::Ask()
 {
   if (exec() != QDialog::Accepted) return false;
   TABsize = tabSizeBox->value();
+  MiApp_autoLoadLua = luaEdit->toPlainText();
   MiApp_gradDescr = gradDescr->toPlainText();
   MiApp_defFontAdjH = fontAdjust->text();
   MiApp_fontAdjOver = myUnpackAdj2int(MiApp_defFontAdjH, 0);
@@ -1012,6 +1022,7 @@ void mimReadPreferences()
 {
   QSettings Qs;
   TABsize = Qs.value("TABsize", 4).toInt();
+  MiApp_autoLoadLua = Qs.value("autoLuaScript", "").toString();
   MiApp_gradDescr = Qs.value("bgndGrad", defWinGRADIENT).toString();
   MiApp_defHeight = Qs.value("frameHeight", defWinHEIGHT).toInt();
   MiApp_defWidth   =  Qs.value("frameWidth", defWinWIDTH).toInt();
@@ -1033,11 +1044,12 @@ void MiFrame::Preferences()
   if (dialog.Ask()) {
     QSettings Qs;                              Qs.setValue("TABsize", TABsize);
     MiApp_defFontAdjH = myPackAdj2string(MiApp_fontAdjOver,MiApp_fontAdjUnder);
-    Qs.setValue("font",     MiApp_defaultFont);
-    Qs.setValue("fontSize", MiApp_defFontSize);
-    Qs.setValue("fontAdjH", MiApp_defFontAdjH); makeFonts();
-    Qs.setValue("keyMaps",  MiApp_keyMaps);
-    Qs.setValue("bgndGrad", MiApp_gradDescr);
+    Qs.setValue("font",          MiApp_defaultFont);
+    Qs.setValue("fontSize",      MiApp_defFontSize);
+    Qs.setValue("fontAdjH",      MiApp_defFontAdjH); makeFonts();
+    Qs.setValue("keyMaps",       MiApp_keyMaps);
+    Qs.setValue("bgndGrad",      MiApp_gradDescr);
+    Qs.setValue("autoLuaScript", MiApp_autoLoadLua);
     if (main) main->SetGradient(MiApp_gradDescr);
     if (main)  {  main->UpdateMetrics();  main->vpResize(); }
     if (scwin) { scwin->UpdateMetrics(); scwin->vpResize(); } shrinkwrap();

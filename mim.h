@@ -14,7 +14,7 @@ class QMessageBox; class QSpinBox;
 class QPushButton; class QSplitter;
 class QLineEdit;   class QTextEdit;
 extern bool MiApp_debugKB;
-extern int  MiApp_defWidth, MiApp_defHeight;
+extern int  MiApp_defWidth, MiApp_defHeight;  extern QString MiApp_autoLoadLua;
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #define defWinWIDTH  80 // default window width (in characters)
 #define defWinHEIGHT 50 // - - height (lines)
@@ -75,10 +75,10 @@ public:    MiInfoWin(MiScTwin *parent);
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 class MiConfigDlg : public QDialog
 {
-  Q_OBJECT QPushButton *fontButton; QTextEdit *gradDescr;
-           QLabel      *fontLabel,            *keymapLabl;
+  Q_OBJECT QPushButton *fontButton;
+           QLabel      *fontLabel;  QTextEdit *gradDescr;
            QLineEdit   *fontAdjust; QTextEdit *keymapEdit;
-                                    QSpinBox  *tabSizeBox;
+           QSpinBox    *tabSizeBox; QTextEdit    *luaEdit;
 protected:
   void setFontLabelText();
 public slots:

@@ -6,7 +6,7 @@
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void luasInit(void);       /* initialization (also load/executes "auto.lua") */
 void luasNtxt(txt*newTxt); /*  new-text hook (called from tmDoLoad, twm.cpp) */
-int  luasExec(txt*);
+int  luasExec(txt*, bool); /*  load/execute given text (current line) as Lua */
 int  luasFunc(void); /* execute (and pop) Lua function from top of Lua stack */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #ifdef lua_h         /* the problem with Lua function names is that it's not */

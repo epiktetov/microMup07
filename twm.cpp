@@ -599,7 +599,8 @@ int TmCommand (int kcode)
   case TW_GRAD1: case TW_GRAD3:
   case TW_GRAD2: case TW_GRAD4: Twnd->sctw->SetGradFromPool(kcode - TW_GRAD1);
     break;
-  case TM_LUA: return luasExec(Ttxt);
+  case TM_LUAF: return luasExec(Ttxt,false);
+  case TM_LUAS: return luasExec(Ttxt, true);
   default:
     return E_NOCOM;
   } return E_OK;

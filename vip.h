@@ -65,9 +65,8 @@ extern bool vipOSmode; /* working in OS mode: current Twnd is modal and keys */
 void EnterOSmode();    /* are converted back to raw Ascii, used only on UNIX */
 void ExitOSmode(), vipYield();
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void vipOnKeyCode(wnd *w, int ev);    /* handle macro entering,TK_SM+TW_CUP… */
-int  vipOnMimCmd (wnd *w, int ev);    /* - TK_EMn and block selections       */
-int  vipOnTwxCmd (wnd *w, int kcode); /* - TW_xx commands                    */
+void vipOnKeyCode(wnd *w, int ev);    /* handle TK_LINFO/CHARK & TW_CUP/DOWN */
+int  vipOnMimCmd (wnd *w, int ev);    /*  <-  block selections and scrolling */
 int  vipOnRegCmd (wnd *w, int kcode); /* process other (LE/TE/TM_x) commands */
 void EnterLEmode(void);
 void ExitLEmode(void);

@@ -91,7 +91,7 @@ static int luTxOpen (lua_State *L)
   else return luaL_error(L,"cannot open %s", tname.uStr());
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-int luTxFocus (lua_State*)            // Tx:focus() = focus last opened window,
+static int luTxFocus (lua_State*)     // Tx:focus() = focus last opened window,
 {                                     //              associated with the text
   txt *tx = luasN_gettext(1);
   wnd *vp = tx->txwndptr;
@@ -266,7 +266,7 @@ luaL_Reg luTxMetaFuncs[] =
 void luasInit(void)
 {
   L = luaL_newstate();
-      luaL_openlibs(L); MkInitCCD();
+      luaL_openlibs(L); MkInitCCD(); // defines "Mk" table (for Lua and itself)
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // Txt table
 //   open(tn/f) - lazy constructor, by text name or bool flag (true/false)
@@ -285,21 +285,29 @@ void luasInit(void)
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   txt *autoLua = tmDesc(":/auto.lua", false); // do not need UNDO (read-only)
   if (autoLua) { tmLoad  (autoLua);
-                 luasExec(autoLua); }
-}
+                 luasExec(autoLua,false); }
+//
+  if (!MiApp_autoLoadLua.isEmpty()) {
+    int rc = luaL_dostring(L, MiApp_autoLoadLua.uStr());
+    if (rc) fprintf(stderr, "LuaERROR: %s\n", lua_tostring(L,-1));
+} }
 //-----------------------------------------------------------------------------
-int luasExec (txt *Tx)
-{
-  int len;    TxTop(Tx);
-  while (!qTxBottom(Tx)) {
-    char *pl = TxGetLn(Tx, &len);
-    if (*pl == '^' || *pl == ACPR || *pl == '\xE2') TxDL  (Tx);
-    else                                            TxDown(Tx);
-  }
-  char *buffer = Tx->txustk->dbeg;
-  len = Tx->txustk->dend - buffer;      luasN_setTxt_this(Tx);
-  int rc = luaL_loadbuffer(L,buffer,len,Tx->file->name.uStr())
-              || lua_pcall(L,0,0,0);  luasN_setTxt_this(NULL);
+int luasExec (txt *Tx, bool just1line) // load/execute given text …(tx, false),
+{                                      // or current line in Ttxt …(Ttxt,true);
+  const char *buffer;
+  int len;
+  if (just1line && Tx == Ttxt) {             TxSetY (Ttxt,   Ty);
+                                    buffer = TxGetLn(Ttxt, &len); }
+  else {        TxTop(Tx);
+    while (!qTxBottom(Tx)) {        char *pl = TxGetLn(Tx, &len);
+      if (*pl == '^' || *pl == ACPR || *pl == '\xE2') TxDL  (Tx);
+      else                                            TxDown(Tx);
+    }
+    buffer = Tx->txustk->dbeg;
+    len    = Tx->txustk->dend - buffer;
+  }                                        luasN_setTxt_this(Tx);
+  int rc = luaL_loadbuffer(L, buffer, len, Tx->file->name.uStr())
+              || lua_pcall(L,0,0,0);     luasN_setTxt_this(NULL);
   if (rc) {
     const char *luaError = lua_tostring(L,-1);
     QRegExp re("\\[.+\\]:(\\d+):(.+)");
@@ -308,7 +316,7 @@ int luasExec (txt *Tx)
       QString mimErr = Utf8("^" AF_ERROR "%1" AF_NONE).arg(re.cap(2));
       TxIL(Tx, mimErr.uStr(), mimErr.length());
     }
-    else vipError(QString("LuaERROR: %1").arg(lua_tolstring(L,-1,0)));
+    else vipError(QString("LuaERROR: %1").arg(lua_tostring(L,-1)));
     return E_SFAIL;
   }
   else if (Tx == Ttxt) Twnd->sctw->DisplayInfo("ok");     return E_OK;

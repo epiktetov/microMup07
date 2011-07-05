@@ -306,10 +306,6 @@ void vipGotoXY (int x, int y)           /* click in the active window (Twnd) */
   vipOnFocus (Twnd);
 }
 /*---------------------------------------------------------------------------*/
-struct KeyTuple { int ev, count, radix; };              /*                   */
-KeyTuple *pMacro,     macroBuf[TK_SMX-TK_SM0][MAXTXRM]; /*  ʁK E Y B O A R Dʀ  */
-int enterinMacro = 0, macroLen[TK_SMX-TK_SM0] ={ 0,0 }; /*                   */
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void vipOnKeyCode (wnd *vp, int ev)   /* called from MkMimXEQ (file ccd.cpp) */
 {
        if (ev == TK_LINFO) vp->sctw->info.updateInfo(MitLINE_BLOCK);
@@ -323,39 +319,26 @@ void vipOnKeyCode (wnd *vp, int ev)   /* called from MkMimXEQ (file ccd.cpp) */
     if (Lwnd) ExitLEmode();              //
     tesetxy (Tx,  vp->wty); vp->sctw->repeatCmd(TW_SCROLUP);
   }
-  else {            int N;
-    if (enterinMacro) { N = enterinMacro - TK_EM0;
-      if ((TK_SM0 <= ev && ev <= TK_SMX) ||
-                           ev == enterinMacro) enterinMacro = 0;
-      else {
-        pMacro->count = KbCount; pMacro->ev = ev;
-        pMacro->radix = KbRadix;
-        pMacro++;
-        if (++macroLen[N] >= MAXTXRM) { vipBell(); enterinMacro = 0; }
-        else vipOnMimCmd(vp, ev);
-    } }
-    else if (TK_SM0 <= ev && ev <= TK_SMX) { N = ev - TK_SM0;
-      macroLen[N] = 0;
-      pMacro = macroBuf[N]; enterinMacro = TK_EM0 + N;
-    }
-    else vipOnMimCmd(vp, ev);
-} }
+  else vipOnMimCmd(vp, ev);
+}
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-static int vipExecuteMacro (wnd *vp, int N)
+inline int vip1sixth (wnd *vp)  /* calculate medium jump size (1/6th of wsh) */
 {
-  int count = KbCount, rc;
-  while (count--) {
-    KeyTuple *pM = macroBuf[N];
-    int       nM = macroLen[N];
-    while (nM-- && !qkbhin()) {
-      int ev = pM->ev; KbCount = pM->count;
-                       KbRadix = pM->radix;
-      pM++;
-      if ((rc = vipOnMimCmd(vp, ev)) != E_OK) return   rc;
-  } }                                         return E_OK;
-} 
+  int N = vp->wsh / 6; return (N > 0) ? N : 1;
+}
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-int vipOnMimCmd(wnd *vp, int ev) /* handling block selections and macro exec */
+static int vipCmdScroll (wnd *vp, int kcode, int dx, int dy)
+{
+  int rc  = vipOnRegCmd(vp, kcode);
+  if (rc != E_OK) return rc;
+  if (dx < 0 && vp->wtx+dx < 0) dx = -vp->wtx; vp->wtx += dx;
+  if (dy < 0 && vp->wty+dy < 0) dy = -vp->wty; vp->wty += dy;
+       if (dx) vipRedrawWindow(vp);
+  else if (dy) vipRoll(vp, 0, vp->wsh, -dy);
+  else {       vipBell();     return E_SETY; }   return E_OK;
+}
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+int vipOnMimCmd (wnd *vp, int ev) /* handling block selections and scrolling */
 {
   last_MiCmd_time = pgtime();
   int ca = 0;
@@ -382,46 +365,22 @@ int vipOnMimCmd(wnd *vp, int ev) /* handling block selections and macro exec */
   default: if (ca &  KxTS)         scblkon(TRUE);
       else if (ev == TX_MCBLOCK) { scblkon(FALSE); return E_OK; }
   }
-  if (TK_EM0 <= ev && ev <= TK_EMX) { int N = ev - TK_EM0;
-    if (macroLen[N] > 0) return vipExecuteMacro(vp, N);
-    else { vipBell();    return E_FINISHED; }
-  }
-  return vipOnTwxCmd(vp, ev);
-}
-/*---------------------------------------------------------------------------*/
-inline int vip1sixth (wnd *vp)  /* calculate medium jump size (1/6th of wsh) */
-{
-  int N = vp->wsh / 6; return (N > 0) ? N : 1;
-}
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-static int vipCmdScroll (wnd *vp, int kcode, int dx, int dy)
-{
-  int rc  = vipOnRegCmd(vp, kcode);
-  if (rc != E_OK) return rc;
-  if (dx < 0 && vp->wtx+dx < 0) dx = -vp->wtx; vp->wtx += dx;
-  if (dy < 0 && vp->wty+dy < 0) dy = -vp->wty; vp->wty += dy;
-       if (dx) vipRedrawWindow(vp);
-  else if (dy) vipRoll(vp, 0, vp->wsh, -dy);
-  else {       vipBell();     return E_SETY; }   return E_OK;
-}
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-int vipOnTwxCmd (wnd *vp, int kcode)                    /* various scrolling */
-{
-  switch (kcode) {
+  switch (ev) {
   case TW_SCROLLF: return vipCmdScroll(vp, LE_LEFT, -KbCount, 0);
   case TW_SCROLRG: return vipCmdScroll(vp, LE_RIGHT, KbCount, 0);
   }
-  if (leARGmode) return vipOnRegCmd(vp, kcode); // no vert.scroll in leARGmode
+  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  if (leARGmode) return vipOnRegCmd(vp, ev); // no vert.scroll in leARGmode
   int dy;
-  switch (kcode) {  // NOTE: scoll up/down key codes differs in 2nd LSB:
+  switch (ev) {     // NOTE: scoll up/down key codes differs in 2nd LSB:
   case TW_SCROLUPN: //                   ..1. (0xd00fa or 0xd1413) scroll up
   case TW_SCROLDNN: //                   ..0. (0xd00fd or 0xd1415) scroll down
     KbCount = vip1sixth(vp);
   case TW_SCROLUP:
   case TW_SCROLDN:
-    if (kcode & 2) { kcode = TE_UP;   dy = -KbCount; }
-    else           { kcode = TE_DOWN; dy =  KbCount; }
-    return vipCmdScroll(vp, kcode, 0, dy);
+    if (ev & 2) { ev = TE_UP;   dy = -KbCount; }
+    else        { ev = TE_DOWN; dy =  KbCount; }
+    return vipCmdScroll(vp, ev, 0, dy);
   case TW_UP:
     dy = vip1sixth(vp);
     if (vp->wty < dy) { vp->sctw->repeatCmd(TE_UP,dy); return E_OK; }
@@ -433,11 +392,11 @@ int vipOnTwxCmd (wnd *vp, int kcode)                    /* various scrolling */
   case TE_PPAGE:
   case TE_NPAGE:
     dy = vip1sixth(vp);
-    if (dy < 2)             kcode = (kcode & 1) ? TW_SCROLDN  : TW_SCROLUP;
-    else { dy = vp->wsh/dy; kcode = (kcode & 1) ? TW_SCROLDNN : TW_SCROLUPN; }
-    vp->sctw->repeatCmd(kcode, dy);
+    if (dy < 2)             ev = (ev & 1) ? TW_SCROLDN  : TW_SCROLUP;
+    else { dy = vp->wsh/dy; ev = (ev & 1) ? TW_SCROLDNN : TW_SCROLUPN; }
+    vp->sctw->repeatCmd(ev, dy);
     return E_OK;
-  default: return vipOnRegCmd(vp, kcode);
+  default: return vipOnRegCmd(vp, ev);
 } }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 int vipOnRegCmd (wnd *vp, int kcode)                     /* regular commands */
