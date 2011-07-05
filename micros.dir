@@ -61,3 +61,4 @@ Keywords for various languages (Bash, C/C++, Perl, Python)     |keywords.txt
 ʂincdirs»ʀ(unix)/usr/include/lua5.1
 ʂincdirs»ʀ(unix)/usr/include/qt4/QtCore
 ʂincdirs»ʀ(unix)/usr/include/qt4/QtGui,/usr/include/qt4
+ʂincdirs»ʀ(win32)../lua/include
