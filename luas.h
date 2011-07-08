@@ -55,6 +55,10 @@ inline void luaQQ_settable  (int ix)              { lua_settable    (L,ix); }
 //
 // Additional convenience methods:
 //
+inline bool luaX_optboolean(int ix, bool defaultValue)
+{
+  return lua_isboolean(L,ix) ? (bool)lua_toboolean(L,ix) : defaultValue;
+}
 inline void luaX_getfield_top (const char *fn)      { luaP_getfield(-1,fn);
                                                            luaQ_remove(-2); }
 inline void luaX_rawgeti_top(int n) { luaP_rawgeti (-1,n); luaQ_remove(-2); }

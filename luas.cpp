@@ -21,24 +21,17 @@ struct luRegExp { // Using "full" user-data to enable proper garbage collection
   QRegExp *re;    // (light userdata is a value, has no individual metatable,
 };                //        and it is not collected -- as it was never created)
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-// Object cosntructor: re = Re("..regex..") or Re[[..regex..]]
-//
-static int luasNewRe (lua_State *L)
+// Object cosntructor: re = Re("..regex.."[,false]) or Re[[..regex..]]
+//                                          ^
+static int luasNewRe (lua_State *L) // case-sensitive? (default: true)
 {
   QString ptn = luaL_checkstring(L,1);
-// ...
-// replace something
-//
+  bool cs  =  luaX_optboolean(2,true);
   luRegExp *newRe = (luRegExp *)luaP_newuserdata(sizeof(luRegExp));
-  newRe->re = new QRegExp(ptn); luaP_getmetatable("re");
-                                luaQ_setmetatable  (-2);  return 1;
+  newRe->re = new QRegExp(ptn, cs ? Qt::CaseSensitive : Qt::CaseInsensitive);
+  luaP_getmetatable("re");
+  luaQ_setmetatable  (-2); return 1;
 }
-static luRegExp *luasN_getRe (int ix)
-{
-  luRegExp *Re = (luRegExp*)luaL_checkudata(L,ix,"re");
-  if (Re->re) return Re;    luaL_error(L,"collected!"); return NULL;
-}
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 static int luasReGC (lua_State *L) // called from garbage collector
 {
   luRegExp *Re = (luRegExp*)luaL_checkudata(L,1,"re");
@@ -47,27 +40,29 @@ static int luasReGC (lua_State *L) // called from garbage collector
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // Re (Regular expression) methods:
 //
-//   re:match("string") = true if string matches
-//   re:cap(N)
-//   re:caps()
+//   re:match("string") -- returns index of first match (nil if does not match)
+//   re:cap(N)          -- returns Nth capture
+//   re:caps()          -- all captures (to use in multi-value assignement)
 //
 static int luasReMatch (lua_State *L)
 {
-  luRegExp *Re = luasN_getRe(1);
+  luRegExp *Re = (luRegExp*)luaL_checkudata(L,1,"re");
   QString str = Utf8(luaL_checkstring(L,2));
-  luaP_pushboolean(Re->re->exactMatch(str)); return 1;
+  int found = Re->re->indexIn(str);
+  if (found < 0) luaP_pushnil();
+  else           luaP_pushinteger(found); return 1;
 }
 static int luasReCap (lua_State *L)
 {
-  luRegExp *Re =  luasN_getRe(1);
+  luRegExp *Re = (luRegExp*)luaL_checkudata(L,1,"re");
   int N = luaL_checkinteger(L,2);
-  luaP_pushstring(Re->re->cap(N).uStr()); return 1;
+  luaP_pushstring(Re->re->cap(N).uStr());    return 1;
 }
 static int luasReCaps (lua_State*)
 {
-  luRegExp *Re =  luasN_getRe(1);
+  luRegExp *Re = (luRegExp*)luaL_checkudata(L,1,"re");
   int N = Re->re->captureCount();
-  for (int i=0; i<N; i++) luaP_pushstring(Re->re->cap(N).uStr()); return N;
+  for (int i = 0; i < N; i++) luaP_pushstring(Re->re->cap(i).uStr()); return N;
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 luaL_Reg luReMetaFuncs[] =
@@ -104,26 +99,28 @@ void luasNtxt (txt *newTxt)  // "new text" hook (called from tmDoLoad, twm.cpp)
   }
   luaP_pushinteger(newTxt->luaTxid = atNextInst++);
   luaP_newtable();
-  luTxtID *newTxtID = (luTxtID*)luaP_newuserdata(sizeof(luTxtID));
+  luTxtID *newTxtID = (luTxtID *)luaP_newuserdata(sizeof(luTxtID));
            newTxtID->t  = newTxt;
-           newTxtID->id = newTxt->luaTxid; luaQ_setfield(-2,"id");
-//
-  luaP_getmetatable("txt"); // Set metatable for new instance (for Tx.X,Tx.Y,…)
-  luaQ_setmetatable(-2);
-  luaQQ_rawset   (iTxt); luaQn_pop(1);
+           newTxtID->id = newTxt->luaTxid; luaQ_setfield(-2,"√id");
+  luaP_getmetatable("txt");            //
+  luaQ_setmetatable(-2);               // NOTE: metatable for Tx object must
+  luaQQ_rawset   (iTxt); luaQn_pop(1); // be after Tx.id (to avoid recursion)
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 static txt *luasN_gettext (int ix)  // returns txt from Lua reference on given
 {                                   // index in the stack (verifies id match)
-  luaP_getfield(ix,"id");
-  luTxtID *txtID = (luTxtID*)lua_touserdata(L,-1);
+  luaP_getfield(ix,"√id");
+  luTxtID *txtID = (luTxtID*)lua_touserdata(L,-1); luaQn_pop(1);
   if (txtID == NULL ||
       txtID->id != txtID->t->luaTxid) luaL_error(L,"bad txt reference");
-  luaQn_pop(1);
+//
+// MicroMir usually does not bother updating Ttxt->vp_ctx/y, but for simplicity
+// all luTx… functions operate with 'txt' structure only, do that update here:
+//
   if (txtID->t == Ttxt) { Ttxt->vp_ctx = Tx;
                           Ttxt->vp_cty = Ty; }  return txtID->t;
 }
-static void luas_UpdateTxy (txt *t, bool changed = false)
+static void luas_UpdateTxy (txt *t, bool changed = false) // reverse update
 {
   if (changed) t->txstat |= TS_CHANGED; if (t == Ttxt) { Tx = Ttxt->vp_ctx;
                                                          Ty = Ttxt->vp_cty; }
@@ -133,15 +130,15 @@ static void luas_UpdateTxy (txt *t, bool changed = false)
 //                                                   false = not real (discard)
 // Tx.open("name"/true/false) --> text object
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-static int luTxOpen (lua_State *L)
-{
-  QString tname; bool init = false;
+static int luTxOpen (lua_State *L)  // for named texts, Lua table is created by
+{                                   // tmDoLoad functions, for ÷/… pseudo-files
+  QString tname; bool init = false; // we must do that manually here
   if (lua_isboolean(L,1))
      { tname = lua_toboolean(L,1) ? QfsEMPTY_NAME : QfsELLIPSIS; init = true; }
   else tname = luaL_checkstring(L,1);
   vipFocusOff(Twnd); Twnd = vipSplitWindow(Twnd, TM_VFORK);
   if (Twnd && twEdit(Twnd, tname)) {
-    if (init) luasNtxt(Ttxt); // tmDoLoad does nothing for ÷/… files, add table
+    if (init) luasNtxt(Ttxt);
     luaP_getglobal("Txt");
     luaX_rawgeti_top(Ttxt->luaTxid); return 1;
   }
@@ -204,7 +201,8 @@ static int luTxIndex (lua_State *L) // Tx.X and Tx.Y - read/write access
 {                                   // Tx.maxY       - read-only
   txt *t = luasN_gettext(1);
   const char *var = luaL_checkstring(L,2);
-       if (strcmp(var,"X")    == 0) luaP_pushinteger(t->vp_ctx+1);
+       if (strcmp(var,"id")   == 0) luaP_pushinteger(t->luaTxid);
+  else if (strcmp(var,"X")    == 0) luaP_pushinteger(t->vp_ctx+1);
   else if (strcmp(var,"Y")    == 0) luaP_pushinteger(t->vp_cty+1);
   else if (strcmp(var,"maxY") == 0) luaP_pushinteger(t->maxTy);
   else {

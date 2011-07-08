@@ -478,25 +478,28 @@ MicroMir-specific Lua objects and operations:
   Mk:XEQ( Mk["keysequence"] ) -- execute given command (or text with commands),
   Mk:XEQ("text-and-commands") --      as if they were entered from the keyboard
 
-  re = Re[[..regex..]] -- creates Regular Expression object
-  re:match("string")   -- true if string matches
-  re:cap(N)
-  re:caps()
+  re = Re("..regex..",true/false) -- regular expression (arg: case sensitivity,
+  re = Re[[..regex..]]                                  default case-sensitive)
+  re:match("string")   -- returns index of first match or nil if does not match
+  re:cap(N)            -- returns Nth capture
+  re:caps()            -- all captures (to use in multi-value assignement)
 
   Tx = Txt.open("filename") -- create/open given file in new window
   Tx = Txt.open(true)       -- open new window with unnamed file (saveable)
   Tx = Txt.open(false)      -- open new window with throw-away text
   Tx = Txt.this             -- reference to "this" text (may be used only from
                                 the text with script iself, not from functions)
+  Tx.id -- text ID
+  (should be used for safe reference, Txt[Tx.id] -> Tx or nil if text replaced)
 
   Tx:focus() -- focus last opened window, associated with the text
   Tx:line(N) -- content of Nth line in given text (= nil if past end-of-text)
   Tx:lines() -- iterator over the text:  for N,line in Tx:lines() do ... end
   Tx.X, Tx.Y -- current cursor position  (setting new value will move cursor)
-  Tx.maxY    -- max valid value of Y  (= total number of lines in given text)
+  Tx.maxY    -- max value of Y in text (= total number of lines in given text)
   Tx:go(dy)
   Tx:go(dx,dy) = convenience methods to move cursor around (because Lua does
-                                      not allow 'Tx.Y++' or even 'Tx.Y += k')
+                                           not allow 'Tx.Y++' or 'Tx.Y += k')
 NOTE:
   attempt to move cursor past out of text borders does not generate any error,
   cursor just moves as far as possible in requested direction
