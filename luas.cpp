@@ -17,6 +17,77 @@ extern "C" {
 }
 lua_State *L = NULL;
 //-----------------------------------------------------------------------------
+struct luRegExp { // Using "full" user-data to enable proper garbage collection
+  QRegExp *re;    // (light userdata is a value, has no individual metatable,
+};                //        and it is not collected -- as it was never created)
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// Object cosntructor: re = Re("..regex..") or Re[[..regex..]]
+//
+static int luasNewRe (lua_State *L)
+{
+  QString ptn = luaL_checkstring(L,1);
+// ...
+// replace something
+//
+  luRegExp *newRe = (luRegExp *)luaP_newuserdata(sizeof(luRegExp));
+  newRe->re = new QRegExp(ptn); luaP_getmetatable("re");
+                                luaQ_setmetatable  (-2);  return 1;
+}
+static luRegExp *luasN_getRe (int ix)
+{
+  luRegExp *Re = (luRegExp*)luaL_checkudata(L,ix,"re");
+  if (Re->re) return Re;    luaL_error(L,"collected!"); return NULL;
+}
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+static int luasReGC (lua_State *L) // called from garbage collector
+{
+  luRegExp *Re = (luRegExp*)luaL_checkudata(L,1,"re");
+  if (Re->re) delete Re->re;            Re->re = NULL; return 0;
+}
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// Re (Regular expression) methods:
+//
+//   re:match("string") = true if string matches
+//   re:cap(N)
+//   re:caps()
+//
+static int luasReMatch (lua_State *L)
+{
+  luRegExp *Re = luasN_getRe(1);
+  QString str = Utf8(luaL_checkstring(L,2));
+  luaP_pushboolean(Re->re->exactMatch(str)); return 1;
+}
+static int luasReCap (lua_State *L)
+{
+  luRegExp *Re =  luasN_getRe(1);
+  int N = luaL_checkinteger(L,2);
+  luaP_pushstring(Re->re->cap(N).uStr()); return 1;
+}
+static int luasReCaps (lua_State*)
+{
+  luRegExp *Re =  luasN_getRe(1);
+  int N = Re->re->captureCount();
+  for (int i=0; i<N; i++) luaP_pushstring(Re->re->cap(N).uStr()); return N;
+}
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+luaL_Reg luReMetaFuncs[] =
+{
+  { "match", luasReMatch }, { "cap",  luasReCap  }, { "__gc", luasReGC },
+                            { "caps", luasReCaps }, {   NULL, NULL     }
+};
+static void luaReInit (void)
+{
+  luaP_pushCfunction(luasNewRe); luaQ_setglobal("Re");
+//
+// "re" metatable (used as metatable for objects returned by Re function)
+//   functions  - instance functions (methods == match,cap,caps,etc)
+//   __index    - reference to itself
+//
+  luaP_newmetatable("re"); luaL_register(L,NULL,luReMetaFuncs);
+  luaP_pushvalue(-1);
+  luaQ_setfield(-2,"__index"); luaQn_pop(1);
+}
+//-----------------------------------------------------------------------------
 struct luTxtID { // userdata for safe reference to the particular text instance
   txt *t;        // - pointer (safe to use, since txt_tag structs never freed)
   int id;        // - expected value of luaTxid in that text
@@ -31,29 +102,15 @@ void luasNtxt (txt *newTxt)  // "new text" hook (called from tmDoLoad, twm.cpp)
     luaP_pushnil();
     luaQQ_settable(iTxt); // Txt[oldTxid] = nil (remove the element)
   }
-//+
-//  fprintf(stderr, "luasNtxt(%d,file=%s,top=%d)\n", atNextInst,
-//                                    newTxt->file->name.cStr(), iTxt);
-//-
   luaP_pushinteger(newTxt->luaTxid = atNextInst++);
   luaP_newtable();
   luTxtID *newTxtID = (luTxtID*)luaP_newuserdata(sizeof(luTxtID));
            newTxtID->t  = newTxt;
            newTxtID->id = newTxt->luaTxid; luaQ_setfield(-2,"id");
 //
-// Set metatable for the new instance == Txt._mt (handles Tx.X, Tx.Y etc)
-//
-  luaP_pushvalue (iTxt); luaX_getfield_top("_mt");
+  luaP_getmetatable("txt"); // Set metatable for new instance (for Tx.X,Tx.Y,…)
   luaQ_setmetatable(-2);
   luaQQ_rawset   (iTxt); luaQn_pop(1);
-}
-static void luasN_setTxt_this (txt *Tx) //- - - - - - - - - - - - - - - - - - -
-{
-  luaP_getglobal  ("Txt"); // Txt.this = Txt[ Ttxt->luaTxid ] or nil (clear)
-  luaP_pushstring("this"); //
-  if (Tx) luaP_rawgeti(-2,Tx->luaTxid);
-  else    luaP_pushnil();
-          luaQQ_rawset(-3); luaQn_pop(1);
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 static txt *luasN_gettext (int ix)  // returns txt from Lua reference on given
@@ -72,9 +129,9 @@ static void luas_UpdateTxy (txt *t, bool changed = false)
                                                          Ty = Ttxt->vp_cty; }
 }
 //-----------------------------------------------------------------------------
-// Text lazy constructor by text name or bool flags: true = "real text" (save)
+// Txt object constructor by text name or bool flag: true = "real text" (save)
 //                                                   false = not real (discard)
-//   Tx.open("name"/true/false) --> text object
+// Tx.open("name"/true/false) --> text object
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 static int luTxOpen (lua_State *L)
 {
@@ -135,7 +192,6 @@ static int luTxLine_it (lua_State *L)   // line iterator function called as:
   }
   else { luaP_pushnil(); luaP_pushnil(); }  return 2;
 }
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 static int luTxLines (lua_State *)
 {
   luasN_gettext(1);
@@ -256,34 +312,44 @@ luaL_Reg luTxFuncs[] =
   { "focus", luTxFocus }, { "IC", luTxIC },
   { "line",  luTxLine  }, { "DL", luTxDL },
   { "lines", luTxLines }, { "DC", luTxDC }, { NULL, NULL   }
-
 };
 luaL_Reg luTxMetaFuncs[] =
 {
   { "__index", luTxIndex }, { "__newindex", luTxNewindex }, { NULL, NULL }
 };
-//-----------------------------------------------------------------------------
-void luasInit(void)
+static void luTxtInit (void)
 {
-  L = luaL_newstate();
-      luaL_openlibs(L); MkInitCCD(); // defines "Mk" table (for Lua and itself)
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // Txt table
-//   open(tn/f) - lazy constructor, by text name or bool flag (true/false)
-//   functions  - other instance functions (line,lines,go,IC,IL,DC,DL)
-//   _mt        - metatable for instance objects (class methods & inst vars)
-//     __index    - read access to instance variables (X,Y,maxY;ref->Txt)
-//     __newindex - write access to inst variables (X,Y only)
+//   open(tn/f) - object constructor, by text name or bool flag (true/false)
+//   functions  - instance functions (methods == line,lines,go,IC,IL,DC,DL)
 //   this       - reference to the currently active text (Ttxt), luasExec only
 //   [luaTxid]  - active texts are stored here (idexed by txt->luaTxid)
 //     [k].id   -- instance id as userdata == { &txt_tag, txt_tag.luaTxid }
+// metatable for instance objects
+//   __index    - read access to instance variables (X,Y,maxY;ref->Txt)
+//   __newindex - write access to inst variables (X,Y only)
 //
-  luaP_newtable(); luaL_register(L,NULL,luTxFuncs);
-  luaP_pushstring("_mt");
-  luaP_newtable(); luaL_register(L,NULL,luTxMetaFuncs); luaQQ_settable(-3);
-  luaQ_setglobal("Txt");
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  txt *autoLua = tmDesc(":/auto.lua", false); // do not need UNDO (read-only)
+  luaP_newtable();  luaL_register(L,NULL,luTxFuncs); luaQ_setglobal("Txt");
+  luaP_newmetatable("txt");
+  luaL_register(L,NULL,luTxMetaFuncs); luaQn_pop(1);
+}
+static void luasN_setTxt_this (txt *Tx) //- - - - - - - - - - - - - - - - - - -
+{
+  luaP_getglobal  ("Txt"); // Txt.this = Txt[ Ttxt->luaTxid ] or nil (clear)
+  luaP_pushstring("this"); //
+  if (Tx) luaP_rawgeti(-2,Tx->luaTxid);
+  else    luaP_pushnil();
+          luaQQ_rawset(-3); luaQn_pop(1);
+}
+//-----------------------------------------------------------------------------
+void luasInit(void)                            // Lua SCRIPTING initialization
+{
+  L = luaL_newstate();
+      luaL_openlibs(L); MkInitCCD(); // defines "Mk" table (for Lua and itself)
+                        luaReInit(); // defines "Re" function (obj constructor)
+                        luTxtInit(); // defines "Txt" table
+  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  txt *autoLua = tmDesc(":/auto.lua", false);   // do not need UNDO (read-only)
   if (autoLua) { tmLoad  (autoLua);
                  luasExec(autoLua,false); }
 //
@@ -291,7 +357,7 @@ void luasInit(void)
     int rc = luaL_dostring(L, MiApp_autoLoadLua.uStr());
     if (rc) fprintf(stderr, "LuaERROR: %s\n", lua_tostring(L,-1));
 } }
-//-----------------------------------------------------------------------------
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 int luasExec (txt *Tx, bool just1line) // load/execute given text …(tx, false),
 {                                      // or current line in Ttxt …(Ttxt,true);
   const char *buffer;
@@ -319,7 +385,7 @@ int luasExec (txt *Tx, bool just1line) // load/execute given text …(tx, false)
     else vipError(QString("LuaERROR: %1").arg(lua_tostring(L,-1)));
     return E_SFAIL;
   }
-  else if (Tx == Ttxt) Twnd->sctw->DisplayInfo("ok");     return E_OK;
+  else if (Tx == Ttxt) Twnd->sctw->DisplayInfo("ok");  return E_OK;
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 int luasFunc (void)       // executing Lua function (from the top of Lua stack)
@@ -329,9 +395,9 @@ int luasFunc (void)       // executing Lua function (from the top of Lua stack)
   if (KbRadix)
        luaP_pushinteger(KbCount);         // function(Ttxt,kbCount/nil)
   else luaP_pushnil();                    //   no return if Ok
-  if (luaQX_pcall(2,0) == 0) return E_OK; //   errof msg if fails
+  if (luaQX_pcall(2,0) == 0) return E_OK; //   error msg if fails
   else {
-    vipError(QString("LuaERROR: %1").arg(lua_tolstring(L,-1,0)));
-    luaQn_pop(1);                                 return E_SFAIL;
+    vipError(QString("LuaERROR: %1").arg(lua_tostring(L,-1)));
+    luaQn_pop(1);                              return E_SFAIL;
 } }
 //-----------------------------------------------------------------------------

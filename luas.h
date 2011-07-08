@@ -25,8 +25,13 @@ inline int luaQX_pcall(int nargs, int nres) // pops nargs+1 (args & function)
 }
 inline void luaP_getfield(int ix, const char *fn) { lua_getfield(L,ix,fn);  }
 inline void luaP_getglobal(const char *name)      { lua_getglobal(L,name);  }
+inline void luaP_getmetatable(const char *t)      { luaL_getmetatable(L,t); }
 inline void luaP_newtable(void)                   { lua_newtable(L);        }
 inline void *luaP_newuserdata(size_t len)  { return lua_newuserdata(L,len); }
+inline int luaP_newmetatable(const char *tname)
+{
+  return luaL_newmetatable(L,tname); // creates metatable and adds to registry
+}
 inline void luaQn_pop(int n)                      { lua_pop(L,n);           }
 inline void luaP_pushboolean            (int b)   { lua_pushboolean  (L,b); }
 inline void luaP_pushCfunction(lua_CFunction f)   { lua_pushcfunction(L,f); }

@@ -478,10 +478,16 @@ MicroMir-specific Lua objects and operations:
   Mk:XEQ( Mk["keysequence"] ) -- execute given command (or text with commands),
   Mk:XEQ("text-and-commands") --      as if they were entered from the keyboard
 
+  re = Re[[..regex..]] -- creates Regular Expression object
+  re:match("string")   -- true if string matches
+  re:cap(N)
+  re:caps()
+
   Tx = Txt.open("filename") -- create/open given file in new window
   Tx = Txt.open(true)       -- open new window with unnamed file (saveable)
   Tx = Txt.open(false)      -- open new window with throw-away text
-  Tx = Txt.this             -- reference to "this" text (not from functions)
+  Tx = Txt.this             -- reference to "this" text (may be used only from
+                                the text with script iself, not from functions)
 
   Tx:focus() -- focus last opened window, associated with the text
   Tx:line(N) -- content of Nth line in given text (= nil if past end-of-text)
