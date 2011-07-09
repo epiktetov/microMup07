@@ -52,17 +52,17 @@ static int luasReMatch (lua_State *L)
   if (found < 0) luaP_pushnil();
   else           luaP_pushinteger(found); return 1;
 }
-static int luasReCap (lua_State *L)
+static int luasReCap (lua_State *L) // valid arg: 0 to captureCount() inclusive
 {
   luRegExp *Re = (luRegExp*)luaL_checkudata(L,1,"re");
   int N = luaL_checkinteger(L,2);
   luaP_pushstring(Re->re->cap(N).uStr());    return 1;
 }
-static int luasReCaps (lua_State*)
-{
-  luRegExp *Re = (luRegExp*)luaL_checkudata(L,1,"re");
-  int N = Re->re->captureCount();
-  for (int i = 0; i < N; i++) luaP_pushstring(Re->re->cap(i).uStr()); return N;
+static int luasReCaps (lua_State *L)                   // cap(0) = whole match,
+{                                                      // not returned by this
+  luRegExp *Re = (luRegExp*)luaL_checkudata(L,1,"re"); // function (i = 1..N)
+  int N = Re->re->captureCount();                      //
+  for (int i=1; i<=N; i++) luaP_pushstring(Re->re->cap(i).uStr()); return N;
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 luaL_Reg luReMetaFuncs[] =
