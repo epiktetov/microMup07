@@ -232,10 +232,6 @@ Rudimental text formatting:
   Ctrl+T - center non-space text in current line using current window width
   F6 - do some formatting (depending of what pre-condition is applicable):
 
-   * Block Format (for single-line selections): try to fill the selected area
-     with just enough text, splitting content past right edge into next line,
-     or grabbing some text from next line (always doing that in whole words)
-
    * Split Very Long Lines (VLL): if the text in current line does not fit into
      window, then unfold it to several lines (splitting on word boundary unless
      that makes gap too big), adding continuation mark (sky blu '»') at the end
@@ -251,9 +247,20 @@ Rudimental text formatting:
 k_(LE_CENTRX, "Ctrl+T", 0xc5454)
 k_(TE_FORMAT, "F6",     0xf5035)
 /*
+More formatting implemented in Lua (auto-loaded at startup, see ":/auto.lua"):
+
+  ^J,F6...F6,F6...  - mark left/right margins by block selection, then format
+  Ctrl+F6,F6,F6...  - use previous margins                       line-by-line
+  Shift+F6          - format all lines up to the next empty one
+
+Format operation tries to fill the selected area with just enough text, splits
+content past right edge into next line or grabs missing content from next line
+(no hiphenation - breaks only at spaces, commas and semicolon, multiple spaces
+are squeezed into one)
+
 ʁSEARH AND REPLACE.ʀ MicroMir can search in text mode (case-sensitive or not), in
 wildcard mode (? matches any symbol and * matches any substring), or in regular
-expression mode: http://doc.qt.nokia.com/4.7/qregexp.html -- modes are selected
+expression one (http://doc.qt.nokia.com/4.7/qregexp.html); the mode is selected
 when entering search/replace pattern.
 
   Ctrl/Meta+F = Home End - edit search/replace pattern (start search by Return)
@@ -331,14 +338,15 @@ a_(TE_FROMCB,   "Meta+V", 0xc7456)
 k_(LE_CPCLOS, "Shift+F4", 0xf7233) /* начнем запоминать по новой */
 k_(LE_CPOPEN,  "Ctrl+F1", 0xf7430) /* наоборот, будем добавлять  */
 /*
-Yes, MicroMir has selections as well -- as a matter of fact, two kinds of them;
-however it is always a rectangle in the text. Shift+movements makes "temporary"
-selection (grey rectangle) and F5 followed by any regular cursor movement makes
-"permanent" one (light blue rectangle). Typing DO NOT overwrites selected text!
-
-        Shift+{arrows} - start/extend  |       (any movement    - start/extend
-   Alt +Shift+{arrows}    "temporary"  |  F5 ..  except for   ..   "permanent"
-   Ctrl+Shift+Left/Right    selection  |       [Shift+]Return)       selection
+ʁSELECTION.ʀ Although text can be copied without selecting anything, MicroMir has
+mechanism of rectangular selections: Shift+{arrows} makes "temporary" selection
+(grey rectangle) & F5 followed by any regular cursor movement makes "permanent"
+one (light blue rectangle).
+                                       |       (any movement    - start/extend
+        Shift+{arrows} - start/extend  |  F5 ..  except for   ..   "permanent"
+   Alt +Shift+{arrows}    "temporary"  |       [Shift+]Return)       selection
+   Ctrl+Shift+Left/Right    selection
+                                         Typing DO NOT overwrites selected text
 */
 a_(LE_LEFT,       "Shift+Left",  0xe0012) /* влево  |               */
 a_(TE_UP,         "Shift+Up",    0xe0013) /* вверх  | с отметкой    */
@@ -353,7 +361,7 @@ a_(LE_END,   "Ctrl+Shift+Right", 0xe0414) /* в конец строки         
 k_(TX_MCBLOCK,             "F5", 0xc8034) /* == "постоянный" блок   */
 /*
 When selection (of either type) is active, some commands operate with selected
-text instead of character, namely:
+text instead of current character, namely:
 
         F1 (Ctrl/Meta+C) - add selected text to copy/paste buffer
   Shift+F1               - save selection and delete from text
@@ -462,7 +470,7 @@ k_(LE_CENTR,  "Ctrl+H",         0xfb448) /* - по горизонтали       
 ʁLua SCRIPTING:ʀ MicroMir embeds Lua scripting language (see http://www.lua.org),
 with only one command defined natively (+ a few more in auto-loaded Lua script)
 
-    Ctrl+J,Ctrl+J - load and executes entire current text as Lua script
+    Ctrl+J,Ctrl+J - load and executes the entire current text as Lua script
      Ctrl+Shift+J - load/execute current line as (single-line) Lua script
 */
 k_(TM_LUAF,    "^J,Ctrl+J", 0xfc000) /* загрузить и выполнить программу на   */
@@ -479,10 +487,11 @@ MicroMir-specific Lua objects and operations:
   Mk:XEQ("text-and-commands") --      as if they were entered from the keyboard
 
   re = Re("..regex..",true/false) -- regular expression (arg: case sensitivity,
-  re = Re[[..regex..]]                                  default case-sensitive)
-  re:match("string")   -- returns index of first match or nil if does not match
-  re:cap(N)            -- returns Nth capture
-  re:caps()            -- all captures (to use in multi-value assignement)
+  re = Re[[..regex..]]                                default = case-sensitive)
+  re:ifind("str"[,pos]) -- returns index of first match (nil if does not match)
+  re:cap(N)             -- returns Nth capture (only when called after 'ifind')
+  re:caps()             -- all captures (to use in multi-value assignement)
+  re:grepl("str","to")  -- globally replace pattern (where \N = Nth capture)
 
   Tx = Txt.open("filename") -- create/open given file in new window
   Tx = Txt.open(true)       -- open new window with unnamed file (saveable)
@@ -495,13 +504,14 @@ MicroMir-specific Lua objects and operations:
   Tx:focus() -- focus last opened window, associated with the text
   Tx:line(N) -- content of Nth line in given text (= nil if past end-of-text)
   Tx:lines() -- iterator over the text:  for N,line in Tx:lines() do ... end
-  Tx.X, Tx.Y -- current cursor position  (setting new value will move cursor)
-  Tx.maxY    -- max value of Y in text (= total number of lines in given text)
+  Tx.X, Tx.Y -- current cursor position (assigning new value will move cursor)
+  Tx.reX,reY -- another corner of the selection rectangle (nil if no selection)
+  Tx.maxY    -- max value of Y in text  (= total number of lines in given text)
   Tx:go(dy)
   Tx:go(dx,dy) = convenience methods to move cursor around (because Lua does
                                            not allow 'Tx.Y++' or 'Tx.Y += k')
 NOTE:
-  attempt to move cursor past out of text borders does not generate any error,
+  attempt to move cursor out of text boundaries does not generate any error,
   cursor just moves as far as possible in requested direction
 
   Tx:IC("text") -- insert text into current line | move cursor past
@@ -590,7 +600,7 @@ Color:
   Hue degrees (in that case Sat=16% and Val=100% is forced)        40° or 40*
 
   Ctrl+Alt+1 - switch to first / default palette in current window
-  Ctrl+Alt+2 - switch to palette 2 (if not confiured, set to 80° light green)
+  Ctrl+Alt+2 - switch to palette 2 (if not confiured, using 80° light green)
   Ctrl+Alt+3 - switch to palette 3 (default is 200° sky blue)
   Ctrl+Alt+4 - switch to palette 4 (default is "mistyrose")
 */
@@ -605,14 +615,14 @@ of "alias=key" pairs. Syntax for both elements is consistent with this document
 (if you are not sure what is the name of particular key,  try starting MicroMir
 with '-kb' option, the names of keys will be displayed in the Info window), and
 the alias automatically works with any modifier. For example, if keyboard lacks
-Ins/Del keys, but have extra function or numpad keys, one can use these config:
+Ins/Del keys (but have extra function or numpad keys), then you can use these:
 
   F11=Ins,F12=Del   -- use F11 as alias for Ins and F12 as alias for Del
   [0]=Ins,[.]=Del   -- use numpad keys for Ins and Del
 
 See "Lua SCRIPTING" for remapping MicroMir commands to different key sequences.
 -------------------------------------------------------------------------------
-Some useful Alt+CHARs (most already present on Mac, but a coiple of them moved)
+Some useful Alt+CHARs (most already present on Mac, but a couple of them moved)
 */
 a_(0, "Alt+1", 0x00B9) /* ¹ */
 a_(0, "Alt+2", 0x00B2) /* ² */    a_(0, "Alt+Shift+@", 0x2122) /* ™ (moved) */

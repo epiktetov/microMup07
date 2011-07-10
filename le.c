@@ -555,8 +555,8 @@ int LeCommand (comdesc *cp)
     TxSetY(Ttxt, Ty); teIL(); tleload(); // the only case Lredit may be false
   }                                      // for editable text is when current
   if (cp->attr & CA_CHANGE) {            // line is end-of-text, insert empty
-    if (!Lredit) return E_CHANGE;
-    else           UdMark = TRUE;
+    if (Lredit) UndoMark = TRUE;
+    else        return E_CHANGE;
   }
   for (rpt = (cp->attr & CA_RPT) ? 1 : KbCount; rpt; rpt--) {
     if (cp->attr & (CA_NEND|CA_NBEG)) {

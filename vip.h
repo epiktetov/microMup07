@@ -25,7 +25,8 @@ void vipActivate(wnd *w);     /* make this window current (set Ttxt/Twnd)    */
 void vipGotoXY(int x, int y); /*        click in the active window (Twnd)    */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 extern bool LeInsMode;  /* Режим вставки (если FALSE, то режим замены), le.c */
-extern bool BlockMark;  /* block mark is on, with BlockMarkRect coordinates  */
+extern bool BlockMark;  /* block mark is on: (BlockTx,BlockTy) to (Tx,Ty)    */
+void wpos_off(wnd *vp);
 void scblkon(bool tmp);
 void scblkoff();
 extern int BlockTx, BlockTy; /* block 1st corner (another one is at cursor)  */

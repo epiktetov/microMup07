@@ -16,7 +16,7 @@ void tundounload(txt *t); void udcut(txt *t), udclear(txt *t);
 #define REPLACE 32000  /* used for dx in lundoadd */
 
 void leundo(), lesundo(), leunundo(), lesunundo();
-extern bool UdMark;
+extern bool UndoMark;
 void tundo1add(txt *t, short typ,          char *a, short len);
 void tundo2add(txt *t, char *ao, short lo, char *an, short ln);
 void lundoadd (txt *t, short xl, short xr, short dx, tchar *os, tchar *ns);

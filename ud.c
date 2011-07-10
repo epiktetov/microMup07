@@ -46,15 +46,15 @@ typedef struct { /* UL_InLE -- замена внутри строки (tchar) */
  /* Старая подстрока */
 } lineundo;
 
-static bool undo_blocked =  FALSE;
+static bool undo_blocked =  false;
 static char ubuf[UBUFSIZ], *eubuf;
-bool UdMark = FALSE;
+bool UndoMark = false;
 /*-----------------------------------------------------------------------------
  *               Добавить сформированную запись откатки к файлу
  */
 static void undogadd (txt *t, short typ)
 {
-  ((text1undo *)ubuf)->utyp = ( UdMark ? typ|U_MARK : typ ); UdMark = FALSE;
+  ((text1undo *)ubuf)->utyp = (UndoMark ? typ|U_MARK : typ); UndoMark = false;
   long len = t->txudcptr;
   if (typ <= UT_LOAD) {                       /* началось изменение текста - */
     if (t->txudlptr < len) len = t->txudlptr; /*     удалим строчную откатку */
@@ -75,7 +75,7 @@ void tundoload (txt *t)                         /* Загрузка редакт
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tundounload (txt *t)                                /* Покидание строки */
 {
-  UdMark = TRUE; if (undo_blocked || t->txudeq == NULL) return;
+  UndoMark = true; if (undo_blocked || t->txudeq == NULL) return;
   DqCutE_toX(t->txudeq, t->txudlptr);
   t->txudcptr =         t->txudlptr;
 }

@@ -200,7 +200,7 @@ void MkLuaXEQ (QString text, wnd *vp)
   else if (lua_isstring(L,-1)) text = Utf8(lua_tostring(L,-1));
   else if (lua_isfunction(L,-1)) {
     if (MiApp_debugKB) fprintf(stderr, ",lua\n");
-    luasFunc();                     luaQn_pop(1); return;
+    wpos_off(vp);      luasFunc();  luaQn_pop(1); return;
   }
   if (MiApp_debugKB) fprintf (stderr, ",'%s'\n", text.uStr());
   if (!text.isEmpty()) MkStrXEQ(text,vp);        luaQn_pop(2);

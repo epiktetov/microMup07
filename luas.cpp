@@ -1,7 +1,6 @@
 /*------------------------------------------------------+----------------------
 // МикроМир07          Embedded Lua scripting           | (c) Epi MG, 2011
 //------------------------------------------------------+--------------------*/
-#include <QString>
 #include <QRegExp>
 #include "mim.h"
 #include "ccd.h"
@@ -14,6 +13,7 @@ extern "C" {
 #include "dq.h"
 #include "le.h"
 #include "tx.h"
+#include "ud.h" // UndoMark
 }
 lua_State *L = NULL;
 //-----------------------------------------------------------------------------
@@ -37,26 +37,35 @@ static int luasReGC (lua_State *L) // called from garbage collector
   luRegExp *Re = (luRegExp*)luaL_checkudata(L,1,"re");
   if (Re->re) delete Re->re;            Re->re = NULL; return 0;
 }
+static int luasReTS (lua_State *L) // tostring(Re) = pattern (mostly for debug)
+{
+  luRegExp *Re = (luRegExp*)luaL_checkudata(L,1,"re");
+  luaP_pushstring(Re->re->pattern().uStr()); return 1;
+}
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-// Re (Regular expression) methods:
+// Re (Regular expression) methods, intentionally with different names compared
+// to built-in Lua patterns to avoid confusion (args modelled after Qt lib):
 //
-//   re:match("string") -- returns index of first match (nil if does not match)
-//   re:cap(N)          -- returns Nth capture
-//   re:caps()          -- all captures (to use in multi-value assignement)
+// re:ifind("str",pos)  -- returns index of first match (nil if does not match)
+// re:cap(N)            -- returns Nth capture
+// re:caps()            -- all captures (to use in multi-value assignement)
+// re:grepl("str","to") -- globally replace pattern (where \N = Nth capture)
 //
-static int luasReMatch (lua_State *L)
+static int luasReIndex (lua_State *L)
 {
   luRegExp *Re = (luRegExp*)luaL_checkudata(L,1,"re");
   QString str = Utf8(luaL_checkstring(L,2));
-  int found = Re->re->indexIn(str);
-  if (found < 0) luaP_pushnil();
-  else           luaP_pushinteger(found); return 1;
+  int ipos = luaL_optinteger(L,3,-1);
+  int found = Re->re->indexIn(str, ipos+1); // Qt string starts indexing from 0
+  if (found < 0) luaP_pushnil();            //            but Lua starts from 1
+  else           luaP_pushinteger(found+1); return 1;
 }
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 static int luasReCap (lua_State *L) // valid arg: 0 to captureCount() inclusive
 {
   luRegExp *Re = (luRegExp*)luaL_checkudata(L,1,"re");
   int N = luaL_checkinteger(L,2);
-  luaP_pushstring(Re->re->cap(N).uStr());    return 1;
+  luaP_pushstring(Re->re->cap(N).uStr()); return 1;
 }
 static int luasReCaps (lua_State *L)                   // cap(0) = whole match,
 {                                                      // not returned by this
@@ -64,11 +73,19 @@ static int luasReCaps (lua_State *L)                   // cap(0) = whole match,
   int N = Re->re->captureCount();                      //
   for (int i=1; i<=N; i++) luaP_pushstring(Re->re->cap(i).uStr()); return N;
 }
+static int luasReGRepl (lua_State *L)
+{
+  luRegExp *Re = (luRegExp*)luaL_checkudata(L,1,"re");
+  QString str = Utf8(luaL_checkstring(L,2));
+  QString tos = Utf8(luaL_checkstring(L,3));
+  luaP_pushstring(str.replace(*(Re->re), tos).uStr()); return 1;
+}
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 luaL_Reg luReMetaFuncs[] =
 {
-  { "match", luasReMatch }, { "cap",  luasReCap  }, { "__gc", luasReGC },
-                            { "caps", luasReCaps }, {   NULL, NULL     }
+  { "ifind", luasReIndex }, { "cap",  luasReCap  }, { "__gc",       luasReGC },
+  { "grepl", luasReGRepl }, { "caps", luasReCaps }, { "__tostring", luasReTS },
+  { NULL, NULL }
 };
 static void luaReInit (void)
 {
@@ -159,12 +176,13 @@ static int luTxFocus (lua_State*)     // Tx:focus() = focus last opened window,
 //   Tx:line(N) = content of Nth line in given text (= nil if past end-of-text)
 //   Tx:lines() = iterator over the text:  for N,line in Tx:lines() do ... end
 //   Tx.X, Tx.Y = current cursor position  (setting new value will move cursor)
-//   Tx.maxY    = max valid value of Y  (= total number of lines in given text)
+//   Tx.reX,reY = opposite corner of selection rectangle (nil if no selection)
+//   Tx.maxY    = max valid value of Y (= total number of lines in given text)
 //   Tx:go(dy)
 //   Tx:go(dx,dy) = convenience methods to move cursor around ('cause Lua does
 //                                      not allow 'Tx.Y++' or even 'Tx.Y += k')
 // NOTE:
-//   attempt to move cursor past out of text borders does not generate any
+//   attempt to move cursor out of text boundaries does not generate any
 //   error, cursor just moves as far as possible in requested direction
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 static int luTxLine (lua_State *L) // Tx:line(N) == Tx.line(Tx,N)
@@ -201,15 +219,32 @@ static int luTxIndex (lua_State *L) // Tx.X and Tx.Y - read/write access
 {                                   // Tx.maxY       - read-only
   txt *t = luasN_gettext(1);
   const char *var = luaL_checkstring(L,2);
-       if (strcmp(var,"id")   == 0) luaP_pushinteger(t->luaTxid);
-  else if (strcmp(var,"X")    == 0) luaP_pushinteger(t->vp_ctx+1);
-  else if (strcmp(var,"Y")    == 0) luaP_pushinteger(t->vp_cty+1);
+       if (strcmp(var,"id")  == 0) luaP_pushinteger(t->luaTxid);
+  else if (strcmp(var,"X")   == 0) luaP_pushinteger(t->vp_ctx+1);
+  else if (strcmp(var,"Y")   == 0) luaP_pushinteger(t->vp_cty+1);
+  else if (strcmp(var,"reX") == 0) {
+    if (t == Ttxt && BlockMark) luaP_pushinteger(BlockTx+1);
+    else                        luaP_pushnil();
+  }
+  else if (strcmp(var,"reY") == 0) {
+    if (t == Ttxt && BlockMark) luaP_pushinteger(BlockTy+1);
+    else                        luaP_pushnil();
+  }
   else if (strcmp(var,"maxY") == 0) luaP_pushinteger(t->maxTy);
   else {
     luaP_getglobal ("Txt"); // refer to the base Txt table for everything else
     luaX_getfield_top(var); // (if field is not there, let Lua generate errors
   }                         // by itself)
   return 1;
+}
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+static void luSetBlock3 (bool setX) // X/y value on Lua stack[3], text == Ttxt
+{
+  long N = (long)luaL_optnumber(L,3,0);
+  if (N > 0) { BlockMark = true;
+               BlockTemp = false; if (setX) BlockTx = N-1;
+                                  else      BlockTy = N-1; }
+  else BlockMark = false;
 }
 static int luTxNewindex (lua_State *L)
 {
@@ -223,9 +258,11 @@ static int luTxNewindex (lua_State *L)
          t->vp_cty = my_max(t->maxTy-N+1,0);   //
     else t->vp_cty = my_min(my_max(N-1,0),t->maxTy);
   }
-  else { luaQQ_rawset(1); return 0; } // fall back to (raw) Lua settable
-  luas_UpdateTxy(t);      return 0;   //      for all unknown properties
-}
+  else if (strcmp(var,"reX") == 0) { if (t == Ttxt) luSetBlock3(true);  }
+  else if (strcmp(var,"reY") == 0) { if (t == Ttxt) luSetBlock3(false); }
+  else { luaQQ_rawset(1); return 0; } //
+  luas_UpdateTxy(t);      return 0;   // fall back to (raw) Lua settable
+}                                     //      for all unknown properties
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 static int luTxGo (lua_State *L) // Tx:go([dx,]dy) == Tx.go(Tx,[dx,]dy)
 {                                //   if dx not specified, default to 0
@@ -233,8 +270,8 @@ static int luTxGo (lua_State *L) // Tx:go([dx,]dy) == Tx.go(Tx,[dx,]dy)
   int dx = 0, dy, k = 2;
   if (lua_gettop(L) > 2) dx = luaL_checkinteger(L,k++);
                          dy = luaL_checkinteger(L,k  );
-  t->vp_ctx = my_max(my_min(t->vp_ctx + dx,0),t->txrm);
-  t->vp_cty = my_max(my_min(t->vp_cty + dy,0),t->maxTy);
+  t->vp_ctx = my_min(my_max(t->vp_ctx + dx,0),t->txrm);
+  t->vp_cty = my_min(my_max(t->vp_cty + dy,0),t->maxTy);
   luas_UpdateTxy(t);                           return 0;
 }
 //-----------------------------------------------------------------------------
@@ -263,10 +300,12 @@ static int luTxIC (lua_State *L) // Tx:IC("text") = insert given text at cursor
   t->vp_ctx += tlen;
   luas_UpdateTxy(t, true); return 0;
 }
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 static int luTxIL (lua_State *L) // Tx:IL("text") = insert given line at cursor
 {
-  txt *t = luasN_gettext(1);          size_t len;
-  const char *text = luaL_checklstring(L,2,&len);
+  txt *t = luasN_gettext(1);          size_t len; // for consistency remove all
+  const char *text = luaL_checklstring(L,2,&len); // trailing spaces - TxFRep()
+  while (len > 0 && text[len-1] == ' ') len -= 1; // does that, TxIL() does not
   TxSetY(t, t->vp_cty++);
   TxIL  (t, (char*)text, len); luas_UpdateTxy(t, true); return 0;
 }
@@ -283,6 +322,7 @@ int luTxDC (lua_State *L) // Tx:DC(N) = delete N character (default = 1)
   TxFRep(t, Lebuf);
   luas_UpdateTxy(t, true); return 0;
 }
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 int luTxDL (lua_State *L) // Tx:DL(N) = delete N lines (default = 1) at cursor
 {
   txt *t = luasN_gettext(1); int N = luaL_optinteger(L,2,1);
@@ -387,9 +427,10 @@ int luasExec (txt *Tx, bool just1line) // load/execute given text …(tx, false)
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 int luasFunc (void)       // executing Lua function (from the top of Lua stack)
-{                         // (for consistency always run it outside of LE mode)
-  if (Lwnd) ExitLEmode();
-  luaP_getglobal ("Txt"); luaX_rawgeti_top(Ttxt->luaTxid);
+{                         // for consistency, always run it outside of LE mode,
+  if (Lwnd) ExitLEmode(); // consider it a single operation in future Undo ops
+  UndoMark = true;
+  luaP_getglobal("Txt"); luaX_rawgeti_top(Ttxt->luaTxid);
   if (KbRadix)
        luaP_pushinteger(KbCount);         // function(Ttxt,kbCount/nil)
   else luaP_pushnil();                    //   no return if Ok

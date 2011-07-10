@@ -185,63 +185,6 @@ void teformat()
   int txw = my_min(Twnd->wsw, Ttxt->txrm)-1; tchar *Lepos = Lebuf;
   int len;
   if (Ttxt->txstat & TS_MCD) exc(E_FORMAT);
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-// Block Format - try to fill the 1-line block with just enough text, splitting
-// content past right edge into next line, or grabbing some text from next line
-// (always in whole words only, using leNword function for word breaks):
-//
-  if (BlockMark) {
-    int len,    x0,  x1;
-    Block1size(&x0, &x1); // exc(E_BLOCKOUT) if not 1-line block
-    short wbeg;
-    Lleng = TxFRead(Ttxt, Lebuf);
-    if (Lleng > x1) {
-      if (tcharIsBlank(Lebuf[x1]) || tcharIsBlank(Lebuf[x1-1])) {
-        Lx = x1-1; leNword (NIL, NIL, &wbeg); // ^
-        Lx = Tx;                              // long line, can split exactly
-        if (wbeg >= Lleng) { BlockTy++;       //    at the right edge of block
-                                  Ty++; return; }
-      }
-      else { Lx = x1+1; leNword(&wbeg, NIL, NIL); // cannot, find the beginning
-             Lx = Tx;                             //  of word that does not fit
-             if (wbeg <= x0) exc(E_FORMAT);
-      }
-      BlockTy++; TxTRep(Ttxt, Lebuf, wbeg); TxDown(Ttxt);
-           Ty++;
-      blktspac(Lebuf, x0);                        // clear head of the new line
-      blktmov (Lebuf+wbeg, Lebuf+x0, Lleng-wbeg); // move split-over text there
-      TxTIL (Ttxt,  Lebuf, Lleng - (wbeg-x0));    // and insert that into text
-    }
-    //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    else if (Lleng < x1-1) {  Lebuf[Lleng++] = (tchar)' '; // first of all, add
-      int len2fill = x1-Lleng;                             // a space to Lebuf,
-      blktmov(Lebuf, lfbuf, (len = Lleng) ); TxDown(Ttxt); // save it in lfbuf
-      Lleng = TxFRead(Ttxt,  Lebuf);
-      if (Lleng < x0) exc(E_FORMAT);
-      if (Lleng < len2fill) {                               // can fill the gap
-        TxDL(Ttxt); blktmov(Lebuf+x0, lfbuf+len, Lleng-x0); // entirely by next
-                    TxTRep (Ttxt, lfbuf, len + (Lleng-x0)); // line => do that!
-      }
-      else {                                         // cannot, find first word
-        Lx = x0+len2fill; leNword (&wbeg, NIL, NIL); // in next line to reamain
-        Lx = Tx;      if (wbeg <= x0) exc(E_FORMAT); // (hopefully there's one)
-//
-// TODO: probably, need to squeeze extra spaces between words in the next line;
-// ortherwise this is quite confusing:
-//
-//   [short-line    ]
-//    word1       word2
-//    ^
-//    wbeg
-//
-        blktmov(Lebuf+x0,   lfbuf+len,   wbeg-x0); len += wbeg-x0;
-        blktmov(Lebuf+wbeg, Lebuf+x0, Lleng-wbeg);
-        BlockTy++;             TxTRep(Ttxt, Lebuf, Lleng-(wbeg-x0));
-             Ty++; TxUp(Ttxt); TxTRep(Ttxt, lfbuf, len);
-    } }
-    return;
-  }
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   Lleng = TxFRead(Ttxt, Lebuf); TxDL(Ttxt);
 //
 // Folding Very Long Lines (VLL): if the line has continuation mark at the end,
@@ -496,8 +439,8 @@ int TeCommand (comdesc *cp)
 
   if (cp->attr & CA_LCUT && Ttxt == LCtxt) return E_LCUT;
   if (cp->attr & CA_CHANGE) {
-    if (Ttxt->txredit != TXED_YES) return E_CHANGE;
-    UdMark = TRUE;
+    if (Ttxt->txredit == TXED_YES) UndoMark = TRUE;
+    else                           return E_CHANGE;
   }
   for (rpt = (cp->attr & CA_RPT) ? 1 : KbCount; rpt; rpt--) {
     TxSetY(Ttxt, Ty);
