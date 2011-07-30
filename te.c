@@ -297,10 +297,10 @@ void tesdown (void)
 {
   int x = Tx, len; tesPrepare();
   for(;;) {
-    char *str = TxGetLn(Ttxt, &len); x = vipFind(str, len, x+1, FALSE);
+    char *str = TxGetLn(Ttxt, &len); x = vipFind(str,len, x+1, false);
     if (x < 0) {  
       if (qkbhin())       exc(E_KBREAK); TxDown(Ttxt);
-      if (qTxBottom(Ttxt)) exc(E_SFAIL); // x == -1 here, exactly start of line
+      if (qTxBottom(Ttxt)) exc(E_SFAIL);       x = -1;
     } 
     else { Ty = Ttxt->txy;
            Tx = x; return; }
@@ -312,11 +312,10 @@ void tesup(void)
   for(;;) {
     if (x < 1) { 
       if (qTxTop(Ttxt)) exc(E_SFAIL); TxUp(Ttxt);
-      if (qkbhin())    exc(E_KBREAK);
+      if (qkbhin())    exc(E_KBREAK);     x = -1;
     }
-    char *str = TxGetLn(Ttxt, &len);
-    x = vipFind(str, len, (x < 0) ? len : x-1, TRUE);
-    if (x != -1) {
+    char *str = TxGetLn(Ttxt, &len); x = vipFind(str,len, (x<0)?len:x-1, true);
+    if (x >= 0) {
       Ty = Ttxt->txy;
       Tx = x; return;
 } } }
