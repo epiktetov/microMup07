@@ -166,15 +166,20 @@ void TxDEL_end(txt *t)
     if (t->txmarky[i] > t->txy) t->txmarky[i] = -1; /* deleting end-of-text  */
 }                                                   /* may delete some marks */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void TxEmpt (txt *t)
-{                    if (t->txudeq) DqEmpt(t->txudeq);
+void TxDiscard (txt *t) /* Discard the content of the file, also UNDO & Synt */
+{
   DqEmpt(t->txdstk); if (t->clustk) DqEmpt(t->clustk);
   DqEmpt(t->txustk); if (t->cldstk) DqEmpt(t->cldstk);
-  t->maxTy = t->txy = 0;
+                     if (t->txudeq) DqEmpt(t->txudeq);
+  t->txudfile = -1;
   t->txudcptr = t->txudlptr = 0; t->vp_ctx = t->vp_wtx = 0;
-  t->txudfile = -1;              t->vp_cty = t->vp_wty = 0; TxMarks0(t);
-  memset(t->lastSynts, 0, sizeof(int) * MAXSYNTBUF);    wndop(TW_EM, t);
+  t->maxTy    = t->txy      = 0; t->vp_cty = t->vp_wty = 0;
+  t->txstat  &= ~TS_FILE;
+  memset(t->thisSynts, 0, sizeof(int) * MAXSYNTBUF);
+  memset(t->prevSynts, 0, sizeof(int) * MAXSYNTBUF);
+  memset(t->lastSynts, 0, sizeof(int) * MAXSYNTBUF);
 }
+void TxEmpt(txt *t) { TxDiscard(t); TxMarks0(t); wndop(TW_EM, t); } /* Empty */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void TxIL(txt *t, char *text, short len)
 {
@@ -213,7 +218,7 @@ short TxRead (txt *t, char *tp)
 short TxTRead (txt *t, tchar *tp)
 {
   if (qTxBottom(t)) {
-    short  len = aftotc(AF_DIRTY "^^" AF_NONE " end of ", -1, tp);
+    short  len = aftotc("^^ end of ",-1, tp);
     return len + QfsFullName2tc(t->file, tp+len);
   } 
   else { short laf =  TxRead(t, txbuf);
@@ -348,7 +353,6 @@ tchar *TxInfo (wnd *w, long y, int *pl)       /* used for repaint in vip.cpp */
 {                                             /* to get current char mim.cpp */
   txt *t = w->wtext;                          /* (return buf may be changed) */
   int len = 0;
-  if (tcbuf[0] & AT_DIRTY) { blktspac(tcbuf, MAXLPAC); tcbuflen = 0; }
   if (t && TxSetY(t, y)) {
     if (w == Lwnd && y == Ly) blktmov(Lebuf, tcbuf, len = Lleng);
     else                                 len = TxTRead(t, tcbuf);

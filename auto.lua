@@ -29,8 +29,8 @@ do local function breakable(c) return (c == ' ' or c == ',' or c == ';') end
     end
     if tline:len() >= Tx.fmtToX then -- too much text, find the place to split
       local Nsp
-      if tline:byte(Tx.fmtToX) == 0x20 then Nsp = Tx.fmtToX -- ← space is right
-      else                                                  --   after the edge
+      if tline:byte(Tx.fmtToX) == 0x20 then Nsp = Tx.fmtToX -- space is right
+      else                                                  --  after the edge
         for i=Tx.fmtToX-1,2,-1 do
           if breakable(tline:sub(i,i)) then Nsp = i; break end
         end

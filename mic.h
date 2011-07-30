@@ -24,11 +24,11 @@ extern "C" {
 typedef long tchar;                           /* Unicode символ с атрибутами */
 #define tATTR(x)(x&0x7FFF0000)
 #define AT_CHAR    0x0000FFFF /* собственно Unicode символ (use only 16-bit) */
-#define AT_BOLD    0x00010000 /* Bold                               == KxTS  */
-#define AT_PROMPT  0x00020000 /* prompts text (def. dark blue text) == KxBLK */
-#define AT_REGEX   0x00040000 /* indicates regex search (dark red)  == KxTMP */
+#define AT_BOLD    0x00010000 /* Bold attribute                              */
+#define AT_PROMPT  0x00020000 /* prompts text (dark blue text), protected    */
+#define AT_REGEX   0x00040000 /* indicates regex search (dark red)           */
 #define AT_SUPER   0x00080000 /* sky blue (special chars) forces Insert mode */
-#define AT_DIRTY   0x00100000 /* "dirty" mark  (was: reserved for underline) */
+#define AT_DIRTY   0x00100000 /* reserved (was: "dirty" mark)                */
 #define AT_IN_FILE 0x001F0000 /* <---- mask of attributes saved in file ---- */
 #define AT_INVERT  0x00200000 /* when added to AT_BG_CLR => indicates cursor */
 #define AT_BG_CLR  0x00c00000 /* background color:                           */

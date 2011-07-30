@@ -142,15 +142,6 @@ void twDirCopy (wnd *from, wnd *to)
   to->dirsp = toDS;
 }
 /*--------------------------------------------------------- Text manager ----*/
-static void discardfile (txt *t)
-{
-  if (t->txstat & TS_FILE) {
-    DqEmpt(t->txustk); t->txy = 0;
-    DqEmpt(t->txdstk); t->txstat &= ~TS_FILE;
-  }
-  if (t->txstat & TS_UNDO) { DqEmpt(t->txudeq); 
-                                    t->txudcptr = t->txudlptr = 0; }
-}
 static void checkfile (txt *t) // - - - - - - - - - - - - - - - - - - - - - - -
 {
   bool ok = (t->file->ft < QftREAL) || QfsIsUpToDate(t->file);
@@ -160,7 +151,7 @@ static void checkfile (txt *t) // - - - - - - - - - - - - - - - - - - - - - - -
  * modifications, warn and preserve it (otherwise discard the file contents):
  */
   if (t->txstat & TS_CHANGED) vipBell(); // TODO: ask question!
-  else                   discardfile(t);
+  else                     TxDiscard(t);
 }
 void tmCheckFiles (void) // - - - - - - - - - - - - - - - - - - - - - - - - - -
 { 
@@ -276,10 +267,7 @@ static void check_MCD (txt *t) // TODO: check file contents instead
   if (t->file->name.compare(QfsROOTFILE, QfsIGNORE_CASE) == 0) {
     t->txstat |= TS_MCD; t->txlm = 0;
                          t->txrm = MCD_LEFT;
-  }
-//  else { t->txstat &= ~TS_MCD; t->txlm = 0;
-//+                              t->txrm = MAXTXRM; }
-}
+} }
 bool tmDoLoad (txt *t)  /*- - - - - - - - - - - - - - - - - - - - - - - - - -*/
 {
 //  fprintf(stderr, "tmLoad(%s)\n", t->file ? t->file->name.cStr() : "Null");
@@ -335,10 +323,10 @@ bool tmReLoad (txt *t)   // Forced reload -- check the status of real file (and
 {                        // discard outdated contents if necessary), but always
   switch (t->file->ft) { // re-create directory listings and PSEUDO files anew:
   case QftNOFILE:        //
-  default:                                           return false;
-  case QftTEXT:   checkfile  (Ttxt); tmLoad  (Ttxt); return  true;
-  case QftPSEUDO: discardfile(Ttxt); tmLoad  (Ttxt); return  true;
-  case QftDIR:         TxEmpt(Ttxt); tmDoLoad(Ttxt); return  true;
+  default:                                         return false;
+  case QftTEXT:   checkfile(Ttxt); tmLoad  (Ttxt); return  true;
+  case QftPSEUDO: TxDiscard(Ttxt); tmLoad  (Ttxt); return  true;
+  case QftDIR:    TxDiscard(Ttxt); tmDoLoad(Ttxt); return  true;
 } }
 /*---------------------------------------------------------------------------*/
 bool tmsave (txt *t, bool needBackup)
