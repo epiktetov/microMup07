@@ -62,16 +62,20 @@ static int luasReIndex (lua_State *L)
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 static int luasReCap (lua_State *L) // valid arg: 0 to captureCount() inclusive
-{
+{                                   //                     cap(0) = whole match
   luRegExp *Re = (luRegExp*)luaL_checkudata(L,1,"re");
   int N = luaL_checkinteger(L,2);
   luaP_pushstring(Re->re->cap(N).uStr()); return 1;
 }
-static int luasReCaps (lua_State *L)                   // cap(0) = whole match,
-{                                                      // not returned by this
-  luRegExp *Re = (luRegExp*)luaL_checkudata(L,1,"re"); // function (i = 1..N)
-  int N = Re->re->captureCount();                      //
+static int luasReCaps (lua_State *L)
+{
+#if QT_VERSION >= 0x040600
+  luRegExp *Re = (luRegExp*)luaL_checkudata(L,1,"re");
+  int N = Re->re->captureCount();
   for (int i=1; i<=N; i++) luaP_pushstring(Re->re->cap(i).uStr()); return N;
+#else
+  return luaL_error(L,"requires Qt 4.6");
+#endif
 }
 static int luasReGRepl (lua_State *L)
 {

@@ -31,9 +31,9 @@ int MkConvertKeyMods (QKeyEvent *event, int &modMask)
 #endif
   if (MiApp_debugKB) { fprintf(stderr, "OnKey(%x", key);
     if (!text.isEmpty()) {
-      if (text.at(0).unicode() >= ' ') fprintf(stderr, ":%s", text.cStr());
+      if (text.at(0).isPrint()) fprintf(stderr, ":%s", text.cStr());
       else for (int i = 0; i < text.size(); i++)
-                               fprintf(stderr, ".%02x", text[i].unicode());
+                              fprintf(stderr, ".%02x", text[i].unicode());
     }
     fprintf(stderr, "|%c%c%c%c%c),native=%x:%x:%x",      keypad ? '#' : '.',
         (modMask & mod_META) ? 'M' : '.', (modMask & mod_CTRL)  ? 'c' : '.',
@@ -166,11 +166,11 @@ void MkMimXEQ (int kcode, int modMask, QString text, wnd *vp)
   //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   if (MkRecording) {
     if (KbRadix) MkMacro.append(Utf8("×")+QString::number(KbCount)+Utf8("⁝"));
-    int t1 = text.isEmpty() ? 0 : text.at(0).unicode();
-    if (t1 < ' ') MkMacro.append(Utf8("‹")+last_MiCmd_key+Utf8("›"));
-    else switch (t1) {
+    if (text.isEmpty() || !text.at(0).isPrint())
+      MkMacro.append(Utf8("‹")+last_MiCmd_key+Utf8("›")); // no printable text
+    else switch (text.at(0).unicode()) {
       case 0x00D7: // × ← these two characters have special meaning in macros
-      case 0x2039: // ‹
+      case 0x2039: // ‹                                      (must escape them)
                MkMacro.append(Utf8("⑆")+text); break;
       default: MkMacro.append          (text); break;
     }
