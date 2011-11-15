@@ -43,8 +43,8 @@ bool twStart (QString filename, long ipos)
 {
   Twnd = vipNewWindow(NULL, -1, -1, TM_VFORK);
   if (twEdit(Twnd, filename)) {
-#ifdef Q_OS_WIN
-    vipReady();
+#ifndef Q_OS_LINUX // force cursor on Mac and Windows (not needed on Linux, as
+    vipReady();    // the application window gets focus / raise automatically)
 #endif
     Twnd->sctw->mf->raise ();
     Ty = ipos-1; return true; // set initial pos after twEdit (which reset it)
@@ -260,6 +260,7 @@ static void tmDirLST (txt *t)
   } 
   if (t->txudeq) udclear(t); //<- reset undo start to this point (initial blank
   t->vp_ctx = t->txlm = DIRLST_FNPOS; //         state is not very interesting)
+  t->txstat |= TS_DIRLST;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static void check_MCD (txt *t) // TODO: check file contents instead
@@ -316,7 +317,7 @@ void tmLoadIn (txt *t, QString  filename) /* only for MacEvents::eventFilter */
   QfsClear(t->file); t->file = QfsNew(filename, NULL);
   tmLoad(t);
   if (Twnd) { vipUpdateWinTitle(Twnd);
-}             vipRedrawWindow  (Twnd); }
+}             vipRedrawWindow  (Twnd); vipReady(); }
 #endif
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 bool tmReLoad (txt *t)   // Forced reload -- check the status of real file (and
@@ -449,30 +450,33 @@ static void tmExtractIncs (txt *mcd, QStringList& incList)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static void tmFnewSearchIncs (QString foundName)
 {
-  QStringList::const_iterator  it; if (foundName.isEmpty()) return;
-  QStringList incList, searchList;
-  for (txt *t = texts; t; t = t->txnext)
-    if (t->txstat & TS_MCD) tmExtractIncs(t, incList);
+       if (foundName.isEmpty ())                         return;
+  else if (QfsExists(foundName)) { twDirPush(foundName); return; }
+  else {
+    QStringList::const_iterator  it;
+    QStringList incList, searchList;
+    for (txt *t = texts; t; t = t->txnext)
+      if (t->txstat & TS_MCD) tmExtractIncs(t, incList);
 
 #ifndef Q_OS_WIN
-  incList.append(QString("/usr/local/include,/usr/include"));
+    incList.append(QString("/usr/local/include,/usr/include"));
 #endif
-  for (it = incList.constBegin(); it != incList.constEnd(); it++)
+    for (it = incList.constBegin(); it != incList.constEnd(); it++)
 #if (QT_VERSION >= 0x040500)
-    searchList.append(it->split(QRegExp(",\\s*")));
+      searchList.append(it->split(QRegExp(",\\s*")));
 #else
-    { QStringList subList = it->split(QRegExp(",\\s*"));
-      QStringList::const_iterator st;
-      for (st = subList.constBegin(); st != subList.constEnd(); st++)
-        searchList.append(*st);
-    }
+      { QStringList subList = it->split(QRegExp(",\\s*"));
+        QStringList::const_iterator st;
+        for (st = subList.constBegin(); st != subList.constEnd(); st++)
+          searchList.append(*st);
+      }
 #endif
-  for (it = searchList.constBegin(); it != searchList.constEnd(); it++) {
-    QString filename = (*it) + "/" + foundName;
-    if (QfsExists(filename)) { twDirPush(filename); return; }
-  }
-  twDirPush(foundName);
-}
+    for (it = searchList.constBegin(); it != searchList.constEnd(); it++) {
+      QString filename = (*it) + "/" + foundName;
+      if (QfsExists(filename)) { twDirPush(filename); return; }
+    }
+    twDirPush(foundName); // enter that file even if it is not know to exist
+} }                       // (create empty text)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tmFnewByTtxt (void)                 /* войти в новый файл (имя из Ttxt) */
 {
