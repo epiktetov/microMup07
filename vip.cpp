@@ -34,17 +34,18 @@ wnd *vipNewWindow (wnd *wbase, int sw, int sh, int kcode)
   w->wsw = (sw < 0) ? MiApp_defWidth  : sw;  w->cx  = w->cy = -1;
   w->wsh = (sh < 0) ? MiApp_defHeight : sh;  w->wty = w->wtx = 0;
   w->wspace = 0;
-  MiFrame *basef = wbase ? wbase->sctw->mf : 0;
-  MiFrame *frame;
+  MiScTwin *baset = wbase ? wbase->sctw : NULL;
+  MiFrame  *basef = baset ? baset->mf   : NULL;
+  MiFrame  *frame;
   if (kcode == TM_VFORK) {
     if (wbase && wbase->wsibling) w->wsh += wbase->wsibling->wsh;
     w->wsibling = NULL;                           w->sib_pos = 0;
     frame = new MiFrame(basef);
-    frame->NewScTwin(w); frame->show();
+    frame->NewScTwin(w, baset); frame->show();
   }
   else if (wbase) {
-    w->wsibling = wbase; wbase->wsh -= w->wsh; wbase->sib_pos = 0;
-    wbase->wsibling = w; basef->NewScTwin (w);     w->sib_pos = 1;
+    w->wsibling = wbase; wbase->wsh -= w->wsh;   wbase->sib_pos = 0;
+    wbase->wsibling = w; basef->NewScTwin(w, baset); w->sib_pos = 1;
   }
   else { free(w);  // incorrect function call - for TE_HFORK
          w = NULL; // case the base window must be specified

@@ -142,10 +142,11 @@ void twDirCopy (wnd *from, wnd *to)
   to->dirsp = toDS;
 }
 /*--------------------------------------------------------- Text manager ----*/
-static void checkfile (txt *t) // - - - - - - - - - - - - - - - - - - - - - - -
+static void checkfile (txt *t)
 {
-  bool ok = (t->file->ft < QftREAL) || QfsIsUpToDate(t->file);
-  t->txredit = t->file->writable ? TXED_YES : TXED_NO; if (ok) return;
+  bool isOk = (t->file->ft < QftREAL) || QfsIsUpToDate(t->file);
+  bool editable = t->file->writable && !(t->txstat & TS_RDONLY);
+  t->txredit = editable ? TXED_YES : TXED_NO;  if (isOk) return;
 /*
  * Not ok - have newer file on disk... but if our older version has any unsaved
  * modifications, warn and preserve it (otherwise discard the file contents):
@@ -165,17 +166,20 @@ void tmCheckFiles (void) // - - - - - - - - - - - - - - - - - - - - - - - - - -
 struct cmdmap { const char *key, *cmd; int txstat; };
 cmdmap vcs_commands[] =
 {
-  { "git",    "«git show %2:%1»",                           TS_RDONLY },
-  { "",       "«git show %2:%1»",                           TS_RDONLY },
-  { "hg",     "«hg cat -r %2 %1»",                          TS_RDONLY },
-  { "blame",  "«git blame %2 %1»",                          TS_GITPL  },
-  { "gitlog", "«git log --pretty='%h (%aN %ad) %s' %2 %1»", TS_GITPL  },
+  { "git:",     "«git show %2:%1»",                           TS_RDONLY },
+  { ":",        "«git show %2:%1»",                           TS_RDONLY },
+  { "gitlog",   "«git log --pretty='%h (%aN %ad) %s' %2 %1»", TS_GITLOG },
+  { "blame",    "«git blame --date short %2 %1»",             TS_GITLOG },
+  { "hg:",      "«hg cat -r %2 %1»",                          TS_RDONLY },
+  { "annotate", "«hg annotate -n -dq %2 %1»",                 TS_GITLOG },
+  { "hglog",    "«hg log --template '{rev} ({author|user}"
+                " {date|date}) {desc|firstline}\\n' %2 %1»",  TS_GITLOG },
   { 0,0,0 }
 };
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 txt *tmDesc (QString filename, bool needUndo, txt *referer)
 {
-  QRegExp ptn("(.+):(git|gitlog|blame||hg):(.*)");
+  QRegExp ptn("([^:]+):(git:|:|gitlog|blame|hg:|hglog|annotate)(.*)");
   short force_txstat = 0;
   short force_clang  = 0;
   if (filename.compare(QfsELLIPSIS) == 0) { // PSEUDO text used by Unix & Lua
@@ -260,7 +264,7 @@ static void tmDirLST (txt *t)
   } 
   if (t->txudeq) udclear(t); //<- reset undo start to this point (initial blank
   t->vp_ctx = t->txlm = DIRLST_FNPOS; //         state is not very interesting)
-  t->txstat |= TS_DIRLST;
+  t->txstat |= TS_DIRLST | TS_RDONLY;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static void check_MCD (txt *t) // TODO: check file contents instead
@@ -269,28 +273,32 @@ static void check_MCD (txt *t) // TODO: check file contents instead
     t->txstat |= TS_MCD; t->txlm = 0;
                          t->txrm = MCD_LEFT;
 } }
+/*---------------------------------------------------------------------------*/
+void tmDumpList() /* dumps the list of all text objects (for debug purposes) */
+{
+  for (txt *tx = texts; tx; tx = tx->txnext) {
+    fprintf(stderr, " %04x:%s,%s\n", tx->txstat,
+           tx->file ? tx->file->     name.cStr() : "Null",
+           tx->file ? tx->file->full_name.cStr() : "Null");
+} }
 bool tmDoLoad (txt *t)  /*- - - - - - - - - - - - - - - - - - - - - - - - - -*/
 {
-//  fprintf(stderr, "tmLoad(%s)\n", t->file ? t->file->name.cStr() : "Null");
-//  for (txt *tx = texts; tx; tx = tx->txnext) {
-//    fprintf(stderr, " %04o%s\n", tx->txstat,
-//                                 tx->file ? tx->file->name.cStr() : "Null");
-//  }
-//+
-  int oc = 0;
   switch (t->file->ft) {       // NOFILE file always considered "loaded" (since
   case QftNOFILE:              // there is no place to reload them from anyway)
   case QftNIL:    return true; //-
   case QftPSEUDO: tmLoadXeq(t); break; // - load by executing command: unix.cpp
   case QftDIR:    tmDirLST( t); break; // - load directory listing (see above)
   case QftTEXT:
-      oc = QfsOpen(t->file, FO_READ);  // DqLoad: -1:fail,0:empty,1:trunc,2:ok
-      if (oc < 0) return false;        //
+    {
+      int oc = QfsOpen(t->file, FO_READ); // oc = -1:fail,0:empty,1:trunc,2:ok
+      if (oc < 0) return false;           //
       if (oc > 0) oc = DqLoad(t->txdstk, t->file, t->file->size);
       QfsClose(t->file);
-      if (oc < 0) return false; // zero result (empty file) is also acceptable
-  }
-  bool editable = !(t->txstat & TS_RDONLY) && t->file->writable && (oc != 1);
+      if (oc <  0) return false; // zero result (empty file) is acceptable,
+      if (oc == 1)               // truncated file too (make 'em read-only,
+         t->txstat |= TS_RDONLY; // as won't be possible to save correctly)
+  } }
+  bool editable = t->file->writable && !(t->txstat & TS_RDONLY);
   t->txredit = editable ? TXED_YES : TXED_NO;
   t->txstat &= ~TS_CHANGED;     check_MCD(t);  // double-check file type
   t->txstat |=  TS_FILE;                       //
@@ -302,6 +310,9 @@ bool tmDoLoad (txt *t)  /*- - - - - - - - - - - - - - - - - - - - - - - - - -*/
 }
 bool tmLoad (txt *t)  /*- - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 {
+//  fprintf(stderr, "tmLoad(%s)\n", t->file ? t->file->name.cStr() : "Null");
+//  tmDumpList();
+//+
   bool ok;
   if (t->txstat & TS_FILE) ok = true;
   else              ok = tmDoLoad(t);
@@ -456,8 +467,8 @@ static void tmFnewSearchIncs (QString foundName)
     QStringList::const_iterator  it;
     QStringList incList, searchList;
     for (txt *t = texts; t; t = t->txnext)
-      if (t->txstat & TS_MCD) tmExtractIncs(t, incList);
-
+      if ((t->txstat & TS_MCD) &&
+          (t->file->path == Ttxt->file->path)) tmExtractIncs(t, incList);
 #ifndef Q_OS_WIN
     incList.append(QString("/usr/local/include,/usr/include"));
 #endif
@@ -489,9 +500,10 @@ void tmFnewByTtxt (void)                 /* войти в новый файл (�
   (char)Lebuf[LEFTorRIGHT] == LDS_MCD) { lm = LEFTorRIGHT+1; rm = Lleng; }
          USE_MCD_MARGIN(MCD_RIGHT) //
     else USE_MCD_MARGIN(MCD_LEFT)  // allow both double-delimiter (64+69th pos)
-    else return;                   // and single-delimiter (64th posd only) fmt
+    else return;                   // and single-delimiter (64th pos only) fmts
   }
   else if (Ttxt->txstat & TS_DIRLST) { lm = DIRLST_FNPOS; rm = Lleng; }
+  else if (Ttxt->txstat & TS_GITLOG) { tmSyncPos();           return; }
   else if (Tx > Lleng) return;
   else {
                  for (lm = Tx; lm >= 0    && (uchar)Lebuf[lm]   != 0xAB;) lm--;

@@ -271,10 +271,14 @@ void MiFrame::finishClose (int qtStandBtn) // finish closing either scwin (when
   QCoreApplication::postEvent(this, new QCloseEvent);
 }
 //-----------------------------------------------------------------------------
-MiScTwin *MiFrame::NewScTwin (wnd *vp) // creates new pane (unless two already
-{                                      // exist - then do nothing, returns 0)
+// Creates new pane in the frame (unless two already exist - then do nothing,
+// return NULL), using background color from supplied pane (default if no base)
+//
+MiScTwin *MiFrame::NewScTwin (wnd *vp, MiScTwin *base)
+{
   if (scwin) return NULL;
-  MiScTwin *sctw = new MiScTwin(this, MiApp_gradDescr, vp);
+  MiScTwin *sctw = new MiScTwin(this, MiApp_gradDescr,
+                          base ? base->gradInPool : 0, vp);
   sash->addWidget(sctw);
   if (main)
      { scwin = sctw; main->vpResize(); sashHeight = sash->handleWidth(); }
@@ -389,11 +393,11 @@ void MiFrame::resizeEvent (QResizeEvent*)
   else QTimer::singleShot(0, this, SLOT(shrinkwrap()));
 }
 //=============================================================================
-MiScTwin::MiScTwin (MiFrame *frame, const QString bgndGrad, wnd *win)
+MiScTwin::MiScTwin (MiFrame *frame, const QString bgndGrad, int pool, wnd *win)
   : gotFocus(0), vp(win), mf(frame),
     info (this),
-    gradPixSize(0), gradPixHeight(0),
-    gradPixmap(NULL),  cmd2repeat(0), timerID(0)
+    gradInPool(pool), gradPixSize(0), gradPixHeight(0),
+                      gradPixmap(NULL),  cmd2repeat(0), timerID(0)
 {
   vp->sctw = this;       setFocusPolicy(Qt::ClickFocus);
   UpdateMetrics();       setAttribute(Qt::WA_OpaquePaintEvent);
@@ -454,14 +458,13 @@ void MiScTwin::SetGradient(const QString grad)
     if (!gf.cap(7).isEmpty()) mimSetNamedColor(gradPool[2], gf.cap(7));
     if (!gf.cap(8).isEmpty()) mimSetNamedColor(gradPool[3], gf.cap(8));
   }
-  else { gradTilt = 1; gradStart = 0.0; gradColor = colorWinGrad;
-                       gradStop  = 1.0;   bgColor = colorWinBgnd; }
-  gradPixSize = 0;
-  UpdateGradientPixmap(); UpdatePrimeColors(); update();
+  else { gradTilt = 1; bgColor = colorWinBgnd; gradStart = 0.0;
+                                               gradStop  = 1.0; }
+  SetGradFromPool(gradInPool);
 }
 void MiScTwin::SetGradFromPool(int N)
 {
-  gradColor = gradPool[N];
+  gradColor = gradPool[ gradInPool = N ];
   gradPixSize = 0;
   UpdateGradientPixmap(); UpdatePrimeColors(); update();
 }

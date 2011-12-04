@@ -8,6 +8,7 @@
  Ins is "Help" key on MacPro keyboard, missing on A1243 (see KEY MAPPING below)
  Del is "Delete⌦" on Mac keyboard ("delete" key is Backspace)
  Return is either "Enter↵" or "Return" on main keyboard (not "enter" on numpad)
+ PgUp/PgDown on MacBook keyboard may be entered as Fn+Up/Fn+Down (modifiers Ok)
  Alt  == ⌥/option  key on Mac keyboard, Alt key elsewhere
  Meta == ⌘/command key on Mac keyboard, "WinKey" key on Windows-compatible one
                              (in most cases, Meta+{x} has alias Ctrl+Numpad{x})
@@ -264,13 +265,13 @@ expression one (http://doc.qt.nokia.com/4.7/qregexp.html); the mode is selected
 when entering search/replace pattern.
 
   Ctrl/Meta+F = Home End - edit search/replace pattern (start search by Return)
-  Meta+Ctrl+End          - edit search pattern for 'grep' (MacOS X/Linux only)
-       Ctrl+. (>)        - insert light blue 'ʈ>ʀ' (marks start of replacement)
-       Ctrl+/            - insert light blue 'ʈ/ʀ' (start of filelist for 'grep')
-       Ctrl+6 (^) - standard (text mode) search          ‹st·--›
-       Ctrl+7 (&) - search by regular expression         ‹re·--›
-       Ctrl+8 (*) - search with wildcards                ‹wc·--›
-       Ctrl+I     - toggle case sensitivity: ignore case ‹--·ic› or not ‹--·cs›
+  Meta[+Ctrl]+End        - edit search pattern for 'grep' (MacOS X/Linux only)
+        Ctrl+. (>)       - insert light blue 'ʈ>ʀ' (marks start of replacement)
+        Ctrl+/           - insert light blue 'ʈ/ʀ' (start of filelist for 'grep')
+        Ctrl+6 (^) - standard (text mode) search          ‹st·--›
+        Ctrl+7 (&) - search by regular expression         ‹re·--›
+        Ctrl+8 (*) - search with wildcards                ‹wc·--›
+        Ctrl+I     - toggle case sensitivity: ignore case ‹--·ic› / not ‹--·cs›
 
               End - search (for previously entered pattern) forward (down)
         Shift+End - search backward (up)
@@ -294,8 +295,9 @@ k_(TE_RDOWN,  "Ctrl+End",       0xc6411) /* замена/поиск вниз    
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 k_(TE_GENTR,  "Meta+Ctrl+F",    0xc6511) /* глобальный поиск (grep, по всем  */
 a_(TE_GENTR,  "Meta+Ctrl+End",  0xc6511) /*                файлам из списка) */
-k_(TM_GREP,              NULL,  0xc65f1) /* в том же окне:            Return */
-k_(TM_GREP2,             NULL,  0xc65f2) /* в новом окне:       Shift+Return */
+a_(TE_GENTR,  "Meta+End",       0xc6511) /* искать                           */
+k_(TM_GREP,              NULL,  0xc65f1) /*   в том же окне:          Return */
+k_(TM_GREP2,             NULL,  0xc65f2) /*   в новом окне:     Shift+Return */
 /*
 ʁSecond MicroMir principle:ʀ text is moved around using copy / paste buffer, with
 basic operations being "add something to the buffer" and "paste the buffer into
@@ -418,10 +420,12 @@ commas or quotes - if is't not, you'll need to use block selection to mark it)
 
 Special ʁFILESʀ (MacOS X/Linux only):
 
-  filename:git:rev == filename::rev - file revision from 'rev' git commit
-  filename:gitlog:[options]         - list of revisions, from 'git log'
-  filename:blame:[options]          - results of 'git blame' for given file
-  filename:hg:rev                   - file revision from 'rev' Mercurial commit
+  filename:git:rev == filename::rev - file revision from given git commit
+  filename:gitlog[options]          - list of revisions, from 'git log'
+  filename:blame[options]           - results of 'git blame' for given file
+  filename:hg:rev                   - file revision (-r) from Mercurial commit
+  filename:hglog[options]           - list of revisions, from 'hg log'
+  filename:annotate[options]        - results of 'hg annotate' for given file
   «shell-command»                   - the result of specific shell command
   (double angle quotations mark can be entered by Alt+'\' and Alt+Shift+'\';
    when starting MicroMir in command prompt, these marks may be replaced with
@@ -430,11 +434,11 @@ Special ʁFILESʀ (MacOS X/Linux only):
 MicroMir automatically detects read-only files and don't allow changing them...
 unless you insist: edit/view mode may be changed at any time (at your own risk)
 
-  Meta+Ctrl+Ins - set text edit mode (green or blue cursor, can change text)
-  Meta+Ctrl+Del - set text view mode (no changes allowed, red cursor)
+  Ctrl+Shift+Ins - set text edit mode (green or blue cursor, can change text)
+  Ctrl+Shift+Del - set text view mode (no changes allowed, red cursor)
 */
-k_(TE_SRW, "Meta+Ctrl+Ins", 0xca506) /* установить режим редактирования   */
-k_(TE_SRO, "Meta+Ctrl+Del", 0xca507) /* установить режим просмотра текста */
+k_(TE_SRW, "Ctrl+Shift+Ins", 0xca506) /* установить режим редактирования   */
+k_(TE_SRO, "Ctrl+Shift+Del", 0xca507) /* установить режим просмотра текста */
 /*
 ʁREPETITION:ʀ Esc,N - enter repetition counter (or argument) for the next command
                               where N is either ddd decimal number like   126
@@ -443,12 +447,12 @@ For example:                                   0ddd octal number such as 0176
   Esc,3,Shift+Del - delete 3 lines
   Esc,5,*         - same as typing ***** (insert/replace depending on the mode)
 
-  Esc,N,Meta+Alt+'<'   - convert word/selection from radix-N (hex) to decimal
-  Esc,N,Meta+Alt+'>'   - convert word/selection to radix-N (where N = 2..36)
-  Esc,N,Ctrl+Shift+Ins - insert character with given code
-  Esc,N,Ctrl+Shift+]   - set the width (of editable part) of the text
-  Esc,N,Ctrl/Meta+E    - move cursor to Nth line in text
-  Esc,N,     Ctrl+H    - move cursor to Nth position in current line
+  Esc,N,Alt+Ins      - insert character with given Unicode number
+  Esc,N,Meta+Alt+'<' - convert word/selection from radix-N (hex) to decimal
+  Esc,N,Meta+Alt+'>' - convert word/selection to radix-N (where N = 2..36)
+  Esc,N,Ctrl+Shift+] - set the width (of editable part) of the text
+  Esc,N,Ctrl/Meta+E  - move cursor to Nth line in text
+  Esc,N,     Ctrl+H  - move cursor to Nth position in current line
 
 Note: without repetition prefix, the last two commands work differently, which
      is a special convenience feature to allow easy centering specific position
@@ -456,16 +460,16 @@ Note: without repetition prefix, the last two commands work differently, which
   Ctrl/Meta+E - centers current line in the windows (vertically only)
        Ctrl+H - centers curret position in the windows (horizontally)
 */
-k_(TK_PREFIX, "Home",           0xcc00a) /* Home (generic) префикс          */
-k_(TK_ESC,    "Esc",            0xcc00e) /* Esc префикс (повторитель и пр.) */
-k_(TK_CtrJ,   "Ctrl+J",         0xcc010) /* ^J префикс (используется в Lua) */
-k_(LE_CWDEC,  "Meta+Alt+,",     0xfb92c)
-k_(LE_CWHEX,  "Meta+Alt+.",     0xfb92e)
-k_(LE_SPCHAR, "Ctrl+Shift+Ins", 0xcb606) /* ввести Unicode символ по коду */
-k_(TE_SWIDTH, "Ctrl+Shift+}",   0xcb65d) /* установить ширину             */
-k_(TE_CENTR,  "Ctrl+E",         0xfb445) /* в середину окна               */
-a_(TE_CENTR,  "Meta+E",         0xfb445) /* - по вертикали                */
-k_(LE_CENTR,  "Ctrl+H",         0xfb448) /* - по горизонтали              */
+k_(TK_PREFIX, "Home",         0xcc00a) /* Home (generic) префикс          */
+k_(TK_ESC,    "Esc",          0xcc00e) /* Esc префикс (повторитель и пр.) */
+k_(TK_CtrJ,   "Ctrl+J",       0xcc010) /* ^J префикс (используется в Lua) */
+k_(LE_SPCHAR, "Alt+Ins",      0xcb606) /* ввести символ по Unicode коду   */
+k_(LE_CWDEC,  "Meta+Alt+,",   0xfb92c) /* ʁ<ʀ  перевести число в десятичное */
+k_(LE_CWHEX,  "Meta+Alt+.",   0xfb92e) /* ʁ>ʀ  - в 16-ричное / основание N  */
+k_(TE_SWIDTH, "Ctrl+Shift+}", 0xcb65d) /* ʁ]ʀ  установить ширину текста     */
+k_(TE_CENTR,  "Ctrl+E",       0xfb445) /* в середину окна                 */
+a_(TE_CENTR,  "Meta+E",       0xfb445) /* - по вертикали                  */
+k_(LE_CENTR,  "Ctrl+H",       0xfb448) /* - по горизонтали                */
 /*
 ʁLua SCRIPTING:ʀ MicroMir embeds Lua scripting language (see http://www.lua.org),
 with only one command defined natively (+ a few more in auto-loaded Lua script)

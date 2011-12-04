@@ -244,22 +244,32 @@ short TxFRead (txt *t, tchar *tp)
 //
 short aftotc (const char *orig, int len, tchar *dest_buf)
 {
-  const char *orig_end = orig + ((len < 0) ? (int)strlen(orig) : len);
-  tchar attr = 0;                                      unsigned x,y,z;
+  const char  *orig_end = orig + ((len < 0) ? (int)strlen(orig) : len);
+  tchar attr = 0, *dest = dest_buf;                     unsigned x,y,z;
   short ltc  = 0;
   while (ltc < MAXLPAC && orig < orig_end) {
     char c = *orig++;
     if (c == ACPR && orig < orig_end && (*orig & 0xC0) == 0x80) {
       attr = (tchar)(AT_IN_FILE & (*orig++ << 16));    continue;
     }
-    else if (c == TAB) { /* Replace TAB with proper number of spaces and mark 
-                          * the first space with AT_TAB attribute (+keep attr)
-                          */
-      *dest_buf++ = (tchar)' ' | AT_TAB | attr;
-      for (ltc++; (ltc % TABsize) != 0
-                && ltc < MAXLPAC; ltc++) *dest_buf++ = (tchar)' ' | attr;
-      continue;
+    // Unfold '\t' from file: Replace TAB with proper number of spaces and mark
+    // the first space with AT_TAB attribute (keeping other axisting attrs too)
+    //
+    else if (c == TAB) {
+      *dest++ = (tchar)' ' | AT_TAB | attr;
+      for (ltc++; (ltc % TABsize) != 0  && ltc < MAXLPAC; ltc++)
+                             *dest++ = (tchar)' ' | attr; continue;
     }
+    // Convert "X\bY" into bold 'Y', provided 'Y' is one-byte ASCII character,
+    // to make t/n/groff output to look nice (so the «man xxx» is readable)
+    //
+    else if (c == '\b') {
+      if (dest > dest_buf) {
+        if (orig < orig_end && ' ' < *orig && *orig <= '~')
+             dest[-1] = (tchar)(*orig++) | AT_BOLD;
+        else dest--; //
+      }    continue; // if 'Y' not in the string or not ASCII, just remove last
+    }                //                      element in dest buffer (if exists)
 #define isUTFcont(x) ((x & 0xC0) == 0x80)
 #ifdef notdef
     else if (orig <= orig_end-3 && (c & 0xF8) == 0xF0 && isUTFcont(orig[0])
@@ -268,26 +278,26 @@ short aftotc (const char *orig, int len, tchar *dest_buf)
       x = *orig++ & 0x3F; /* 4-byte:     11110www 10xxxxxx 10yyyyyy 10zzzzzz */
       y = *orig++ & 0x3F; /*                   -> 000wwwxx xxxxyyyy yyzzzzzz */
       z = *orig++ & 0x3F; /*           (unsupported due to QChar limitation) */
-      *dest_buf++ = ((tchar)w << 18) | 
-                    ((tchar)x << 12) | ((tchar)y << 6) | z | attr; }
+      *dest++ = ((tchar)w << 18) |
+                ((tchar)x << 12) | ((tchar)y << 6) | z | attr; }
 #endif
     else if (orig <= orig_end-2 && (c & 0xF0) == 0xE0 && isUTFcont(orig[0])
                                                       && isUTFcont(orig[1])) {
       x = c       & 0x0F; 
       y = *orig++ & 0x3F; /* 3-byte:              1110xxxx 10yyyyyy 10zzzzzz */
       z = *orig++ & 0x3F; /*                            -> xxxxyyyy yyzzzzzz */
-      *dest_buf++ = ((tchar)x << 12) | ((tchar)y << 6) | z | attr;
+      *dest++ = ((tchar)x << 12) | ((tchar)y << 6) | z | attr;
     }
     else if (orig <= orig_end-1 && (c & 0xE0) == 0xC0 && isUTFcont(orig[0])) {
       y = c       & 0x1F;
       z = *orig++ & 0x3F; /* 2-byte:  110yyyyy 10zzzzzz -> 00000yyy yyzzzzzz */
-      *dest_buf++ = ((tchar)y << 6) | z | attr;
+      *dest++ = ((tchar)y << 6) | z | attr;
     }
     else if ((c & 0x80) != 0)
-     { if (c & 0x40)  { *dest_buf++ = (ctotc(c)+0x350) | attr | AT_BADCHAR; }
-       else           { *dest_buf++ = (ctotc(c)+ 0x60) | attr | AT_BADCHAR; }}
-    else if (c < ' ') { *dest_buf++ = (ctotc(c)+ '@' ) | attr | AT_TAB;      }
-    else              { *dest_buf++ =  ctotc(c)        | attr;               }
+     { if (c & 0x40)  { *dest++ = (ctotc(c)+0x350) | attr | AT_BADCHAR; }
+       else           { *dest++ = (ctotc(c)+ 0x60) | attr | AT_BADCHAR; }}
+    else if (c < ' ') { *dest++ = (ctotc(c)+ '@' ) | attr | AT_TAB;      }
+    else              { *dest++ =  ctotc(c)        | attr;               }
     ltc++;
   }
   return ltc;

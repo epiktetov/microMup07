@@ -122,14 +122,9 @@ static void shellexec (txt *Stxt, short& Sx,
         int len = read(fds_out, pst = line_buffer, max_len);
         if (len <= 0) break;               TxSetY(Stxt, Sy);
         for (p = pst; len--; p++) {
-          switch (*p) {
-          case '\r':
-          case '\n':
-            appendText(Stxt,Sx,     pst,   p);
-            appendCR  (Stxt,Sx,Sy); pst = p+1; break;
-          case '\b':
-            if (p > pst) p--;
-        } }
+          if (*p == '\r' || *p == '\n') { appendText(Stxt,Sx,     pst,   p);
+                                          appendCR  (Stxt,Sx,Sy); pst = p+1; }
+        }
         if (p != pst) appendText(Stxt,Sx, pst, p);
       }
       while ((k = kbhin()) != 0) { // Wait for user input
@@ -275,14 +270,17 @@ int tmSyncPos (void) /* SyncPos(tm) -- NOTE: only works with ASCII filenames */
   len = TxRead(Ttxt, line_buffer); if (len <= 0)        return -1;
   line_buffer[len] = 0;
 //
-// Git "pretty log" handling -- actually, we only care whether each line starts
+// Mercurial/git log handling - actually, we only care whether each line starts
 // with (probably, abbreviated) revision SHA-1 (both «git log --pretty=oneline»
-// and µMup-specific 'gitlog' qualify, as well as «git blame» output); filename
-// of the original file is taken from the last word of Ttxt name
+// and µMup-specific 'gitlog' qualify, as well as «git blame» output), or short
+// rev number (Hg only) - the value just must be suitable for 'name:git|hg:rev'
+// special name understood by tmDesc (filename of the original file taken from
+// the last word of Ttxt name, VCS name obtained from the 1st word of the name)
 //
-  if (Ttxt->txstat & TS_GITPL)
-    filename =  Ttxt->file->name.section(' ', -1).remove(-1,1) + "::"
-          + QString(line_buffer).section(' ',0,0);
+  if (Ttxt->txstat & TS_GITLOG)
+    filename =  Ttxt->file->name.section(' ', -1).remove(-1,1) + ":" +
+                Ttxt->file->name.section(' ',0,0).remove( 0,1) + ":" +
+            QString(line_buffer).section(' ',0,0);
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // {line-other}a{line1}[,{line2}]         {line-other1}[,{line-other2}]d{line}
 // > ...                                  < ...

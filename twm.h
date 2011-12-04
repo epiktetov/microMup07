@@ -32,20 +32,20 @@ struct txt_tag
   wnd  *txwndptr;           /* Список окон, наложенных на текст              */
   short txlructr;           /* Счетчик для алгоритма выталкивания            */
   short txstat;             /* Биты слова-состояния текста:                  */
-#define TS_BUSY     001     /* - слот занят                                  */
-#define TS_FILE     002     /* - файл в памяти                               */
-#define TS_UNDO     004     /* - откатка файла в памяти                      */
-#define TS_DIRLST   010     /* - список файлов - временный индекс            */
-#define TS_CHANGED  020     /* - файл изменялся                              */
-#define TS_WND      040     /* - есть хотя бы одно окно                      */
-#define TS_DqSWAP  0777     /* - биты используются для чистки в tmswap |     */
-#define TS_PERM    0100     /* - файл постоянно резидентен в памяти    |dq.c */
-#define TS_SAVERR  0200     /* - в процессе сохранения возникла ошибка |     */
-#define TS_PSEUDO  0400     /* - corresponding file is not real file         */
-#define TS_RDONLY 01000     /* - force read-only (for ':help' viewing)       */
-#define TS_NEW    02000     /* - новый файл - записывать по FO_NEW           */
-#define TS_MCD    04000     /* - this file == micros.dir                     */
-#define TS_GITPL 010000     /* - this file == git pretty log or blame result */
+#define TS_BUSY     0x01    /* - слот занят                                  */
+#define TS_CHANGED  0x02    /* - файл изменялся                              */
+#define TS_DIRLST   0x04    /* - это список файлов (временный индекс)        */
+#define TS_WND      0x08    /* - есть хотя бы одно окно                      */
+#define TS_FILE     0x10    /* - файл в памяти                               */
+#define TS_UNDO     0x20    /* - откатка файла в памяти                      */
+#define TS_DqSWAP  0x1FF    /* - биты используются для чистки в tmswap |     */
+#define TS_PERM     0x40    /* - файл постоянно резидентен в памяти    |dq.c */
+#define TS_SAVERR   0x80    /* - в процессе сохранения возникла ошибка |     */
+#define TS_PSEUDO  0x100    /* - corresponding file is not real file         */
+#define TS_RDONLY  0x200    /* - force read-only (for ':help', dirlist etc)  */
+#define TS_NEW     0x400    /* - новый файл - записывать по FO_NEW           */
+#define TS_MCD     0x800    /* - this file == micros.dir                     */
+#define TS_GITLOG 0x1000    /* - this file == git/Hg log (or blame/annotate) */
   short vp_ctx, vp_wtx;     /* Позиция курсора в тексте (cursor-in-text-x/y) */
   long  vp_cty, vp_wty;     /* и окна (win-in-text) дла посл. активного окна */
   struct txt_tag *txnext;

@@ -302,7 +302,7 @@ static short mem_swap_rules[] =
   TS_BUSY|TS_FILE|TS_UNDO|TS_DIRLST|TS_CHANGED, S_EFILE|S_EUNDO|S_EDESC,
   TS_BUSY|TS_FILE|TS_UNDO|TS_DIRLST,            S_EFILE|S_EUNDO|S_EDESC,
   TS_BUSY|TS_FILE|TS_UNDO,                      S_EFILE,
-  TS_DqSWAP,                                    S_UDCUT,
+  TS_DqSWAP,            /* applied to ALL -> */ S_UDCUT,
   TS_BUSY|TS_UNDO,                              S_EUNDO|S_EDESC,
   TS_BUSY|TS_FILE|TS_UNDO|TS_CHANGED,           S_SFILE|S_EFILE, 0
 };

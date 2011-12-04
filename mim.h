@@ -33,8 +33,8 @@ class MiFrame : public QMainWindow
            QMenu  *size_menu; int  sashHeight; QFont textFont, boldFont;
   MiScTwin *main, *scwin;
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-public:    MiFrame(MiFrame *base); MiScTwin *NewScTwin(wnd *vp);
-  virtual ~MiFrame();              void DeleteScTwin(MiScTwin*);
+public:    MiFrame(MiFrame *base); MiScTwin *NewScTwin(wnd *vp,MiScTwin *base);
+  virtual ~MiFrame();              void   DeleteScTwin        (MiScTwin *that);
   void updateWinTitle(void);
   const QFont& getTextFont() const { return textFont; }
   const QFont& getBoldFont() const { return boldFont; }
@@ -89,7 +89,7 @@ public:
 //--------------------------------------//-------------------------------------
 class MiScTwin : public QWidget         //   MicroMir Scrollable Text Window
 {
-public: MiScTwin(MiFrame *frame, const QString bgndGrad, wnd *vp);
+public: MiScTwin(MiFrame *frame, const QString bgndGrad, int usePool, wnd *vp);
   virtual ~MiScTwin();
   void vpResize();                      // resize based on vp->wsh/wsw info
   void vpResize(int width, int height); // resize to given dimensions
@@ -101,7 +101,7 @@ private:
 public:
   wnd     *vp; // ViewPort (interface between Qt/C++ and legacy C code)
   MiFrame *mf;
-  MiInfoWin info; int fontBaseline, fontHeight, fontWidth;
+  MiInfoWin info; int gradInPool, fontBaseline, fontHeight, fontWidth;
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   void SetGradient(const QString grad); void SetGradFromPool(int N);
   void UpdateGradientPixmap();

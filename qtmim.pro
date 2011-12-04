@@ -4,15 +4,17 @@ CONFIG += release
 macx {
   TARGET = µMup07
   ICON = microMir.icns
-  LIBS += -framework Cocoa
+  LIBS += -llua -framework Cocoa
   QtPLATF = macx
   QMAKE_INFO_PLIST = mim.Info.plist
   QMAKE_PKGINFO_TYPEINFO = "~epi"
 } else:unix {
+  INCLUDEPATH += /usr/include/lua5.1
+  LIBS += -llua5.1 # explicit version on Linux, locally built one everywhere
   QtPLATF = unix
 } else:win32 {
   INCLUDEPATH += ../lua/include
-  LIBS += -L../lua/lib
+  LIBS += -L../lua/lib -llua
   QtPLATF = win32
   RC_FILE = qtmim.rc
 }
@@ -31,7 +33,6 @@ macx:OBJECTIVE_SOURCES += macs.mm
 }
 HEADERS += luas.h   vip.h   te.h le.h tx.h dq.h ud.h
 SOURCES += luas.cpp vip.cpp te.c le.c tx.c dq.c ud.c rt.c
-LIBS += -llua
 DEPENDPATH += .
 INCLUDEPATH += .
 OBJECTS_DIR = obj
