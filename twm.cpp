@@ -469,7 +469,7 @@ static void tmFnewSearchIncs (QString foundName)
     for (txt *t = texts; t; t = t->txnext)
       if ((t->txstat & TS_MCD) &&
           (t->file->path == Ttxt->file->path)) tmExtractIncs(t, incList);
-#ifndef Q_OS_WIN
+#ifdef UNIX
     incList.append(QString("/usr/local/include,/usr/include"));
 #endif
     for (it = incList.constBegin(); it != incList.constEnd(); it++)
@@ -503,7 +503,9 @@ void tmFnewByTtxt (void)                 /* войти в новый файл (�
     else return;                   // and single-delimiter (64th pos only) fmts
   }
   else if (Ttxt->txstat & TS_DIRLST) { lm = DIRLST_FNPOS; rm = Lleng; }
-  else if (Ttxt->txstat & TS_GITLOG) { tmSyncPos();           return; }
+#ifdef UNIX
+  else if (Ttxt->txstat & TS_GITLOG) { tmSyncPos(); return; }
+#endif
   else if (Tx > Lleng) return;
   else {
                  for (lm = Tx; lm >= 0    && (uchar)Lebuf[lm]   != 0xAB;) lm--;
