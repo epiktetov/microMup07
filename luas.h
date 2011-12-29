@@ -62,6 +62,17 @@ inline bool luaX_optboolean(int ix, bool defaultValue)
 inline void luaX_getfield_top (const char *fn)      { luaP_getfield(-1,fn);
                                                            luaQ_remove(-2); }
 inline void luaX_rawgeti_top(int n) { luaP_rawgeti (-1,n); luaQ_remove(-2); }
+//
+// Registration of C functions was changed between Lua 5.1 and 5.2, supporting
+// both for now (with source code updated to match new interface):
+//
+#if LUA_VERSION_NUM < 502
+#define luaP_newlibtable(Fn) lua_newtable (L)
+#define luaX_setfuncs(Fn)    luaL_register(L,NULL,Fn)
+#else
+#define luaP_newlibtable(Fn) luaL_newlibtable(L,Fn)
+#define luaX_setfuncs(Fn)    luaL_setfuncs   (L,Fn,0)
 #endif
+#endif /* lua_h */
 /*---------------------------------------------------------------------------*/
 #endif                                                    /* LUAS_H_INCLUDED */

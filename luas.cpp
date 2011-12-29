@@ -99,7 +99,7 @@ static void luaReInit (void)
 //   functions  - instance functions (methods == match,cap,caps,etc)
 //   __index    - reference to itself
 //
-  luaP_newmetatable("re"); luaL_register(L,NULL,luReMetaFuncs);
+  luaP_newmetatable("re"); luaX_setfuncs(luReMetaFuncs);
   luaP_pushvalue(-1);
   luaQ_setfield(-2,"__index"); luaQn_pop(1);
 }
@@ -371,9 +371,8 @@ static void luTxtInit (void)
 //   __index    - read access to instance variables (X,Y,maxY;ref->Txt)
 //   __newindex - write access to inst variables (X,Y only)
 //
-  luaP_newtable();  luaL_register(L,NULL,luTxFuncs); luaQ_setglobal("Txt");
-  luaP_newmetatable("txt");
-  luaL_register(L,NULL,luTxMetaFuncs); luaQn_pop(1);
+  luaP_newlibtable(luTxFuncs); luaX_setfuncs(luTxFuncs); luaQ_setglobal("Txt");
+  luaP_newmetatable   ("txt"); luaX_setfuncs(luTxMetaFuncs);      luaQn_pop(1);
 }
 static void luasN_setTxt_this (txt *Tx) //- - - - - - - - - - - - - - - - - - -
 {
