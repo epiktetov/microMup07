@@ -247,8 +247,13 @@ static void tmDirLST (txt *t)
     QString line;
     QFile::Permissions attr = it->permissions();
     ushort ftattr = it->isDir() ? 0x281 : 0x280;
-    line.sprintf("%lc%c%c%c%c%c%c%c%c%c%c%lc%12d %s %lc%ls", ftattr,
-         it->isDir()              ? 'd' : '-',
+    char type = QFile::symLinkTarget(it->filePath()).isEmpty()
+                       ? (it->isDir() ? 'd' : '-')   : 'l';
+    // Note:
+    // unlike the standard 'ls -l' command, the list shows file permissions of
+    // the TARGET file (but with first character changed to 'l' for symlinks)
+    //
+    line.sprintf("%lc%c%c%c%c%c%c%c%c%c%c%lc%12d %s %lc%ls", ftattr, type,
          attr & QFile::ReadOwner  ? 'r' : '-',
          attr & QFile::WriteOwner ? 'w' : '-',
          attr & QFile::ExeOwner   ? 'x' : '-',
