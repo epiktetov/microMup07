@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07     UNIX-specific stuff and tmSyncPos     | (c) Epi MG, 2007-2011
+// МикроМир07     UNIX-specific stuff and tmSyncPos     | (c) Epi MG, 2007-2012
 //------------------------------------------------------+--------------------*/
 #include <QString>        /* Old tm.c (c) Attic 1989-91, (c) EpiMG 1997-2003 */
 #include <QRegExp>
@@ -277,10 +277,17 @@ int tmSyncPos (void) /* SyncPos(tm) -- NOTE: only works with ASCII filenames */
 // special name understood by tmDesc (filename of the original file taken from
 // the last word of Ttxt name, VCS name obtained from the 1st word of the name)
 //
-  if (Ttxt->txstat & TS_GITLOG)
+  if (Ttxt->txstat & TS_GITLOG) {
     filename =  Ttxt->file->name.section(' ', -1).remove(-1,1) + ":" +
                 Ttxt->file->name.section(' ',0,0).remove( 0,1) + ":" +
             QString(line_buffer).section(' ',0,0);
+    //
+    // Cannot specify absolute path in the 'git show rev:file' command (because
+    // of "Path 'file' exists on disk, but not in 'rev'" message) - so changing
+    // current working directory to one stored in the file->path of Ttxt:
+    //
+    if (!Ttxt->file->path.isEmpty()) QfsChDir(Ttxt->file);
+  }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // {line-other}a{line1}[,{line2}]         {line-other1}[,{line-other2}]d{line}
 // > ...                                  < ...

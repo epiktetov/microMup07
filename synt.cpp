@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07      Syntax checker / text colorizer      | (c) Epi MG, 2011
+// МикроМир07      Syntax checker / text colorizer      | (c) Epi MG, 2011,2012
 //------------------------------------------------------+----------------------
 #include <QString>
 #include "mic.h"
@@ -22,11 +22,11 @@ short SyntKnownLang (QString filename)
   QRegExp LuaFile(".+\\.lua");
   QRegExp PerlFile(".+\\.pl");
   QRegExp PythonFile(".+\\.py");
-       if (ShFile.exactMatch(filename))     return CLangSH   + CLangDISABLED;
+       if (ShFile.exactMatch(filename))     return CLangSH + CLangDISABLED;
   else if (CppFile.exactMatch(filename))    return CLangCPP;
   else if (LuaFile.exactMatch(filename))    return CLangLUA;
-  else if (PerlFile.exactMatch(filename))   return CLangPERL + CLangDISABLED;
-  else if (PythonFile.exactMatch(filename)) return CLangPYTH + CLangDISABLED;
+  else if (PerlFile.exactMatch(filename))   return CLangPERL;
+  else if (PythonFile.exactMatch(filename)) return CLangPYTH;
   else                                      return CLangNONE;
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -40,10 +40,10 @@ short SyntSniffText (txt *text)
   if (!binSpec.exactMatch(firstLine)) return CLangNONE;
   QString  progName = binSpec.cap(1);
        if (progName == "env") progName = binSpec.cap(2).section(' ',0,0);
-       if (bash.exactMatch(progName)) return CLangSH   + CLangDISABLED;
-  else if (progName == "perl")        return CLangPERL + CLangDISABLED;
-  else if (progName == "python")      return CLangPYTH + CLangDISABLED;
-  else                                return CLangGEN  + CLangDISABLED;
+       if (bash.exactMatch(progName)) return CLangSH + CLangDISABLED;
+  else if (progName == "perl")        return CLangPERL;
+  else if (progName == "python")      return CLangPYTH;
+  else                                return CLangGEN + CLangDISABLED;
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void SyntLangOn()
@@ -68,22 +68,22 @@ void SyntBrakToggle()
 }
 //-----------------------------------------------------------------------------
 typedef bool (*tchar_uint_fp)(const tchar *, unsigned int);
-typedef bool (*tchar_int_fp) (const tchar *, int);
-typedef bool (* char_int_fp) (const char  *, int);
+typedef bool (*tchar_int2_fp)(const tchar *, int, int);
+typedef bool (* char_int2_fp)(const char  *, int, int); // pointer,len,pos
 struct SyntLang_t {
   tchar_uint_fp in_word_set;
-  tchar_int_fp  is_eol_com_tc, is_begin_com_tc;
-  char_int_fp   is_eol_com_c,  is_begin_com_c;
+  tchar_int2_fp is_eol_com_tc, is_begin_com_tc;
+   char_int2_fp is_eol_com_c,  is_begin_com_c;
   const char *  end_comment;
 };
 bool no_keywords    (const tchar *, unsigned int) { return false; }
-bool no_comments_tc (const tchar *,          int) { return false; }
-bool no_comments_c  (const  char *,          int) { return false; }
+bool no_comments_tc (const tchar *, int,     int) { return false; }
+bool no_comments_c  (const  char *, int,     int) { return false; }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 static const char empty[] = "";
-static bool pound_eol_com_tc (const tchar *tstr, int)
-                                            { return ((char)tstr[0] == '#'); }
-static bool pound_eol_com_c (const char *str, int) { return (str[0] == '#'); }
+static bool pound_eol_com_tc (const tchar *tstr, int,int)
+                                               { return (char)tstr[0] == '#'; }
+static bool pound_eol_com_c(const char *str, int,int) { return str[0] == '#'; }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #define BASH_TOTAL_KEYWORDS 25
 #define BASH_MIN_WORD_LENGTH 2
@@ -208,22 +208,22 @@ static bool Lua_in_word_set (const tchar *tstr, unsigned int len)
   } }
   return false;
 }
-static bool Lua_is_eol_com_tc (const tchar *tstr, int len)
+static bool Lua_is_eol_com_tc (const tchar *tstr, int len, int)
 {
   return (len > 1 && (char)tstr[0] == '-' && (char)tstr[1] == '-'
                   &&             (len < 3 || (char)tstr[2] != '['));
 }
-static bool Lua_is_eol_com_c (const char *str, int len)
+static bool Lua_is_eol_com_c (const char *str, int len, int)
 {
   return (len > 1 && str[0] == '-' && str[1] == '-'
                   &&      (len < 3 || str[2] != '['));
 }
-static bool Lua_is_begin_com_tc (const tchar *tstr, int len)
+static bool Lua_is_begin_com_tc (const tchar *tstr, int len, int)
 {
   return (len > 3 && (char)tstr[0] == '-' && (char)tstr[1] == '-'
                   && (char)tstr[2] == '[' && (char)tstr[3] == '[');
 }
-static bool Lua_is_begin_com_c (const char *str, int len)
+static bool Lua_is_begin_com_c (const char *str, int len, int)
 {
   return (len > 1 && str[0] == '/' && str[1] == '*'
                   && str[2] == '[' && str[3] == '[');
@@ -302,19 +302,19 @@ static bool Cpp_in_word_set (const tchar *tstr, unsigned int len)
   } }
   return false;
 }
-static bool Cpp_is_eol_com_tc (const tchar *tstr, int len)
+static bool Cpp_is_eol_com_tc (const tchar *tstr, int len, int)
 {
   return (len > 1 && (char)tstr[0] == '/' && (char)tstr[1] == '/');
 }
-static bool Cpp_is_eol_com_c (const char *str, int len)
+static bool Cpp_is_eol_com_c (const char *str, int len, int)
 {
   return (len > 1 && str[0] == '/' && str[1] == '/');
 }
-static bool Cpp_is_begin_com_tc (const tchar *tstr, int len)
+static bool Cpp_is_begin_com_tc (const tchar *tstr, int len, int)
 {
   return (len > 1 && (char)tstr[0] == '/' && (char)tstr[1] == '*');
 }
-static bool Cpp_is_begin_com_c (const char *str, int len)
+static bool Cpp_is_begin_com_c (const char *str, int len, int)
 {
   return (len > 1 && str[0] == '/' && str[1] == '*');
 }
@@ -384,9 +384,14 @@ static bool Perl_in_word_set (const tchar *tstr, unsigned int len)
   } }
   return false;
 }
-static bool Perl_eol_com_tc (const tchar *tstr, int)
-                                           { return ((char)tstr[0] == '#'); }
-static bool Perl_eol_com_c (const char *str, int) { return (str[0] == '#'); }
+static bool Perl_eol_com_tc (const tchar *tstr, int, int pos)
+{
+  return (char)tstr[0] == '#' && (pos == 0 || (char)tstr[-1] == ' ');
+}
+static bool Perl_eol_com_c (const char *str, int, int pos)
+{
+  return str[0] == '#' && (pos == 0 || str[-1] == ' ');
+}
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #define PYTHON_TOTAL_KEYWORDS 32
 #define PYTHON_MIN_WORD_LENGTH 2
@@ -472,9 +477,9 @@ SyntLang_t SyntLangs[] =
                        &Perl_eol_com_c,  &no_comments_c, empty }, // CLangPERL
 
   { &Python_in_word_set,
-    &pound_eol_com_tc, &no_comments_tc,
-    &pound_eol_com_c,  &no_comments_c, empty }, // CLangPYTH
-};
+       &Perl_eol_com_tc, &no_comments_tc,
+       &Perl_eol_com_c,  &no_comments_c, empty }, // CLangPYTH (same comments
+};                                                //             as for Perl)
 //-----------------------------------------------------------------------------
 void printSynt(int *Synt)
 {
@@ -549,10 +554,10 @@ void SyntColorize (txt *text, tchar *tcp, int& len)
       switch (typ) {
       case '\\': N++; break;
       case '#':
-        if (L->is_eol_com_tc(tcp+N, len-N)) {
+        if (L->is_eol_com_tc(tcp+N, len-N, N)) {
           while (N < len) tcp[N++] |= AT_COMMENT;
         }
-        else if (L->is_begin_com_tc(tcp+N, len-N)) {
+        else if (L->is_begin_com_tc(tcp+N, len-N, N)) {
           word0 =  N;           // ^
           mode = 'c'; continue; // will process the comment at the beginning of
         }                       // next loop iteration, as begin_comment cannot
@@ -669,8 +674,8 @@ int SyntParse(txt *text, char *str, int len, int *out) // NOTE: 'out' may point
     switch (Type_c(c)) {
     case '\\': N++; break;
     case '#':
-           if (L->is_eol_com_c  (str+N, len-N)) goto end_of_loop;
-      else if (L->is_begin_com_c(str+N, len-N)) {
+           if (L->is_eol_com_c  (str+N, len-N, N)) goto end_of_loop;
+      else if (L->is_begin_com_c(str+N, len-N, N)) {
         word0 =  N;           // ^
         mode = 'c'; continue; // will process the comment at the beginning of
       }                       // next loop iteration, as begin_comment cannot
