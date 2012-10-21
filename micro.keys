@@ -18,6 +18,11 @@ COMMAND LINE
 (see also FILES     mim -           - start editing an empty text
    section below)   mim dirname     - open the contents of given directory
                     mim .           - start with current directory contents
+Options:
+ -dos - save files in DOS/Win format (with CR LF) instead of default POSIX (LF)
+ -dq  - debug memory allocation |
+ -ti  - show execution timing   | not intended for regular use, for debugging
+ -kb  - show keyboard commands  | purposes only, do not use unless instructed
 */
 k_BEGIN
 /*

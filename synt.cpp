@@ -57,13 +57,13 @@ void SyntLangOff()
                                  Ttxt->clang += CLangDISABLED;
   else exc(E_SFAIL);                      wndop(TW_ALL, Ttxt);
 }
-int ShowBrak = 1; // show-brackets mode: 0 = no-pos-check, 1 = normal, 2 = full
+int ShowBrakts = 1; // show-brackets mode: 0=no-pos-check, 1=normal, 2=full
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void SyntBrakToggle()
 {
-       if (KbRadix)       ShowBrak = KbCount;
-  else if (ShowBrak == 1) ShowBrak = 2;
-  else                    ShowBrak = 1;
+       if (KbRadix)         ShowBrakts = KbCount;
+  else if (ShowBrakts == 1) ShowBrakts = 2;
+  else                      ShowBrakts = 1;
   wndop(TW_ALL, Ttxt);
 }
 //-----------------------------------------------------------------------------
@@ -603,9 +603,9 @@ end_of_loop:
 // Make sure all already type-matched closing brackets are positioned correctly
 // (should not be to the left of adjusted opening bracket position)
 //
-  if (ShowBrak) for (i = 0; i < brtclo; i++)
-                  if ((text->prevSynts[brnclo+i+1] >> 8) > braclo[i])
-                    tcp[braclo[i]] |= AT_ERROR;
+  if (ShowBrakts) for (i = 0; i < brtclo; i++)
+                    if ((text->prevSynts[brnclo+i+1] >> 8) > braclo[i])
+                      tcp[braclo[i]] |= AT_ERROR;
 //
 // Move Synt pair of the first (hopefully, single) mismatched bracket in front
 // of the list, trying to avoid multiple error marks and provide more relevant
@@ -619,8 +619,8 @@ end_of_loop:
 //
   for (i = 0; i < brnclo; i++)  newSynts[numNews++] = text->prevSynts[i+1];
   for (i = 0; i < brx && numNews < MAXSYNTBUF; i++) {
-    newSynts[numNews++] = (word1 << 8) | brakt[i];
-    if (in_le_mode || ShowBrak > 1)  tcp[brakp[i]] |= AT_MARKOK;
+    newSynts[numNews++] =  (word1 << 8) | brakt[i];
+    if (in_le_mode || ShowBrakts > 1) tcp[brakp[i]] |= AT_MARKOK;
   }
 // Some artificial intelligence to add an earlier indication of missing closing
 // bracket - mark as error when first non-closed bracket in current line starts
@@ -632,10 +632,10 @@ end_of_loop:
 //         ...        not closed                                       int y1);
 //       }                                 }
 //
-  if (ShowBrak && brx && brnclo
-               && word1 <= (text->prevSynts[brnclo] >>   8)
-               && !(       (text->prevSynts[brnclo] & 0xFF) == '{' &&
-                                                   brakt[0] != '{' ))
+  if (ShowBrakts && brx && brnclo
+                 && word1 <= (text->prevSynts[brnclo] >>   8)
+                 && !(       (text->prevSynts[brnclo] & 0xFF) == '{' &&
+                                                     brakt[0] != '{' ))
     tcp[brakp[0]] |= AT_ERROR;
 //
 // Unless in line-editing mode, check if post-line Synts has been changed, and,

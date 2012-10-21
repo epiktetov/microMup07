@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07   Main Frame + Application Data + ScTwin  | (c) Epi MG, 2004-2011
+// МикроМир07   Main Frame + Application Data + ScTwin  | (c) Epi MG, 2004-2012
 //------------------------------------------------------+----------------------
 #include <QApplication>
 #include <QtGui>
@@ -16,8 +16,9 @@ static QString MimVersion()
   return Utf8("µMup07 version %1 (" QtPLATF ")").arg(microVERSION);
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-bool dosEOL = false;                              /* Настраиваемые параметры */
-int TABsize = 4;
+bool dosEOL = false;   /* Настраиваемые параметры: - DOS/Windows end-of-line */
+int debugDQ = 0;       /* - debug DQ memory allocation (used in dq.c file)   */
+int TABsize = 4;       /* - табуляция, обычно 4 или 8 символов, configurable */
 QSize MiFrameSize;
        bool MiApp_debugKB    = false;
 static bool MiApp_timeDELAYS = false;
@@ -84,7 +85,7 @@ int main(int argc, char *argv[])
 #if defined(Q_OS_MAC) && QT_VERSION >= 0x040500
   QApplication::setGraphicsSystem("raster");
 #endif  //                         ^
-// when using "native" graphics, scroll() posts update requeston on all widgets
+// when using "native" graphics, scroll() posts update requests for all widgets
 // (comments says "This is a hack around Apple's missing functionality, pending
 // the toolbox team fix. --Sam"), resulting in full window update and rendering
 // our efforts to optimize repaint irrelevant; setting "raster" system seems to
@@ -104,8 +105,9 @@ int main(int argc, char *argv[])
   for (int i = 1; i < argc; i++) {
     QString param = Utf8(argv[i]);
          if (param.compare("-dos",IGNORE_CASE) == 0) dosEOL           =  TRUE;
-    else if (param.compare("-kb", IGNORE_CASE) == 0) MiApp_debugKB    =  true;
+    else if (param.compare("-dq", IGNORE_CASE) == 0) debugDQ          =  TRUE;
     else if (param.compare("-ti", IGNORE_CASE) == 0) MiApp_timeDELAYS =  true;
+    else if (param.compare("-kb", IGNORE_CASE) == 0) MiApp_debugKB    =  true;
     else if (param == "-") { if (tmStart(QfsEMPTY_NAME)) return app.exec();
                              else                        return 2;        }
     else {
@@ -844,7 +846,7 @@ void MiInfoWin::SetPalette (QColor bgnd, QColor text)
 }
 void MiInfoWin::vpResize() // need plenty of room for key codes...
 {
-  resize(2 * mimBORDER + sctw->Tw2qtW(MiApp_debugKB ? 20 : 9),
+  resize(2 * mimBORDER + sctw->Tw2qtW(MiApp_debugKB ? 20 : 10),
          2 * mimBORDER + sctw->Th2qtH(1));
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -872,20 +874,22 @@ void MiInfoWin::paintEvent (QPaintEvent *)
   else if (MiApp_timeDELAYS &&
      (dx = (int)(pgtime()-last_MiCmd_time)) > 1) { info.sprintf("%4dms", dx);
                                        dc.drawText(sctw->Tx2qtX(0), Y, info); }
-  else {
-    info.sprintf("%7d", int((sctw->vp == Twnd) ? Ty : sctw->vp->cty)+1);
-    if (sctw->vp->wtext && 0 < sctw->vp->wtext->clang &&
-                               sctw->vp->wtext->clang < CLangMAX) {
-      int *Synts = sctw->vp->wtext->lastSynts,
-        numSynts = Synts[0] & AT_CHAR;
-      for (int i = 0; i < numSynts && i < 3; i++) {
-        if (info[i] > ' ') info[i+1] = QChar(0x2026);
-                           info[i]   = QChar(Synts[i+1] & 0xFF);
-    } }
-    dc.drawText(sctw->Tx2qtX(0),                     Y, info.mid(0, 4));
-    dc.drawText(sctw->Tx2qtX(4) + sctw->fontWidth/2, Y, info.mid(4, 3));
+  else {     wnd *vp = sctw->vp;
+    info.sprintf("%8d", int((vp == Twnd) ? Ty : vp->cty) + 1);
+    if (vp->wtext && 0 < vp->wtext->clang && vp->wtext->clang < CLangMAX) {
+      int *Synts, numSynts;
+      if (ShowBrakts == 2 && TxSetY(vp->wtext, vp->wty + vp->cy))
+           Synts = vp->wtext->prevSynts;
+      else Synts = vp->wtext->lastSynts; numSynts = Synts[0] & AT_CHAR;
+      int i;
+      for (i = 0; i < numSynts && info[i] == ' '; i++)
+                        info[i] = QChar(Synts[i+1] & 0xFF);
+      if (i < numSynts) info[i] = QChar(0x2026); // …
+    }
+    dc.drawText(sctw->Tx2qtX(0),                     Y, info.mid(0, 5));
+    dc.drawText(sctw->Tx2qtX(5) + sctw->fontWidth/2, Y, info.mid(5, 3));
   }
-  dc.drawText(sctw->Tx2qtX(8), Y, clipStatus());
+  dc.drawText(sctw->Tx2qtX(9), Y, clipStatus());
 }
 void MiInfoWin::updateInfo (MiInfoType mit) { if (mit) infoType = mit;
                                                             repaint(); }

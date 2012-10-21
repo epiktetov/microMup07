@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07         Самый главный header файл         | (c) Epi MG, 2006-2011
+// МикроМир07         Самый главный header файл         | (c) Epi MG, 2006-2012
 //------------------------------------------------------+--------------------*/
 #ifndef MIC_H_INCLUDED  /* Old "nm.h" (c) Attic 1989-90, (c) EpiMG 1998-2001 */
 #define MIC_H_INCLUDED
@@ -60,7 +60,8 @@ typedef long tchar;                           /* Unicode символ с атр�
 #define TeSCH_CONTINUE  AT_SUPER+0xBB /* Line continuation mark (TE_FORMAT)  */
 /*---------------------------------------------------------------------------*/
 extern int TABsize; /* Настраиваемые параметры - табуляция, 4 или 8 символов */
-extern bool dosEOL; /* - DOS/Windows style for end-of-line (CR/LF вместо CR) */
+extern int debugDQ; /* - debug DQ memory allocation, -dq command line option */
+extern bool dosEOL; /* - DOS/Windows style for end-of-line (CR/LF вместо LF) */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #define MAXPATH    400                     /* Некоторые магические константы */
 #define MAXDIRSTK   12

@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07  Command Codes Definition / transcoding   | (c) Epi MG, 1998-2011
+// МикроМир07  Command Codes Definition / transcoding   | (c) Epi MG, 1998-2012
 //------------------------------------------------------+----------------------
 //include <qnamespace.h>
 #include <QKeyEvent>

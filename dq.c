@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07       Деки                                | (c) Epi MG, 2007,2011
+// МикроМир07       Деки                                | (c) Epi MG, 2007-2012
 //------------------------------------------------------+----------------------
 * Original "dq.c" (c) Attic 1989-91
 *                 (c) EpiMG 1997-2001
@@ -46,32 +46,6 @@ void DqInit(char *membuf, long bufsize)     /* create "anti-deq" that covers */
   deq0.dnext = &deq0;  deq0.dbeg = membuf+bufsize;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-//#include <stdio.h>
-//void DqPrintDeqs(const char *title)
-//{
-//  long gap, len; fprintf(stderr, "%s", title);
-//  deq *d;
-//  if (deq0.dnext != &deq0) {
-//    gap = cpdiff(deq0.dnext->dbeg, deq0.dend);
-//    if (gap > 0) fprintf(stderr, "%ld-", gap);
-//  }
-//  for (d = deq0.dnext; d != &deq0; d = d->dnext) {
-//    fprintf(stderr, "%c%c", d->dbext? '{' : '[', d->dtyp);
-//         if (d == lockdeq) fprintf(stderr, "*");
-//    else if (d ==  gapdeq) fprintf(stderr, "+");
-//    len = DqLen(d);
-//         if (len > 1048576) fprintf(stderr, "%.1fM", (double)len/1048576);
-//    else if (len > 1024)    fprintf(stderr, "%.1fk", (double)len/1024);
-//    else                    fprintf(stderr, "%ld",           len);
-//    fprintf(stderr, "%c", d->deext ? '}' : ']');
-//    gap = cpdiff(d->dnext->dbeg, d->dend);
-//         if (gap > 1048576) fprintf(stderr, "-%.1fM-", (double)gap/1048576);
-//    else if (gap > 1024)    fprintf(stderr, "-%.1fk-", (double)gap/1024);
-//    else if (gap > 0)       fprintf(stderr, "-%ld-",           gap);
-//  }
-//  fprintf(stderr, "\n");
-//}
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 deq *DqNew (short typ, short bext, short eext)
 {
   deq *d; if (freedeqs) { d = freedeqs; freedeqs = d->dnext; }
@@ -109,6 +83,32 @@ static long DqFree()                  /* calculate total free memory in deqs */
   while ((d = d->dnext) != &deq0); return f;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+#include <stdio.h>
+void DqPrintDeqs()
+{
+  long gap, len;
+  deq *d;
+  if (deq0.dnext != &deq0) {
+    gap = cpdiff(deq0.dnext->dbeg, deq0.dend);
+    if (gap > 0) fprintf(stderr, "%ld-", gap);
+  }
+  for (d = deq0.dnext; d != &deq0; d = d->dnext) {
+    fprintf(stderr, "%c%c", d->dbext? '{' : '[', d->dtyp);
+         if (d == lockdeq) fprintf(stderr, "*");
+    else if (d ==  gapdeq) fprintf(stderr, "+");
+    len = DqLen(d);
+         if (len > 1048576) fprintf(stderr, "%.1fM", (double)len/1048576);
+    else if (len > 1024)    fprintf(stderr, "%.1fk", (double)len/1024);
+    else                    fprintf(stderr, "%ld",           len);
+    fprintf(stderr, "%c", d->deext ? '}' : ']');
+    gap = cpdiff(d->dnext->dbeg, d->dend);
+         if (gap > 1048576) fprintf(stderr, "-%.1fM-", (double)gap/1048576);
+    else if (gap > 1024)    fprintf(stderr, "-%.1fk-", (double)gap/1024);
+    else if (gap > 0)       fprintf(stderr, "-%ld-",           gap);
+  }
+  fprintf(stderr, "\n");
+}
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void extgap (deq *d, long len, bool move_previous)
 {
   deq *d1st, *d2nd; /* нужна память в промежутке между [d1st}-..gap..-{d2nd] */
@@ -119,10 +119,8 @@ void extgap (deq *d, long len, bool move_previous)
   if (cpdiff(d2nd->dbeg, d1st->dend) >= len) return; /* уже есть! */
   lockdeq = d;
   gapdeq = d1st;
-//+
-// fprintf(stderr, "x(len=%ld%s", len, move_previous ? ",prev" : "");
-// DqPrintDeqs(":");
-//-
+  if (debugDQ) { fprintf(stderr,"extgap(len=%ld%s):\n",
+                    len, move_previous ? ",prev" : ""); DqPrintDeqs(); }
   if (d1st->deext > len) len = d1st->deext;
   if (d2nd->dbext > len) len = d2nd->dbext;
   if (DqFree() < len && tmswap(len) < len) { /* Если нет места: swap smthng */
@@ -143,10 +141,8 @@ void extgap (deq *d, long len, bool move_previous)
       lblkmov(d->dbeg, d->dbeg + delta, DqLen(d)); d->dbeg += delta;
                                                    d->dend += delta;
   } }
-//+
-// DqPrintDeqs("Dq:");
-//-
-  lockdeq = gapdeq = NIL; DqReserveExt = TRUE;
+  DqReserveExt = TRUE;
+  lockdeq = gapdeq = NIL; if (debugDQ) DqPrintDeqs();
 }
 /*---------------------------------------------------------------------------*/
 void DqAddB (deq *d, char *data, int len)

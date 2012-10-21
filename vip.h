@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07 ViewPort (interface wx/C++ / legacy code) | (c) Epi MG, 2006-2011
+// МикроМир07 ViewPort (interface wx/C++ / legacy code) | (c) Epi MG, 2006-2012
 //------------------------------------------------------+--------------------*/
 #ifndef VIP_H_INCLUDED  /* Old "nm.h" (c) Attic 1989-90, (c) EpiMG 1998-2001 */
 #define VIP_H_INCLUDED  /* old "wd.h" (c) Attic 1989, then (c) EpiMG 1996,98 */
@@ -18,7 +18,7 @@ void vipCleanupWindow (wnd *w);        /* <- called from MiScTwin destructor */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 extern "C" {
 #endif
-void vipFocus(wnd *w);
+void vipFocus   (wnd *w);     /* focus the winow (usually after vipActivate) */
 void vipOnFocus (wnd *w);     /* to be called when the window gets focus     */
 void vipFocusOff(wnd *w);     /* to be called when focus goes off the window */
 void vipActivate(wnd *w);     /* make this window current (set Ttxt/Twnd)    */
@@ -26,6 +26,7 @@ void vipGotoXY(int x, int y); /*        click in the active window (Twnd)    */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 extern bool LeInsMode;  /* Режим вставки (если FALSE, то режим замены), le.c */
 extern bool BlockMark;  /* block mark is on: (BlockTx,BlockTy) to (Tx,Ty)    */
+extern int  ShowBrakts; /* show-brackets: 0=no-pos-check, 1=normal, 2=full   */
 void wpos_off(wnd *vp);
 void scblkon(bool tmp);
 void scblkoff();
