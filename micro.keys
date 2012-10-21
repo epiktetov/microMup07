@@ -210,10 +210,6 @@ both should be pressed and released before the next key (unlike Shift/Ctrl/…)
   Ctrl+Shift+Numpad{arrows}
     move selected text (or from cursor to end of the line)
     in given direction, overwriting whatever it moves over
-
-  Ctrl+T - center current line in the text (using current window width)
-  F6 - split very long line into several shorter, or merge them back, or join
-       with the next line (separating them by space), i.e. do some formatting
 */
 k_(TE_BLIN,     "Home,Return",      0xc5804) /* разрезать строку в начало    */
 k_(TE_SLIN,     "Home,Ins",         0xc5806) /* разрезать строку вертикально */
@@ -261,8 +257,8 @@ are squeezed into one)
 
 ʁSEARH AND REPLACE.ʀ MicroMir can search in text mode (case-sensitive or not), in
 wildcard mode (? matches any symbol and * matches any substring), or in regular
-expression one (http://doc.qt.nokia.com/4.7/qregexp.html); the mode is selected
-when entering search/replace pattern.
+expression one (see http://qt-project.org/doc/qt-4.8/QRegExp.html); the mode is
+selected when entering search/replace pattern.
 
   Ctrl/Meta+F = Home End - edit search/replace pattern (start search by Return)
   Meta[+Ctrl]+End        - edit search pattern for 'grep' (MacOS X/Linux only)
@@ -273,10 +269,10 @@ when entering search/replace pattern.
         Ctrl+8 (*) - search with wildcards                ‹wc·--›
         Ctrl+I     - toggle case sensitivity: ignore case ‹--·ic› / not ‹--·cs›
 
-              End - search (for previously entered pattern) forward (down)
-        Shift+End - search backward (up)
-   Ctrl+      End - replace (if matches) or search down (if not)
-   Ctrl+Shift+End - replace (if matches) or search up (if not)
+  Ctrl+G       =       End - search (for previously entered pattern) forward
+  Ctrl+Shift+G = Shift+End - search backward (up)
+  Ctrl+B == Ctrl+      End - replace (if matches) or search down (if not)
+            Ctrl+Shift+End - replace (if matches) or search up (if not)
 */
 k_(TE_SENTR,        "Home,End", 0xc6811) /* ввод подстроки поиска и замены   */
 a_(TE_SENTR,          "Meta+F", 0xc6811) /*    (Return или End - поиск вниз, */
@@ -288,10 +284,13 @@ k_(LA_STDMODE,        "Ctrl+6", 0xc6436) /*               | стандартны
 k_(LA_REMODE,         "Ctrl+7", 0xc6437) /* Режим поиска: | regexp      ‹re› */
 k_(LA_WCMODE,         "Ctrl+8", 0xc6438) /*               | wildcards   ‹wx› */
 k_(LA_IGNOREC,        "Ctrl+I", 0xc6449)
-k_(TE_SDOWN,             "End", 0xd6011) /* повторение поиска вниз */
+k_(TE_SDOWN,          "Ctrl+G", 0xd6011)
+a_(TE_SDOWN,             "End", 0xd6011) /* повторение поиска вниз */
 k_(TE_SUP,         "Shift+End", 0xd6211) /* повторить поиск вверх  */
-k_(TE_RUP,    "Ctrl+Shift+End", 0xc6611) /* замена/поиск вверх     */
-k_(TE_RDOWN,  "Ctrl+End",       0xc6411) /* замена/поиск вниз      */
+a_(TE_SUP,    "Ctrl+Shift+G",   0xd6211)
+k_(TE_RUP,    "Ctrl+Shift+End", 0xc6611) /* замена/поиск вверх */
+k_(TE_RDOWN,  "Ctrl+End",       0xc6411) /* замена/поиск вниз  */
+a_(TE_RDOWN,  "Ctrl+B",         0xc6411)
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 k_(TE_GENTR,  "Meta+Ctrl+F",    0xc6511) /* глобальный поиск (grep, по всем  */
 a_(TE_GENTR,  "Meta+Ctrl+End",  0xc6511) /*                файлам из списка) */
@@ -342,7 +341,7 @@ k_(LE_CPOPEN,  "Ctrl+F1", 0xf7430) /* наоборот, будем добавл�
 /*
 ʁSELECTION.ʀ Although text can be copied without selecting anything, MicroMir has
 mechanism of rectangular selections: Shift+{arrows} makes "temporary" selection
-(grey rectangle) & F5 followed by any regular cursor movement makes "permanent"
+(grey rectangle),  F5 followed by any regular cursor movement makes "permanent"
 one (light blue rectangle).
                                        |       (any movement    - start/extend
         Shift+{arrows} - start/extend  |  F5 ..  except for   ..   "permanent"
@@ -378,7 +377,7 @@ ones (without selection, current character is converted and cursor moves right)
 
   Meta+Alt+Up   - convert current character (or selected block) to uppercase
   Meta+Alt+Down - convert current character (or selected block) to lowercase
-  Ctrl+B        - add / clear "bold" attribute
+  Meta+Alt+B    - add / clear "bold" attribute
 
 NOTE: "bold" attribute is marked by Unicode chars U+281 / U+280 (which are very
 unlikely to appear in regular text) and not compatible with anything.. not even
@@ -386,7 +385,7 @@ with build-in MicroMir search engine. Use at your own risk, you've been warned!
 */
 k_(LE_CCUP,  "Meta+Alt+Up",   0xf8913) /* буква -> прописная */
 k_(LE_CCDWN, "Meta+Alt+Down", 0xf8915) /* буква -> строчная  */
-k_(LE_CBOLD, "Ctrl+B",        0xf8442) /* сделать жирным     */
+k_(LE_CBOLD, "Meta+Alt+B",    0xf8442) /* сделать жирным     */
 /*
 ʁThird MicroMir principle:ʀ instead of relying on sorting capabilites provided by
 file browser, one can keep files sorted his/her way (and also add any comments)
@@ -446,19 +445,18 @@ For example:                                   0ddd octal number such as 0176
                                                xddd hexadecimal number    x7e
   Esc,3,Shift+Del - delete 3 lines
   Esc,5,*         - same as typing ***** (insert/replace depending on the mode)
-
   Esc,N,Alt+Ins      - insert character with given Unicode number
   Esc,N,Meta+Alt+'<' - convert word/selection from radix-N (hex) to decimal
   Esc,N,Meta+Alt+'>' - convert word/selection to radix-N (where N = 2..36)
   Esc,N,Ctrl+Shift+] - set the width (of editable part) of the text
-  Esc,N,Ctrl/Meta+E  - move cursor to Nth line in text
-  Esc,N,     Ctrl+H  - move cursor to Nth position in current line
+  Esc,N,Ctrl+E       - move cursor to Nth line in text
+  Esc,N,Ctrl+H       - move cursor to Nth position in current line
 
 Note: without repetition prefix, the last two commands work differently, which
      is a special convenience feature to allow easy centering specific position
 
-  Ctrl/Meta+E - centers current line in the windows (vertically only)
-       Ctrl+H - centers curret position in the windows (horizontally)
+  Ctrl+E - centers current line in the windows (vertically only)
+  Ctrl+H - centers curret position in the windows (horizontally)
 */
 k_(TK_PREFIX, "Home",         0xcc00a) /* Home (generic) префикс          */
 k_(TK_ESC,    "Esc",          0xcc00e) /* Esc префикс (повторитель и пр.) */
@@ -467,9 +465,8 @@ k_(LE_SPCHAR, "Alt+Ins",      0xcb606) /* ввести символ по Unicode
 k_(LE_CWDEC,  "Meta+Alt+,",   0xfb92c) /* ʁ<ʀ  перевести число в десятичное */
 k_(LE_CWHEX,  "Meta+Alt+.",   0xfb92e) /* ʁ>ʀ  - в 16-ричное / основание N  */
 k_(TE_SWIDTH, "Ctrl+Shift+}", 0xcb65d) /* ʁ]ʀ  установить ширину текста     */
-k_(TE_CENTR,  "Ctrl+E",       0xfb445) /* в середину окна                 */
-a_(TE_CENTR,  "Meta+E",       0xfb445) /* - по вертикали                  */
-k_(LE_CENTR,  "Ctrl+H",       0xfb448) /* - по горизонтали                */
+k_(TE_CENTR,  "Ctrl+E",       0xfb445) /* в середину окна по вертикали    */
+k_(LE_CENTR,  "Ctrl+H",       0xfb448) /*               - по горизонтали  */
 /*
 ʁLua SCRIPTING:ʀ MicroMir embeds Lua scripting language (see http://www.lua.org),
 with only one command defined natively (+ a few more in auto-loaded Lua script)
@@ -591,7 +588,7 @@ solid background is just too boring), which may be configured using Preferences
 dialog. Full format of gradient specification is the following (square brackets
 mark optional parts):
 
-  primColor[/offColor][,start-stop][;tilt][,2nd:prim2][,3rd:prim3][4th:prim4]
+  primColor[/offColor][,start-stop][;tilt][,2nd:prim2][,3rd:prim3][,4th:prim4]
 
 where primColor - primary gradient color for first (default) color palette
        offColor - off-color (default "white")

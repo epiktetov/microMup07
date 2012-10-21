@@ -448,8 +448,8 @@ void MiScTwin::SetGradient(const QString grad)
     else                     mimSetNamedColor(  bgColor, gf.cap(2));
 //
     gradTilt = gf.cap(5).toInt();
-    if (gf.cap(3).isEmpty() && gradTilt > 0) { gradStart = 0.0;
-                                               gradStop  = 1.0; }
+    if (gf.cap(3).isEmpty() && gradTilt > 0) { gradStart = 0.00;
+                                               gradStop  = 0.25; }
     else {
       gradStart = gf.cap(3).toFloat();
       gradStop  = gf.cap(4).toFloat();
@@ -458,8 +458,8 @@ void MiScTwin::SetGradient(const QString grad)
     if (!gf.cap(7).isEmpty()) mimSetNamedColor(gradPool[2], gf.cap(7));
     if (!gf.cap(8).isEmpty()) mimSetNamedColor(gradPool[3], gf.cap(8));
   }
-  else { gradTilt = 1; bgColor = colorWinBgnd; gradStart = 0.0;
-                                               gradStop  = 1.0; }
+  else { gradTilt = 4; bgColor = colorWinBgnd; gradStart = 0.00;
+                                               gradStop  = 0.25; }
   SetGradFromPool(gradInPool);
 }
 void MiScTwin::SetGradFromPool(int N)

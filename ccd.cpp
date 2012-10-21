@@ -6,6 +6,7 @@
 #include <QKeySequence>
 #include "mim.h"
 #include "ccd.h"
+#include "twm.h"
 #include "vip.h"
 #include "lua.hpp"
 #include "luas.h"
@@ -106,6 +107,7 @@ QString MkToString (int kcode)
               return st.left(N) + "[" + st.at(N) + "]";
   } else      return st;
 }
+inline QString MkQuoteCmd(QString& cmd) { return Utf8("‹") + cmd + Utf8("›"); }
 /*---------------------------------------------------------------------------*/
 #define MkMAX_MACRO_SIZE 350 /* the only limitation is to be able editing it */
 QString MkMacro;             /*  (so Mk.Fn="value" should fit under MAXTXRM) */
@@ -121,11 +123,11 @@ void MkStartRecording (int N)
   luaQQ_rawset(-3); luaQn_pop(1);
 }
 void MkStopRecording (void) //- - - - - - - - - - - - - - - - - - - - - - - - -
-{                                                // make sure there's no self-
-  QString macro = MacroName(MkRecording);        // references in the string,
-  MkMacro.replace(Utf8("‹")+macro+Utf8("›"),""); // to avoid infinite recursion
-  luaP_getglobal("Mk");                          // (one such reference always
-  luaP_pushstring(  macro.cStr());               //  recorded just before stop)
+{                                         // make sure there is no self-refs in
+  QString macro = MacroName(MkRecording); // string to avoid infinite recursion
+  MkMacro.replace(MkQuoteCmd(macro), ""); // (one such reference is always
+  luaP_getglobal("Mk");                   //     recorded just before stopping)
+  luaP_pushstring(  macro.cStr());
   luaP_pushstring(MkMacro.uStr()); MkMacro.clear();
   luaQQ_rawset(-3);  luaQn_pop(1); MkRecording = 0;
 }
@@ -140,20 +142,20 @@ void MkMimXEQ (int kcode, int modMask, QString text, wnd *vp)
   int digit = MkToDigit(kcode);
   if (KbRadix && !modMask && digit >= 0) {
     KbCount = KbRadix * KbCount + digit;
-    last_MiCmd_key = Utf8("×%1").arg(KbCount); return;
+    Twnd->sctw->DisplayInfo( Utf8("×%1").arg(KbCount) ); return;
   }
   luaP_getglobal("Mk");
   if (MkPrefix.isEmpty()) { last_MiCmd_key = MkToString(kcode|modMask);
                             luaP_getfield(-1,last_MiCmd_key.uStr()); }
   else {
     if (MkPrefix == "Esc" && !modMask) {
-      const char *radix = "";
-           if (kcode == 'X') { KbRadix = 16; KbCount = 0;     radix = "hex"; }
-      else if (digit ==  0 ) { KbRadix =  8; KbCount = 0;     radix = "oct"; }
-      else if (digit  >  0 ) { KbRadix = 10; KbCount = digit; radix = "dec"; }
+      QString info;
+           if (kcode == 'X') { KbRadix = 16; info = "(hex)";    KbCount = 0; }
+      else if (digit ==  0 ) { KbRadix =  8; info = "(oct)";    KbCount = 0; }
+      else if (digit  >  0 ) { KbRadix = 10; info.setNum( KbCount = digit ); }
       if (KbRadix) {
-        last_MiCmd_key = Utf8("(%1)×%2…").arg(radix).arg(KbCount);
-        luaQn_pop(1);                            MkPrefix.clear(); return;
+        Twnd->sctw->DisplayInfo( Utf8("×%1").arg(info) );
+        luaQn_pop(1);                   MkPrefix.clear(); return;
     } }
     QString MkStr = MkToString(kcode|modMask);
     last_MiCmd_key = MkPrefix + "," + MkStr;
@@ -162,12 +164,12 @@ void MkMimXEQ (int kcode, int modMask, QString text, wnd *vp)
       luaQn_pop(1);    last_MiCmd_key = MkStr; // Try finding CCD with prefix
       luaP_getfield(-1,last_MiCmd_key.uStr()); // 1st, ignore it if not found
   } }
-  if (MiApp_debugKB)  fprintf(stderr, ",‹%s›", last_MiCmd_key.uStr());
+  if (MiApp_debugKB) fprintf(stderr, ",‹%s›", last_MiCmd_key.uStr());
   //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   if (MkRecording) {
     if (KbRadix) MkMacro.append(Utf8("×")+QString::number(KbCount)+Utf8("⁝"));
     if (text.isEmpty() || !text.at(0).isPrint())
-      MkMacro.append(Utf8("‹")+last_MiCmd_key+Utf8("›")); // no printable text
+      MkMacro.append(MkQuoteCmd(last_MiCmd_key)); // no printable text exists
     else switch (text.at(0).unicode()) {
       case 0x00D7: // × ← these two characters have special meaning in macros
       case 0x2039: // ‹                                      (must escape them)
@@ -185,18 +187,21 @@ void MkLuaXEQ (QString text, wnd *vp)
     int mk = lua_tointeger(L,-1);        luaQn_pop(2); // as number is str too,
     if (MiApp_debugKB) fprintf(stderr, ",0x%x\n", mk); // since its convertible
     switch (mk) {                                      // always to string
-    case TK_PREFIX: MkPrefix = last_MiCmd_key; return;
-    case TK_ESC:    MkPrefix = "Esc";          return;
-    case TK_CtrJ:   MkPrefix = "^J";           return;
+    case TK_PREFIX: MkPrefix = last_MiCmd_key; break;
+    case TK_ESC:    MkPrefix = "Esc";          break;
+    case TK_CtrJ:   MkPrefix = "^J";           break;
     case TK_SM1:
     case TK_SM2:
     case TK_SM3: if (MkRecording) { MkStopRecording();  vipBell(); }
                                     MkStartRecording(mk - TK_SM0); return;
     case TK_EM1:
-    case TK_EM2:
-    case TK_EM3: MkStopRecording();    return;
-    default:     vipOnKeyCode(vp, mk); return;
-  } }
+    case TK_EM2:                                  // shall NEVER store MkPrefix
+    case TK_EM3: MkStopRecording();    return;    // alone into the Macro, only
+    default:     vipOnKeyCode(vp, mk); return;    //    as part of the cmd name
+    }                                             // ↓
+    if (MkRecording) MkMacro.replace(MkQuoteCmd(MkPrefix), "");
+    Twnd->sctw->DisplayInfo(MkPrefix);                  return;
+  }
   else if (lua_isstring(L,-1)) text = Utf8(lua_tostring(L,-1));
   else if (lua_isfunction(L,-1)) {
     if (MiApp_debugKB) fprintf(stderr, ",lua\n");
