@@ -474,15 +474,18 @@ k_(TE_CENTR,  "Ctrl+E",       0xfb445) /* в середину окна по ве
 k_(LE_CENTR,  "Ctrl+H",       0xfb448) /*               - по горизонтали  */
 /*
 ʁLua SCRIPTING:ʀ MicroMir embeds Lua scripting language (see http://www.lua.org),
-with only one command defined natively (+ a few more in auto-loaded Lua script)
+scripts are supposed to be opened just as regular texts and then executed using
+these commands (plus ":/auto.lua" automatically loaded/executed at startup):
 
     Ctrl+J,Ctrl+J - load and executes the entire current text as Lua script
-     Ctrl+Shift+J - load/execute current line as (single-line) Lua script
+    Ctrl+Shift+J  - load/execute current line as (single-line) Lua script
+    Ctrl+J,N      - create new unnamed/throw-away text for new Lua script
 */
 k_(TM_LUAF,    "^J,Ctrl+J", 0xfc000) /* загрузить и выполнить программу на   */
 k_(TM_LUAS, "Ctrl+Shift+J", 0xfcc00) /*  языке Lua из текущего текста/строки */
+k_(TM_LUAN, "^J,N",         0xfc00e)
 /*
-MicroMir-specific Lua objects and operations:
+MicroMir-specific Lua objects and operations
 
   Mk["keysequence"] = Mk["other-sequence"] -- remap existing MicroMir command
   Mk["keysequence"] = "text-and-commands"  -- map text with embedded commands…
@@ -492,20 +495,11 @@ MicroMir-specific Lua objects and operations:
   Mk:XEQ( Mk["keysequence"] ) -- execute given command (or text with commands),
   Mk:XEQ("text-and-commands") --      as if they were entered from the keyboard
 
-  re = Re("..regex..",true/false) -- regular expression (arg: case sensitivity,
-  re = Re[[..regex..]]                                default = case-sensitive)
-  re:ifind("str"[,pos]) -- returns index of first match (nil if does not match)
-  re:cap(N)             -- returns Nth capture (only when called after 'ifind')
-  re:caps()             -- all captures (to use in multi-value assignement)
-  re:grepl("str","to")  -- globally replace pattern (where \N = Nth capture)
-
   Tx = Txt.open("filename") -- create/open given file in new window
   Tx = Txt.open(true)       -- open new window with unnamed file (saveable)
   Tx = Txt.open(false)      -- open new window with throw-away text
-  Tx = Txt.this             -- reference to "this" text (may be used only from
-                                the text with script iself, not from functions)
-  Tx.id -- text ID
-  (should be used for safe reference, Txt[Tx.id] -> Tx or nil if text replaced)
+
+  Tx.id -- text ID for safe reference, Txt[Tx.id] -> Tx or nil if text replaced
 
   Tx:focus() -- focus last opened window, associated with the text
   Tx:line(N) -- content of Nth line in given text (= nil if past end-of-text)
@@ -520,21 +514,30 @@ NOTE:
   attempt to move cursor out of text boundaries does not generate any error,
   cursor just moves as far as possible in requested direction
 
-  Tx:IC("text") -- insert text into current line | move cursor past
-  Tx:IL("line") -- insert given line at cursor   |    inserted text
+  Tx:IC("text") -- insert text into current line | moves cursor past
+  Tx:IL("line") -- insert given line at cursor   |     inserted text
   Tx:DC(N) -- delete N characters at cursor
   Tx:DL(N) -- delete N lines at cursor (default = 1)
   Tx:gtl() -- get-text-left convenience method = gets first chunk of non-spaces
                                        from text to the left of cursor position
+[line 523] xref: new.lua
+
+  re = Re("..regex..",true/false) -- regular expression (arg: case sensitivity,
+  re = Re[[..regex..]]                                default = case-sensitive)
+  re:ifind("str"[,pos]) -- returns index of first match (nil if does not match)
+  re:cap(N)             -- returns Nth capture (only when called after 'ifind')
+  re:caps()             -- all captures (to use in multi-value assignement)
+  re:grepl("str","to")  -- globally replace pattern (where \N = Nth capture)
+
 Examples (auto-loaded at startup):
 
-  MkCCD["Ctrl+Shift+T"] = function(Tx) Tx:IC(os.date()) end
-  MkCCD["Ctrl+Shift++"] = function(Tx)
+  Mk["Ctrl+Shift+T"] = function(Tx) Tx:IC(os.date()) end
+  Mk["Ctrl+Shift++"] = function(Tx)
     local result = loadstring("local X="..Tx:gtl()..";return X")()
     Tx:IC("= "..tostring(result))
   end
   for _,n in pairs{"F7","F8","F9"} do -- inserts current value of Fn macro into
-    Mk["^J,"..n] = function(Tx)       --     current text (edit and re-execute)
+    Mk["^J,"..n] = function(Tx)       --  current text (to edit and re-execute)
       local pref,Fn = "Mk."..n.."=",Mk[n]
       if type(Fn) == 'string' then Tx:IL(pref..'"'..Fn..'"')
                               else Tx:IL(pref..'none') end

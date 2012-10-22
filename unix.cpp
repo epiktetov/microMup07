@@ -127,20 +127,20 @@ static void shellexec (txt *Stxt, short& Sx,
         }
         if (p != pst) appendText(Stxt,Sx, pst, p);
       }
-      while ((k = kbhin()) != 0) { // Wait for user input
-        unsigned char ascii = k;
+      while ((k = kbhin()) != 0) { // Process all user input from KBH queue
+        unsigned char ascii = k;   //  (but do not wait for anything here)
         switch (k) {
         case    3: kill(pid, SIGINT);          break_count++; break; /* ^C */
         case    4: close(fds_in); fds_in = -1; break_count++; break; /* ^D */
-        default:
-          if (fds_in < 0)  continue;
-          if (k == '\n') appendCR(Stxt,Sx,Sy);
+        default:                               // ^
+          if (fds_in < 0)  continue;           // kill/close is *supposed* to
+          if (k == '\n') appendCR(Stxt,Sx,Sy); // break the loop, but may not
           else {
             p = (char*)&ascii; appendText(Stxt,Sx, p, p+1);
           }
           write(fds_in, &ascii, 1);
       } }
-      if (Swnd) vipOnFocus (Swnd); vipYield ();
+      if (Swnd) vipOnFocus (Swnd); vipYield(); // <- QCoreApp::processEvents();
       if (Swnd) vipFocusOff(Swnd); TxSetY(Stxt, Sy);
     }
     while (break_count < 2);     if (fds_in != -1) close(fds_in);
@@ -191,11 +191,16 @@ void tmshell (int kcode)
     if (wind) wattach(Ctxt, wind);
     else    { vipBell();   return; }
   }
-  wind->ctx = wind->wtx = 0;
-  wind->cty = wind->wty = 0;
-  if (Twnd == wind) Tx = Ty = 0;
-  else        vipActivate(wind); vipFocus(wind); vipUpdateWinTitle(wind);
+  if (wind != Twnd) vipActivate(wind);
+              vipUpdateWinTitle(wind); vipFocus(wind);
 //
+// Removed Sun Oct 21 12:12:00 2012 - all positions are cleared by TxEmpt or
+//                                                     when creating new text
+//   wind->ctx = wind->wtx = 0;
+//   wind->cty = wind->wty = 0;
+//   if (Twnd == wind) Tx = Ty = 0;
+//   else        vipActivate(wind); vipFocus(wind); vipUpdateWinTitle(wind);
+//--
 // Now insert the command (along with the prompt == current directory) into the
 // text and execute UNIX shell command... then check if any files were changed
 //
@@ -256,7 +261,7 @@ int tmSyncPos (void) /* SyncPos(tm) -- NOTE: only works with ASCII filenames */
   QString filename;                            // grep "unix.cpp:273:int tm..."
   QRegExp gnuFileLine("([+./0-9A-z-]+):(\\d+):.*");
   QRegExp unifiedDiff("@@ [^@]+\\+(\\d+),[^@]+ @@.*");
-  QRegExp lineKeyword("\"?([+.0-z]+)\"?, line (\\d+)(?:.(\\d+))?");
+  QRegExp lineKeyword("\"?([^ \",]+)\"?, line (\\d+)(?:.(\\d+))?");
 //        ^
 // [some-prefix] ["]{file}["], line {line}[.{pos}][:] {some-text}
 //

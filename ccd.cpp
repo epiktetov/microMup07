@@ -179,9 +179,9 @@ void MkMimXEQ (int kcode, int modMask, QString text, wnd *vp)
     if (MkMacro.size() > MkMAX_MACRO_SIZE) { vipBell(); MkStopRecording(); }
   }
   MkLuaXEQ(text, vp);   // Lua stack here: [-2] global "Mk" (not used below)
-}                       //                 [-1] command code definition value
+}                       //                 [-1] Mk[kcode] value (may be nil)
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-void MkLuaXEQ (QString text, wnd *vp)
+void MkLuaXEQ (QString text, wnd *vp) // text is only used when stack[-1] = nil
 {
   if (lua_isnumber(L,-1)) {                            // MUST check before str
     int mk = lua_tointeger(L,-1);        luaQn_pop(2); // as number is str too,
@@ -210,30 +210,41 @@ void MkLuaXEQ (QString text, wnd *vp)
   if (MiApp_debugKB) fprintf (stderr, ",'%s'\n", text.uStr());
   if (!text.isEmpty()) MkStrXEQ(text,vp);        luaQn_pop(2);
 }
-static int luMkXEQ (lua_State *L) { luaL_checktype(L, 1, LUA_TTABLE);
-                                    luaL_checkany (L, 2);
-                                    MkLuaXEQ ("",  Twnd);   return 0; }
+static int luMkXEQ (lua_State *L) // this function is called from Lua scripts
+{                                 // whenever explicit Mk:XEQ(something) used
+  luaL_checktype(L,1,LUA_TTABLE); // no return value, but may raise an error
+  luaL_checkany (L,2);
+  MkLuaXEQ ("", Twnd); if (qkbhin()) { luaP_pushinteger(1);
+                                       return lua_error(L); }  else return 0;
+}
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-void MkStrXEQ (QString text, wnd *vp)
-{
+void MkStrXEQ (QString text, wnd *vp) // execute MicroMir command from its text
+{                                     // presentation, several times if KbCount
+  int repeat = KbRadix ? KbCount : 1; // was set (by MkMimXEQ function)
+     KbRadix = 0;        KbCount = 1; // <- must reset that counter here!
   int N, len = text.length();
-  for (int i = 0; i < len; i++) {
-    int k = text.at(i).unicode();
-    if (k == 0x2446 && i+1 < len) vipOnKeyCode(vp, text.at(++i).unicode()); //⑆
-    else if (k ==  0x2039) {                                                //‹
-      if ((N = text.indexOf(Utf8("›"),i+1)) > 0) {
-        luaP_getglobal("Mk");
-        luaP_getfield(-1,text.mid(i+1,N-i-1).cStr()); i=N; MkLuaXEQ("", vp);
-    } }
-    else if (k == 0xD7) { //×
-      if ((N = text.indexOf(Utf8("⁝"),i+1)) > 0) {
-        KbRadix = 1;                                // applied to next command
-        KbCount = text.mid(i+1,N-i-1).toInt(); i=N; // (radix does not matter)
-    } }
-    else if (Mk_IsCHAR(k)) vipOnKeyCode(vp, k);
-} }
+  for (int k = 0; k < repeat; k++) {
+    for (int i = 0; i < len; i++) {
+      int k = text.at(i).unicode();
+      if (k == 0x2446) {    // ⑆ used to escape special characters (× and ‹)
+        if (i == len-1) break;
+        vipOnKeyCode(vp, text.at(++i).unicode());
+      }
+      else if (k ==  0x2039) {   // ‹
+        if ((N = text.indexOf(Utf8("›"),i+1)) > 0) {
+          luaP_getglobal("Mk");
+          luaP_getfield(-1,text.mid(i+1,N-i-1).cStr()); i=N; MkLuaXEQ("", vp);
+      } }
+      else if (k == 0xD7) {      // ×
+        if ((N = text.indexOf(Utf8("⁝"),i+1)) > 0) {
+          KbRadix = 1;                                // applied to next command
+          KbCount = text.mid(i+1,N-i-1).toInt(); i=N; // (radix does not matter)
+      } }
+      else if (Mk_IsCHAR(k)) vipOnKeyCode(vp, k);
+      if (qkbhin()) return; //
+} } }                       // KB interrupt (currently not used), or an error
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-void MkInitCCD (void)   // move Command Codes Definitions into global Lua table
+void MkInitCCD (void)  // moves Command Codes Definitions into global Lua table
 {
   luaP_newtable();
   for (microCCD *pt = CCD; pt->hexcode; pt++) {

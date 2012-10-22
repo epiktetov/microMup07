@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07  Clipboard (using wxClipboard) & CS/LS op | (c) Epi MG, 2007-2011
+// МикроМир07  Clipboard (using wxClipboard) & CS/LS op | (c) Epi MG, 2007-2012
 //------------------------------------------------------+----------------------
 #include <QApplication>   /* Old le.c (c) Attic 1989,    (c) EpiMG 1996-2003 */
 #include <QClipboard>     /* old te.c (c) Attic 1989-96, (c) EpiMG 1998,2001 */
@@ -200,9 +200,9 @@ void cpaste()                              /* Paste: called either from te.c */
   if (!cpopen || cpempt) {                 /* so have to work in any LE mode */
     if (cb_new_data) fromClipboard();
   }
-  else   clearClipboard(); // clear system Clipboard to avoid inconsistency
-  if (cpempt) exc(E_NOOP); // (first paste resets cpopen, so the second one
-  int oldLx = Lx;          // gets data from Clipboard instead of LCtxt)
+  else   clearClipboard(); //<- clear system Clipboard to avoid inconsistency
+  if (cpempt) exc(E_NOOP); //   (when 1st paste resets cpopen, and second one
+  int oldTx = Lwnd? Lx:Tx; //       gets data from Clipboard instead of LCtxt)
   cptinit(true);
   cpclose(); TxTop(LCtxt); if (qTxBottom(LCtxt)) return;
 //
@@ -214,7 +214,7 @@ void cpaste()                              /* Paste: called either from te.c */
     pasteFromLCtxt(true);     // First stored line may be pasted either as line
     while(!qTxBottom(LCtxt)){ // or as characters, exit LE mode for the rest of
       if (Lwnd) ExitLEmode(); // save buffer (if paste isn't finished) and move
-      Tx = oldLx;     Ty++;   // cursor to saved position one line below, rinse
+      Tx = oldTx;     Ty++;   // cursor to saved position one line below, rinse
       pasteFromLCtxt(true);   // and repeat pasting.
 } } }
 /*---------------------------------------------------------------------------*/

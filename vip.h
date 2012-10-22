@@ -59,8 +59,8 @@ void vipRedrawWindow(wnd *vp);
 void vipRedraw      (wnd *vp, int tx, int ty, int width, int height);
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void vipReady(), vipBell();
-bool qkbhin();
-int  kbhin();
+bool qkbhin();         /* historical name, now for detecting interrupt/error */
+int   kbhin();         /* keyboard queue for hardware (vipOSmode only) input */
 void setkbhin(int kc); /* called on real keyboard events, resets kbhin timer */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 extern bool vipOSmode; /* working in OS mode: current Twnd is modal and keys */

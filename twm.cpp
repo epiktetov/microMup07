@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07           Text & Window Manager           | (c) Epi MG, 2004-2011
+// МикроМир07           Text & Window Manager           | (c) Epi MG, 2004-2012
 //------------------------------------------------------+----------------------
 #include <QCoreApplication> // need QCoreApplication::arguments
 #include <QRegExp>
@@ -345,6 +345,14 @@ bool tmReLoad (txt *t)   // Forced reload -- check the status of real file (and
   case QftPSEUDO: TxDiscard(Ttxt); tmLoad  (Ttxt); return  true;
   case QftDIR:    TxDiscard(Ttxt); tmDoLoad(Ttxt); return  true;
 } }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+void tmUnlink (txt *t)       /* unlink text from the file (change to PSEUDO) */
+{
+  qfile *pseudo = QfsNew(QfsELLIPSIS, t->file);
+  QfsClear(t->file);          t->file = pseudo;
+  t->txstat |=  TS_PSEUDO;
+  t->txredit =   TXED_YES;
+}
 /*---------------------------------------------------------------------------*/
 bool tmsave (txt *t, bool needBackup)
 {
@@ -450,6 +458,8 @@ void twShowFile(QString name)
   wnd *wind = vipSplitWindow(Twnd, TM_VFORK);
   if  (wind)  twEdit(wind, name, NULL, true);
 }
+void twNewLuaText() { twShowFile(":/new.lua");   // open file, then unlink it
+     tmUnlink(Ttxt);  vipUpdateWinTitle(Twnd); } // (and update window title)
 /*---------------------------------------------------------------------------*/
 static void tmExtractIncs (txt *mcd, QStringList& incList)
 {
@@ -612,6 +622,7 @@ int TmCommand (int kcode)
     break;
   case TM_LUAF: return luasExec(Ttxt,false);
   case TM_LUAS: return luasExec(Ttxt, true);
+  case TM_LUAN: twNewLuaText(); return E_OK;
   default:
     return E_NOCOM;
   } return E_OK;

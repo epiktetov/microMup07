@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07    le = Line Editor -- Редактор строки    | (c) Epi MG, 2006-2011
+// МикроМир07    le = Line Editor -- Редактор строки    | (c) Epi MG, 2006-2012
 //------------------------------------------------------+--------------------*/
 #include "mic.h"             /* Old le.c (c) Attic 1989, (c) EpiMG 1996-2003 */
 #include "ccd.h"
@@ -572,9 +572,10 @@ int LeCommand (comdesc *cp)
               excptr = & leenv; if ((x = setjmp(leenv)) == 0) (*cp->cfunc)();
               excptr = nextexc; if  (x)                             return x;
 
-    if (leARGmode) leARGmode++;
+    if (leARGmode) leARGmode++; // any command makes next entered char not 1st
     else Tx = Lx;
     if (cp->attr & CA_CHANGE) Lchange = TRUE;
+    if (qkbhin())            return E_KBREAK;
   }
   return E_OK;
 }

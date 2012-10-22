@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07    te = Text editor - Редактор текста     | (c) Epi MG, 2006-2011
+// МикроМир07    te = Text editor - Редактор текста     | (c) Epi MG, 2006-2012
 //------------------------------------------------------+--------------------*/
 #include "mic.h"          /* Old te.c (c) Attic 1989-96, (c) EpiMG 1998,2001 */
 #include "ccd.h"
@@ -433,9 +433,7 @@ comdesc *Tdecode (int kcode)  /*- - - - - - - - - - - - - - - - - - - - - - -*/
 int TeCommand (comdesc *cp)
 {
   jmp_buf *nextexc, teenv; /* TODO: remove nextexc (no recursion anymore) */
-  long rpt;
-  short x;
-
+  int x, rpt;
   if (cp->attr & CA_LCUT && Ttxt == LCtxt) return E_LCUT;
   if (cp->attr & CA_CHANGE) {
     if (Ttxt->txredit == TXED_YES) UndoMark = TRUE;
@@ -443,7 +441,6 @@ int TeCommand (comdesc *cp)
   }
   for (rpt = (cp->attr & CA_RPT) ? 1 : KbCount; rpt; rpt--) {
     TxSetY(Ttxt, Ty);
-    if (qkbhin())                                return E_KBREAK;
     if ((cp->attr & CA_NBEG) && qTxTop   (Ttxt)) return E_MOVUP;
     if ((cp->attr & CA_NEND) && qTxBottom(Ttxt)) return E_MOVDOWN;
 //
@@ -456,6 +453,7 @@ int TeCommand (comdesc *cp)
               excptr = nextexc; if  (x)                             return x;
 
     if (cp->attr & CA_CHANGE) Ttxt->txstat |= TS_CHANGED;
+    if (qkbhin())                        return E_KBREAK;
   }
   return E_OK;
 }

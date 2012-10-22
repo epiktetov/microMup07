@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07 ViewPort (interface Qt/C++ • legacy code) | (c) Epi MG, 2006-2011
+// МикроМир07 ViewPort (interface Qt/C++ • legacy code) | (c) Epi MG, 2006-2012
 //------------------------------------------------------+----------------------
 #include <QApplication>
 #include <QPainter>
@@ -409,9 +409,10 @@ int vipOnRegCmd (wnd *vp, int kcode)                     /* regular commands */
       if ((cp = Ldecode(KbCode)) == NULL) { ExitLEmode(); continue; }
       switch (rc = LeCommand(cp)) {
       case E_LEXIT: continue; // <-- re-try the command on TE and/or TM level
-      case E_OK:   break; //
-      default: vipBell(); //
-      }            break; // we're done here, sucessfully or not (break loop)
+      case E_OK:       break;
+      case E_KBREAK: vipBell();              break;
+      default:       vipBell(); setkbhin(1); break; // we've done here, break
+      }                                      break; // the while(KbCode) loop
     }
     else if ((cp = Tdecode(KbCode)) != NULL) rc = TeCommand(cp);
     else if ((cp = Ldecode(KbCode)) == NULL) rc = TmCommand(KbCode);
@@ -421,12 +422,14 @@ int vipOnRegCmd (wnd *vp, int kcode)                     /* regular commands */
     switch (rc) {                    // TE/TM command return codes:
     case E_LENTER: rc = E_OK; break; // - LenterARG called
     case E_OK:                break; // - everything all right
-    default: vipBell();              // - some error encountered
+    case E_KBREAK: vipBell(); break; // - KB break (kbhin already set)
+    default:       vipBell();        // - some error encountered => place
+                 setkbhin(1); break; //       an interript into kbhin queue
     }                       
     KbCode  = 0; // cleanup KbStuff (and force end-of-loop as well)
   } KbCount = 1; //
-    KbRadix = 0; return rc;
-}
+    KbRadix = 0; return rc; // return code is not really used (vipOnKeyCode
+}                           // discards it), used only for "return vipXxxCmd"
 /*---------------------------------------------------------------------------*/
 static QRegExp Qspre; /* Qt presentation of search pattern (regexp/wildcard) */
 static QString Qsstr; /* Qt search string                                    */
@@ -528,28 +531,30 @@ int vipConvert (tchar *str, int str_len, int cvt_type, tchar *out)
 }
 /*---------------------------------------------------------------------------*/
 #define MAX_KEY_QUEUE 64
-bool vipOSmode;
 static int keyQueue[MAX_KEY_QUEUE], *kqHead = keyQueue, *kqTail = keyQueue;
-static quint64 last_kbhin = 0;
-
-void setkbhin(int key) 
-{ 
-  last_kbhin = pgtime(); 
+static quint64 last_kbhin = 0;                      bool vipOSmode = false;
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+void setkbhin (int key)  // KB queue for hardware (vipOSmode) input, also used
+{                        // for detecting interrupt/error (key=1) and timeouts
+  last_kbhin = pgtime(); // (32 secs without real KB input => something wrong)
   if (key) {
     if (kqTail == keyQueue+MAX_KEY_QUEUE) {
       int len = kqTail - kqHead;
-      if (kqHead == keyQueue) { vipBell(); return; }
-      blkmov(kqHead, keyQueue, len*sizeof(int));
-      kqHead = keyQueue;
-      kqTail = keyQueue+len;
-    }
-    *kqTail++ = key;
-} }
+      if (len == MAX_KEY_QUEUE) { QApplication::beep(); return; }
+      blkmov(kqHead,
+             keyQueue, len * sizeof(int)); kqHead = keyQueue;
+                                           kqTail = keyQueue + len;
+    } *kqTail++ = key;
+  }                                // clear the queue (remove error indicator)
+  else kqHead = kqTail = keyQueue; // if key==0 (MiScTwin::keyPress/wheelEvent)
+}
 int   kbhin(void) { return (kqHead < kqTail) ? *kqHead++ : 0; }
 bool qkbhin(void)
-{
-  return (kqHead < kqTail) || (pgtime() - last_kbhin) > 32768;
+{                                         // returns true when:
+  return (kqHead < kqTail)                // - queue not empty (error queued)
+      || (pgtime() - last_kbhin) > 32000; // - last event more than 32sec ago
 }
+void vipBell() { QApplication::beep(); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void EnterOSmode()
 {
@@ -573,7 +578,6 @@ void vipFileTooBigError (qfile *f, long size)
   vipError(QString("File %1 is too big (size: %2), truncated")
                          .arg(QfsShortName(f)).arg(size));
 }
-void vipBell() { QApplication::beep(); }
 /*---------------------------------------------------------------------------*/
 QString vipQstrX (QString str)                /* currently not used anywhere */
 {

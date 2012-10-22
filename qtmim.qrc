@@ -3,6 +3,7 @@
   <file alias="help">micro.keys</file>
   <file>abc</file>
   <file>LICENSE</file>
+  <file>new.lua</file>
   <file>auto.lua</file>
   <file>qtmim.png</file>
   <file>microMir.png</file>

@@ -3,16 +3,34 @@ Mk["Ctrl+Shift++"] = function(Tx)
   local result = loadstring("local X="..Tx:gtl()..";return X")()
   Tx:IC("= "..tostring(result))
 end
-for _,n in pairs{"F7","F8","F9"} do  -- inserts current value of F7/F8/F9 macro
-  Mk["^J,"..n] = function(Tx)        -- into current text (edit and re-execute)
+for _,n in pairs{"F7","F8","F9"} do -- inserts current value of Fn macro into
+  Mk["^J,"..n] = function(Tx)       --  current text (to edit and re-execute)
     local pref,Fn = "Mk."..n.."=",Mk[n]
     if type(Fn) == 'string' then Tx:IL(pref..'"'..Fn..'"')
                             else Tx:IL(pref..'none') end
   end
 end
+function Txt.openXref(Tx)        Tx.refs = { }       -- open new (throw-away)
+  local newTx = Txt.open(false); Tx.refTx = newTx.id -- text cross-referenced
+        newTx.refs = { };        newTx.refTx = Tx.id -- to given one
+
+  Tx.Xref = function(self,txN,rxN)            -- Suggested usage:
+    local Rx = self.refTx and Txt[self.refTx] --
+    txN = txN or self.Y                       -- Mk["keyseq"] = function(Tx)
+    rxN = rxN or Rx.Y-1; self.refs[txN] = rxN --   local Rx = Txt.openXref(Tx)
+                           Rx.refs[rxN] = txN --   for N,line in Tx:lines() do
+  end; return newTx                           --     if ... end
+end                                           --       Rx:IL(smth); Tx:Xref(N)  end
+Mk["Ctrl+Y"] = function(Tx)                   --     end
+  local Rx = Tx.refTx and Txt[Tx.refTx]       --   end  --  use Ctrl+Y to jump
+  if not Rx then return end                   -- end    -- between these texts
+  for i=Tx.Y,1,-1 do
+    if Tx.refs[i] then Rx:focus(); Rx.Y = Tx.refs[i]; return end
+  end
+end
 do local function breakable(c) return (c == ' ' or c == ',' or c == ';') end
-   local function squeeze(line,atN)
-     return line:sub(1,atN-1)..line:sub(atN):gsub("%s%s+"," ")
+   local function squeeze(line,afterN)
+     return line:sub(1,afterN-1)..line:sub(afterN):gsub("%s%s+"," ")
    end
   local function BlockFormat(Tx)
     if Tx.X < Tx.reX then Tx.fmtFromX,Tx.fmtToX = Tx.X,Tx.reX

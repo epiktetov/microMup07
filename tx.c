@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07              Texts - Тексты               | (c) Epi MG, 2007,2011
+// МикроМир07              Texts - Тексты               | (c) Epi MG, 2007-2012
 //------------------------------------------------------+--------------------*/
 #include "mic.h"             /* Old tx.c (c) Attic 1989, (c) EpiMG 1998,2001 */
 #include "qfs.h"
@@ -66,9 +66,24 @@ void TxDel (txt *t)
   t->txstat = 0; DqDel(t->txustk); t->txustk = NIL; QfsClear(t->file);
   t->maxTy  = 0; DqDel(t->txdstk); t->txdstk = NIL;          t->file = NIL;
   if (t->txudeq) DqDel(t->txudeq); t->txudeq = NIL;
-  if (t->clustk) DqDel(t->clustk); t->clustk = NIL;
-  if (t->cldstk) DqDel(t->cldstk); t->cldstk = NIL; t->clang = 0;
+  if (t->clustk) DqDel(t->clustk); t->clustk = NIL; t->luaTxid = 0;
+  if (t->cldstk) DqDel(t->cldstk); t->cldstk = NIL; t->clang   = 0;
 }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+void TxDiscard (txt *t) /* Discard the content of the file, also UNDO & Synt */
+{
+  DqEmpt(t->txdstk); if (t->clustk) DqEmpt(t->clustk);
+  DqEmpt(t->txustk); if (t->cldstk) DqEmpt(t->cldstk);
+                     if (t->txudeq) DqEmpt(t->txudeq);
+  t->txudfile = -1;
+  t->txudcptr = t->txudlptr = 0; t->vp_ctx = t->vp_wtx = 0;
+  t->maxTy    = t->txy      = 0; t->vp_cty = t->vp_wty = 0;
+  t->txstat  &= ~TS_FILE;
+  memset(t->thisSynts, 0, sizeof(int) * MAXSYNTBUF);
+  memset(t->prevSynts, 0, sizeof(int) * MAXSYNTBUF);
+  memset(t->lastSynts, 0, sizeof(int) * MAXSYNTBUF);
+}
+void TxEmpt(txt *t) { TxDiscard(t); TxMarks0(t); wndop(TW_EM, t); } /* Empty */
 /*---------------------------------------------------------------------------*/
 bool qTxBottom(txt *t) { return qDqEmpt(t->txdstk); }
 bool qTxTop   (txt *t)
@@ -165,21 +180,6 @@ void TxDEL_end(txt *t)
   for (i=0; i<TXT_MARKS; i++)
     if (t->txmarky[i] > t->txy) t->txmarky[i] = -1; /* deleting end-of-text  */
 }                                                   /* may delete some marks */
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void TxDiscard (txt *t) /* Discard the content of the file, also UNDO & Synt */
-{
-  DqEmpt(t->txdstk); if (t->clustk) DqEmpt(t->clustk);
-  DqEmpt(t->txustk); if (t->cldstk) DqEmpt(t->cldstk);
-                     if (t->txudeq) DqEmpt(t->txudeq);
-  t->txudfile = -1;
-  t->txudcptr = t->txudlptr = 0; t->vp_ctx = t->vp_wtx = 0;
-  t->maxTy    = t->txy      = 0; t->vp_cty = t->vp_wty = 0;
-  t->txstat  &= ~TS_FILE;
-  memset(t->thisSynts, 0, sizeof(int) * MAXSYNTBUF);
-  memset(t->prevSynts, 0, sizeof(int) * MAXSYNTBUF);
-  memset(t->lastSynts, 0, sizeof(int) * MAXSYNTBUF);
-}
-void TxEmpt(txt *t) { TxDiscard(t); TxMarks0(t); wndop(TW_EM, t); } /* Empty */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void TxIL(txt *t, char *text, short len)
 {
