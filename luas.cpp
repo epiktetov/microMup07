@@ -182,6 +182,7 @@ static int luTxFocus (lua_State*)     // Tx:focus() = focus last opened window,
 //   Tx.X, Tx.Y = current cursor position  (setting new value will move cursor)
 //   Tx.reX,reY = opposite corner of selection rectangle (nil if no selection)
 //   Tx.maxY    = max valid value of Y (= total number of lines in given text)
+//   Tx.name    = text (file) name (not including the path)
 //   Tx:go(dy)
 //   Tx:go(dx,dy) = convenience methods to move cursor around ('cause Lua does
 //                                      not allow 'Tx.Y++' or even 'Tx.Y += k')
@@ -235,6 +236,7 @@ static int luTxIndex (lua_State *L) // Tx.X and Tx.Y - read/write access
     else                        luaP_pushnil();
   }
   else if (strcmp(var,"maxY") == 0) luaP_pushinteger(t->maxTy);
+  else if (strcmp(var,"name") == 0) luaP_pushstring(t->file->name.uStr());
   else {
     luaP_getglobal ("Txt"); // refer to the base Txt table for everything else
     luaX_getfield_top(var); // (if field is not there, let Lua generate errors

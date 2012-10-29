@@ -1,7 +1,6 @@
-<html><head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-</head><body>
-<span style="font-family:Consolas,Liberation Mono,Menlo,monospace">
+auto-generated from `micro.keys` at Sun Oct 28 21:12:50 2012
+
+<div style="font-family:Consolas,Liberation Mono,Menlo,monospace">
 <font size="3">
 /*-----------------------------------------------------------------------------<br>
  * µMup07 = МикроМир07 = multi-platform text editor • MacOS Х • Linux • Windows<br>
@@ -550,7 +549,7 @@ Examples (auto-loaded at startup):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else Tx:IL(pref..'none') end<br>
 &nbsp;&nbsp;&nbsp;&nbsp;end<br>
 &nbsp;&nbsp;end<br>
-&nbsp;&nbsp;Mk2html(Txt.this) -- convert this text to HTML (try Ctrl+Shift+J here)<br>
+&nbsp;&nbsp;Mk2html(Txt.this) -- convert this text to HTML (use Ctrl+Shift+J here)<br>
 */<br>
 k_(TK_SM0,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NULL, 0xfd235) /* <b>MACRO:</b> In addition to universal scripts, */<br>
 k_(TK_SM1, "Shift+F7", 0xfd236) /* MikroMir provides quick method to record */<br>
@@ -672,5 +671,5 @@ a_(0, "Alt+/",&nbsp;&nbsp;0x00F7) /* ÷ */&nbsp;&nbsp; a_(0, "Alt+Shift+?", 0x00
 #endif<br>
 k_(TK_ZERO,0,0)<br>
 k_END_OF_TABLE<br>
-</font></span>
-</body></html>
+</font>
+</div>

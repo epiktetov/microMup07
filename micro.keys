@@ -545,7 +545,7 @@ Examples (auto-loaded at startup):
                               else Tx:IL(pref..'none') end
     end
   end
-  Mk2html(Tx.this) -- convert this text to HTML (use Ctrl+Shift+J in this line)
+  Mk2html(Txt.this) -- convert this text to HTML (use Ctrl+Shift+J here)
 */
 k_(TK_SM0,       NULL, 0xfd235) /* ʁMACRO:ʀ In addition to universal scripts, */
 k_(TK_SM1, "Shift+F7", 0xfd236) /* MikroMir provides quick method to record */
