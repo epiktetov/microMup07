@@ -86,7 +86,8 @@ function Mk2html(Tx)        -- convert MicroMir text (with ʁboldʀ etc) to HTML
   Hx:IL[[<div style="font-family:Consolas,Liberation Mono,Menlo,monospace">]]
   Hx:IL[[<font size="3">]]
   for N,line in Tx:lines() do
-    line = line:gsub("<(.-)>","&lt;%1&gt;")
+    line = line:gsub("<","&lt;")
+    line = line:gsub(">","&gt;")
     line = line:gsub("\202\129(.-)\202\128","<b>%1</b>")
     line = line:gsub("\202\129(.+)","<b>%1</b>")
     line = line:gsub("  ","&nbsp;&nbsp;")

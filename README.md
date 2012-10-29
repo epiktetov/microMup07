@@ -1,4 +1,4 @@
-auto-generated from `micro.keys` at Sun Oct 28 21:12:50 2012
+auto-generated from `micro.keys` at Sun Oct 28 21:28 2012
 
 <div style="font-family:Consolas,Liberation Mono,Menlo,monospace">
 <font size="3">
@@ -51,8 +51,8 @@ k_(LE_BEG,&nbsp;&nbsp; "Ctrl+Left",&nbsp;&nbsp; 0xd0412) /* курсор в са
 k_(LE_END,&nbsp;&nbsp; "Ctrl+Right",&nbsp;&nbsp;0xd0414) /* - в конец, за последний не-пробел&nbsp;&nbsp;&nbsp;&nbsp;*/<br>
 k_(TW_UP,&nbsp;&nbsp;&nbsp;&nbsp; "Alt+Up",&nbsp;&nbsp;&nbsp;&nbsp; 0xd0813) /* на несколько строк вверх&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; */<br>
 k_(TW_DOWN,&nbsp;&nbsp; "Alt+Down",&nbsp;&nbsp; 0xd0815) /* на несколько строк вниз (1/6ая окна) */<br>
-k_(LE_PWORD,&nbsp;&nbsp;"Alt+Left",&nbsp;&nbsp; 0xd0812) /* -> предыдущее слово&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/<br>
-k_(LE_NWORD,&nbsp;&nbsp;"Alt+Right",&nbsp;&nbsp;0xd0814) /* -> следующее слово&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; */<br>
+k_(LE_PWORD,&nbsp;&nbsp;"Alt+Left",&nbsp;&nbsp; 0xd0812) /* -&gt; предыдущее слово&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/<br>
+k_(LE_NWORD,&nbsp;&nbsp;"Alt+Right",&nbsp;&nbsp;0xd0814) /* -&gt; следующее слово&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; */<br>
 /*<br>
 &nbsp;&nbsp;&nbsp;&nbsp; PgUp/PgDown&nbsp;&nbsp;&nbsp;&nbsp;- scroll text one page (= windows height - 1) up/down<br>
 Ctrl+PgUp/PgDown&nbsp;&nbsp;&nbsp;&nbsp;- move cursor to very beginning / end of the document<br>
@@ -132,10 +132,10 @@ k_(LE_LTAB,&nbsp;&nbsp; "Shift+Tab",&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&n
 a_(LE_LTAB,&nbsp;&nbsp; "Shift+Backtab",&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0xd2202) /*&nbsp;&nbsp;&nbsp;&nbsp; позицию табуляции */<br>
 k_(LE_TABCHR, "Ctrl+Shift+Tab",&nbsp;&nbsp;&nbsp;&nbsp; 0xc2602) /* вставить символ TAB&nbsp;&nbsp; */<br>
 a_(LE_TABCHR, "Ctrl+Shift+Backtab", 0xc2602) /*&nbsp;&nbsp;(BkTAB ≈ Shift+TAB)&nbsp;&nbsp;*/<br>
-k_(TE_CMARK,&nbsp;&nbsp;"Ctrl+Tab",&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xd2401) /* курсор --> где были&nbsp;&nbsp; */<br>
+k_(TE_CMARK,&nbsp;&nbsp;"Ctrl+Tab",&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xd2401) /* курсор --&gt; где были&nbsp;&nbsp; */<br>
 #ifdef Q_OS_MAC&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/* синонимы для Mac KB:&nbsp;&nbsp;*/<br>
 a_(LE_TABCHR, "Alt+Shift+Backtab",&nbsp;&nbsp;0xc2602) /*&nbsp;&nbsp; вставить символ TAB */<br>
-a_(TE_CMARK,&nbsp;&nbsp;"Alt+Tab",&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0xd2401) /*&nbsp;&nbsp; курсор --> где были */<br>
+a_(TE_CMARK,&nbsp;&nbsp;"Alt+Tab",&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0xd2401) /*&nbsp;&nbsp; курсор --&gt; где были */<br>
 #endif<br>
 k_(TE_SMARK0, "Ctrl+Shift+`", 0xd2630) /* установить маркер 0, wheat */<br>
 k_(TE_SMARK1, "Ctrl+Shift+1", 0xd2631) /*&nbsp;&nbsp;маркер 1 = красный флажок */<br>
@@ -146,9 +146,9 @@ a_(TE_SMARK1, "Ctrl+Shift+!", 0xd2631) /* (на MacOS Х и Linux&nbsp;&nbsp;&nb
 a_(TE_SMARK2, "Ctrl+Shift+@", 0xd2632) /* shift+N уже преобразовано) */<br>
 a_(TE_SMARK3, "Ctrl+Shift+#", 0xd2633)<br>
 k_(TE_CMARK0, "Ctrl+`",&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xd2430) /* перейти к маркеру 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/<br>
-k_(TE_CMARK1, "Ctrl+1",&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xd2431) /* -> 1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; */<br>
-k_(TE_CMARK2, "Ctrl+2",&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xd2432) /* -> 2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;NOTE: codes must */<br>
-k_(TE_CMARK3, "Ctrl+3",&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xd2433) /* -> 3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;be TE_S/CMARK0+N */<br>
+k_(TE_CMARK1, "Ctrl+1",&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xd2431) /* -&gt; 1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; */<br>
+k_(TE_CMARK2, "Ctrl+2",&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xd2432) /* -&gt; 2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;NOTE: codes must */<br>
+k_(TE_CMARK3, "Ctrl+3",&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xd2433) /* -&gt; 3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;be TE_S/CMARK0+N */<br>
 k_(TE_CR,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "Return", 0xc2004) /* в начало следующей строки&nbsp;&nbsp;*/<br>
 k_(TE_RCR,&nbsp;&nbsp;&nbsp;&nbsp;"Shift+Return", 0xc2204) /* - - с выравниванием&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/<br>
 /*<br>
@@ -271,7 +271,7 @@ selected when entering search/replace pattern.<br>
 <br>
 &nbsp;&nbsp;Ctrl/Meta+F = Home End - edit search/replace pattern (start search by Return)<br>
 &nbsp;&nbsp;Meta[+Ctrl]+End&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- edit search pattern for 'grep' (MacOS X/Linux only)<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ctrl+. (>)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - insert light blue 'ʈ>ʀ' (marks start of replacement)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ctrl+. (&gt;)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - insert light blue 'ʈ&gt;ʀ' (marks start of replacement)<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ctrl+/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - insert light blue 'ʈ/ʀ' (start of filelist for 'grep')<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ctrl+6 (^) - standard (text mode) search&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;‹st·--›<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ctrl+7 (&) - search by regular expression&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ‹re·--›<br>
@@ -364,8 +364,8 @@ a_(LE_RIGHT,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"Shift+Right", 0xe0014) /* вп�
 a_(TE_DOWN,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "Shift+Down",&nbsp;&nbsp;0xe0015) /* вниз&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; */<br>
 a_(TW_UP,&nbsp;&nbsp;&nbsp;&nbsp; "Alt+Shift+Up",&nbsp;&nbsp;&nbsp;&nbsp;0xe0813) /* на несколько строк&nbsp;&nbsp;&nbsp;&nbsp; */<br>
 a_(TW_DOWN,&nbsp;&nbsp; "Alt+Shift+Down",&nbsp;&nbsp;0xe0815) /*&nbsp;&nbsp;вверх/вниз с отметкой */<br>
-a_(LE_NWORD,&nbsp;&nbsp;"Alt+Shift+Right", 0xe0814) /* -> следующее слово&nbsp;&nbsp;&nbsp;&nbsp; */<br>
-a_(LE_PWORD,&nbsp;&nbsp;"Alt+Shift+Left",&nbsp;&nbsp;0xe0812) /* -> предыдущее слово&nbsp;&nbsp;&nbsp;&nbsp;*/<br>
+a_(LE_NWORD,&nbsp;&nbsp;"Alt+Shift+Right", 0xe0814) /* -&gt; следующее слово&nbsp;&nbsp;&nbsp;&nbsp; */<br>
+a_(LE_PWORD,&nbsp;&nbsp;"Alt+Shift+Left",&nbsp;&nbsp;0xe0812) /* -&gt; предыдущее слово&nbsp;&nbsp;&nbsp;&nbsp;*/<br>
 a_(LE_BEG,&nbsp;&nbsp; "Ctrl+Shift+Left",&nbsp;&nbsp;0xe0412) /* в начало строки&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/<br>
 a_(LE_END,&nbsp;&nbsp; "Ctrl+Shift+Right", 0xe0414) /* в конец строки&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; */<br>
 k_(TX_MCBLOCK,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "F5", 0xc8034) /* == "постоянный" блок&nbsp;&nbsp; */<br>
@@ -392,8 +392,8 @@ NOTE: "bold" attribute is marked by Unicode chars U+281 / U+280 (which are very<
 unlikely to appear in regular text) and not compatible with anything.. not even<br>
 with build-in MicroMir search engine. Use at your own risk, you've been warned!<br>
 */<br>
-k_(LE_CCUP,&nbsp;&nbsp;"Meta+Alt+Up",&nbsp;&nbsp; 0xf8913) /* буква -> прописная */<br>
-k_(LE_CCDWN, "Meta+Alt+Down", 0xf8915) /* буква -> строчная&nbsp;&nbsp;*/<br>
+k_(LE_CCUP,&nbsp;&nbsp;"Meta+Alt+Up",&nbsp;&nbsp; 0xf8913) /* буква -&gt; прописная */<br>
+k_(LE_CCDWN, "Meta+Alt+Down", 0xf8915) /* буква -&gt; строчная&nbsp;&nbsp;*/<br>
 k_(LE_CBOLD, "Meta+Alt+B",&nbsp;&nbsp;&nbsp;&nbsp;0xf8442) /* сделать жирным&nbsp;&nbsp;&nbsp;&nbsp; */<br>
 /*<br>
 <b>Third MicroMir principle:</b> instead of relying on sorting capabilites provided by<br>
@@ -437,7 +437,7 @@ Special <b>FILES</b> (MacOS X/Linux only):<br>
 &nbsp;&nbsp;«shell-command»&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - the result of specific shell command<br>
 &nbsp;&nbsp;(double angle quotations mark can be entered by Alt+'\' and Alt+Shift+'\';<br>
 &nbsp;&nbsp; when starting MicroMir in command prompt, these marks may be replaced with<br>
-&nbsp;&nbsp; single quote before the parameter: ʈ>ʀ mim \''git log' -- will open git log)<br>
+&nbsp;&nbsp; single quote before the parameter: ʈ&gt;ʀ mim \''git log' -- will open git log)<br>
 <br>
 MicroMir automatically detects read-only files and don't allow changing them...<br>
 unless you insist: edit/view mode may be changed at any time (at your own risk)<br>
@@ -455,8 +455,8 @@ For example:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&n
 &nbsp;&nbsp;Esc,3,Shift+Del - delete 3 lines<br>
 &nbsp;&nbsp;Esc,5,*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - same as typing ***** (insert/replace depending on the mode)<br>
 &nbsp;&nbsp;Esc,N,Alt+Ins&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- insert character with given Unicode number<br>
-&nbsp;&nbsp;Esc,N,Meta+Alt+'<' - convert word/selection from radix-N (hex) to decimal<br>
-&nbsp;&nbsp;Esc,N,Meta+Alt+'>' - convert word/selection to radix-N (where N = 2..36)<br>
+&nbsp;&nbsp;Esc,N,Meta+Alt+'&lt;' - convert word/selection from radix-N (hex) to decimal<br>
+&nbsp;&nbsp;Esc,N,Meta+Alt+'&gt;' - convert word/selection to radix-N (where N = 2..36)<br>
 &nbsp;&nbsp;Esc,N,Ctrl+Shift+] - set the width (of editable part) of the text<br>
 &nbsp;&nbsp;Esc,N,Ctrl+E&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - move cursor to Nth line in text<br>
 &nbsp;&nbsp;Esc,N,Ctrl+H&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - move cursor to Nth position in current line<br>
@@ -471,8 +471,8 @@ k_(TK_PREFIX, "Home",&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xcc00a) /
 k_(TK_ESC,&nbsp;&nbsp;&nbsp;&nbsp;"Esc",&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0xcc00e) /* Esc префикс (повторитель и пр.) */<br>
 k_(TK_CtrJ,&nbsp;&nbsp; "Ctrl+J",&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xcc010) /* ^J префикс (используется в Lua) */<br>
 k_(LE_SPCHAR, "Alt+Ins",&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0xcb606) /* ввести символ по Unicode коду&nbsp;&nbsp; */<br>
-k_(LE_CWDEC,&nbsp;&nbsp;"Meta+Alt+,",&nbsp;&nbsp; 0xfb92c) /* <b><</b>&nbsp;&nbsp;перевести число в десятичное */<br>
-k_(LE_CWHEX,&nbsp;&nbsp;"Meta+Alt+.",&nbsp;&nbsp; 0xfb92e) /* <b>></b>&nbsp;&nbsp;- в 16-ричное / основание N&nbsp;&nbsp;*/<br>
+k_(LE_CWDEC,&nbsp;&nbsp;"Meta+Alt+,",&nbsp;&nbsp; 0xfb92c) /* <b>&lt;</b>&nbsp;&nbsp;перевести число в десятичное */<br>
+k_(LE_CWHEX,&nbsp;&nbsp;"Meta+Alt+.",&nbsp;&nbsp; 0xfb92e) /* <b>&gt;</b>&nbsp;&nbsp;- в 16-ричное / основание N&nbsp;&nbsp;*/<br>
 k_(TE_SWIDTH, "Ctrl+Shift+}", 0xcb65d) /* <b>]</b>&nbsp;&nbsp;установить ширину текста&nbsp;&nbsp;&nbsp;&nbsp; */<br>
 k_(TE_CENTR,&nbsp;&nbsp;"Ctrl+E",&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xfb445) /* в середину окна по вертикали&nbsp;&nbsp;&nbsp;&nbsp;*/<br>
 k_(LE_CENTR,&nbsp;&nbsp;"Ctrl+H",&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xfb448) /*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - по горизонтали&nbsp;&nbsp;*/<br>
@@ -505,7 +505,7 @@ MicroMir-specific Lua objects and operations<br>
 &nbsp;&nbsp;Tx = Txt.this&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -- reference to "this" text (may be used only from<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;text with script iself, not from functions)<br>
 &nbsp;&nbsp;Tx.id -- text ID = index in Txt<br>
-&nbsp;&nbsp;(should be used for safe reference, Txt[Tx.id] -> Tx or nil if text replaced)<br>
+&nbsp;&nbsp;(should be used for safe reference, Txt[Tx.id] -&gt; Tx or nil if text replaced)<br>
 <br>
 &nbsp;&nbsp;Tx:focus() -- focus last opened window, associated with the text<br>
 &nbsp;&nbsp;Tx:line(N) -- content of Nth line in given text (= nil if past end-of-text)<br>
@@ -587,7 +587,7 @@ k_(TE_SHBRAK, "Ctrl+O",&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xce44f) /* пере
 &nbsp;&nbsp;Ctrl+L - display line number in the info window (default)<br>
 &nbsp;&nbsp;Ctrl+Q - ask for shell command and execute it (MacOS X/Linux only)<br>
 &nbsp;&nbsp; in shell command:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;light blue 'ʈ•ʀ' (Ctrl+'<') is replaced with the name of current file,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;light blue 'ʈ•ʀ' (Ctrl+'&lt;') is replaced with the name of current file,<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;light blue 'ʈ/ʀ' (Ctrl+'/') replaced with full path to current file<br>
 */<br>
 k_(TK_NONE,&nbsp;&nbsp; NULL,&nbsp;&nbsp;&nbsp;&nbsp; 0xce000) /* None command */<br>
