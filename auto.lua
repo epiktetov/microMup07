@@ -82,9 +82,9 @@ end
 function Mk2html(Tx)        -- convert MicroMir text (with ʁboldʀ etc) to HTML
   local Hx = Txt.open(true) --
   Hx:IL("auto-generated from `"..Tx.name.."` at "..os.date())
-  Hx:IL("")
-  Hx:IL[[<div style="font-family:Consolas,Liberation Mono,Menlo,monospace">]]
-  Hx:IL[[<font size="3">]]
+  Hx:IL("");Hx:IL[[<div>]]
+  Hx:IL[[<span style="font-family:Consolas,Liberation Mono,Menlo,monospace">]]
+  Hx:IL[[<font size="2">]]
   for N,line in Tx:lines() do
     line = line:gsub("<","&lt;")
     line = line:gsub(">","&gt;")
@@ -93,5 +93,5 @@ function Mk2html(Tx)        -- convert MicroMir text (with ʁboldʀ etc) to HTML
     line = line:gsub("  ","&nbsp;&nbsp;")
     Hx:IL(line.."<br>")
   end
-  Hx:IL[[</font>]]; Hx:IL[[</div>]]
+  Hx:IL[[</font></span>]]; Hx:IL[[</div>]]
 end

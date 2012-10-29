@@ -1,7 +1,8 @@
-auto-generated from `micro.keys` at Sun Oct 28 21:28 2012
+auto-generated from `micro.keys` at Sun Oct 28 21:45:20 2012
 
-<div style="font-family:Consolas,Liberation Mono,Menlo,monospace">
-<font size="3">
+<div>
+<span style="font-family:Consolas,Liberation Mono,Menlo,monospace">
+<font size="2">
 /*-----------------------------------------------------------------------------<br>
  * µMup07 = МикроМир07 = multi-platform text editor • MacOS Х • Linux • Windows<br>
  * ----------------------------------------------------------------------------<br>
@@ -612,7 +613,7 @@ where primColor - primary gradient color for first (default) color palette<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;primN - primary color for Nth color palette<br>
 Color:<br>
 &nbsp;&nbsp;#rrggbb 24-bit hexadecimal RGB value&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for example:&nbsp;&nbsp;&nbsp;&nbsp;#ffefd5<br>
-&nbsp;&nbsp;SVG color names (see http://www.w3.org/TR/SVG/types.html)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;papayawhip<br>
+&nbsp;&nbsp;SVG color names (see http://www.w3.org/TR/SVG/types.html) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;papayawhip<br>
 &nbsp;&nbsp;Hue degrees (in that case Sat=16% and Val=100% is forced)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;40° or 40*<br>
 <br>
 &nbsp;&nbsp;Ctrl+Alt+1 - switch to first / default palette in current window<br>
@@ -671,5 +672,5 @@ a_(0, "Alt+/",&nbsp;&nbsp;0x00F7) /* ÷ */&nbsp;&nbsp; a_(0, "Alt+Shift+?", 0x00
 #endif<br>
 k_(TK_ZERO,0,0)<br>
 k_END_OF_TABLE<br>
-</font>
+</font></span>
 </div>
