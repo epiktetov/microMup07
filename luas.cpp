@@ -364,7 +364,8 @@ static void luTxtInit (void)
 // Txt table
 //   open(tn/f) - object constructor, by text name or bool flag (true/false)
 //   functions  - instance functions (methods == line,lines,go,IC,IL,DC,DL)
-//   [luaTxid]  - active texts are stored here (idexed by txt->luaTxid)
+//   this       - reference to the currently active text (Ttxt), luasExec only
+//   [luaTxid]  - all active texts are stored here (idexed by txt->luaTxid)
 //     [k].id   -- instance id as userdata == { &txt_tag, txt_tag.luaTxid }
 // metatable for instance objects
 //   __index    - read access to instance variables (X,Y,maxY;ref->Txt)
@@ -373,16 +374,14 @@ static void luTxtInit (void)
   luaP_newlibtable(luTxFuncs); luaX_setfuncs(luTxFuncs); luaQ_setglobal("Txt");
   luaP_newmetatable   ("txt"); luaX_setfuncs(luTxMetaFuncs);      luaQn_pop(1);
 }
-//static void luasN_setTxt_this (txt *Tx) //- - - - - - - - - - - - - - - - - -
-//{
-//  luaP_getglobal  ("Txt"); // Txt.this = Txt[ Ttxt->luaTxid ] or nil (clear)
-//  luaP_pushstring("this"); //
-//  if (Tx) luaP_rawgeti(-2,Tx->luaTxid);
-//  else    luaP_pushnil();                  removed - Sun Oct 21 12:07:39 2012
-//          luaQQ_rawset(-3); luaQn_pop(1);  (do not remmeber why it was added,
-//}                                          there seems to be no use for that)
-// Txt table
-//   this       - reference to the currently active text (Ttxt), luasExec only
+static void luasN_setTxt_this (txt *Tx) //- - - - - - - - - - - - - - - - - - -
+{
+  luaP_getglobal  ("Txt"); // Txt.this = Txt[ Ttxt->luaTxid ] or nil (clear)
+  luaP_pushstring("this"); //
+  if (Tx) luaP_rawgeti(-2,Tx->luaTxid);   // to avoid adding metatable to Ttxt
+  else    luaP_pushnil();                 // just to cover one rarely used ref,
+          luaQQ_rawset(-3); luaQn_pop(1); // adding "this" only in the luasExec
+}                                         // scope (^J,^J and Shift^J commands)
 //-----------------------------------------------------------------------------
 void luasInit(void)                            // Lua SCRIPTING initialization
 {
@@ -413,16 +412,17 @@ int luasExec (txt *Tx, bool just1line) // load/execute given text …(tx, false)
     }
     buffer = Tx->txustk->dbeg;
     len    = Tx->txustk->dend - buffer;
-  }                                     // luasN_setTxt_this(Tx);
+  }                                        luasN_setTxt_this(Tx);
   int rc = luaL_loadbuffer(L, buffer, len, Tx->file->name.uStr())
-              || lua_pcall(L,0,0,0);  // luasN_setTxt_this(NULL);
+              || lua_pcall(L,0,0,0);     luasN_setTxt_this(NULL);
   if (rc) {
     const char *luaError = lua_tostring(L,-1);
     QRegExp re("\\[.+\\]:(\\d+):(.+)");
-    QString mimErr;
-    if (re.exactMatch(luaError)) {      TxSetY(Tx, re.cap(1).toInt());
+    if (re.exactMatch(luaError)) {
       QString mimErr = Utf8("^" AF_ERROR "%1" AF_NONE).arg(re.cap(2));
-      TxIL(Tx, mimErr.uStr(), mimErr.length());
+      if (just1line) TxSetY(Ttxt, Ty + 1);
+      else           TxSetY(Tx, re.cap(1).toInt());
+      TxIL (Tx,  mimErr.uStr(),   mimErr.length());
     }
     else vipError(QString("LuaERROR: %1").arg(lua_tostring(L,-1)));
     return E_SFAIL;

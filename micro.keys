@@ -492,14 +492,16 @@ MicroMir-specific Lua objects and operations
   Mk["keysequence"] = function(Tx,count)   -- map Lua function to key sequence
     ...
   end
-  Mk:XEQ( Mk["keysequence"] ) -- execute given command (or text with commands),
-  Mk:XEQ("text-and-commands") --      as if they were entered from the keyboard
+  Mk:Do( Mk["keysequence"] ) -- execute given command (or text with commands),
+  Mk:Do("text-and-commands") --      as if they were entered from the keyboard
 
   Tx = Txt.open("filename") -- create/open given file in new window
   Tx = Txt.open(true)       -- open new window with unnamed file (saveable)
   Tx = Txt.open(false)      -- open new window with throw-away text
-
-  Tx.id -- text ID for safe reference, Txt[Tx.id] -> Tx or nil if text replaced
+  Tx = Txt.this             -- reference to "this" text (may be used only from
+                                    text with script iself, not from functions)
+  Tx.id -- text ID = index in Txt
+  (should be used for safe reference, Txt[Tx.id] -> Tx or nil if text replaced)
 
   Tx:focus() -- focus last opened window, associated with the text
   Tx:line(N) -- content of Nth line in given text (= nil if past end-of-text)
@@ -520,7 +522,7 @@ NOTE:
   Tx:DL(N) -- delete N lines at cursor (default = 1)
   Tx:gtl() -- get-text-left convenience method = gets first chunk of non-spaces
                                        from text to the left of cursor position
-[line 523] xref: new.lua
+[line 525] xref: new.lua
 
   re = Re("..regex..",true/false) -- regular expression (arg: case sensitivity,
   re = Re[[..regex..]]                                default = case-sensitive)
@@ -543,6 +545,7 @@ Examples (auto-loaded at startup):
                               else Tx:IL(pref..'none') end
     end
   end
+  Mk2html(Tx.this) -- convert this text to HTML (use Ctrl+Shift+J in this line)
 */
 k_(TK_SM0,       NULL, 0xfd235) /* ʁMACRO:ʀ In addition to universal scripts, */
 k_(TK_SM1, "Shift+F7", 0xfd236) /* MikroMir provides quick method to record */

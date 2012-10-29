@@ -211,7 +211,7 @@ void MkLuaXEQ (QString text, wnd *vp) // text is only used when stack[-1] = nil
   if (!text.isEmpty()) MkStrXEQ(text,vp);        luaQn_pop(2);
 }
 static int luMkXEQ (lua_State *L) // this function is called from Lua scripts
-{                                 // whenever explicit Mk:XEQ(something) used
+{                                 // whenever explicit Mk:Do(something) used;
   luaL_checktype(L,1,LUA_TTABLE); // no return value, but may raise an error
   luaL_checkany (L,2);
   MkLuaXEQ ("", Twnd); if (qkbhin()) { luaP_pushinteger(1);
@@ -251,7 +251,7 @@ void MkInitCCD (void)  // moves Command Codes Definitions into global Lua table
     if (pt->kseq) { luaP_pushstring (pt->kseq);
                     luaP_pushinteger(pt->hexcode); luaQQ_rawset(-3); }
   }
-  luaP_pushstring     ("XEQ");
+  luaP_pushstring      ("Do");
   luaP_pushCfunction(luMkXEQ); luaQQ_rawset(-3); luaQ_setglobal("Mk");
 }
 //-----------------------------------------------------------------------------

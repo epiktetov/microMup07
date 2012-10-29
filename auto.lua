@@ -79,3 +79,20 @@ do local function breakable(c) return (c == ' ' or c == ',' or c == ';') end
                        while Tx.reX do BlockFormat(Tx) end end
   end
 end
+function Mk2html(Tx)        -- convert MicroMir text (with ʁboldʀ etc) to HTML
+  local Hx = Txt.open(true) --
+  if Hx.maxY > 0 then Hx.Y = 1; Hx:DL(Hx.maxY) end
+  Hx:IL[[<html><head>]]
+  Hx:IL[[<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">]]
+  Hx:IL[[</head><body>]]
+  Hx:IL[[<span style="font-family:Consolas,Liberation Mono,Menlo,monospace">]]
+  Hx:IL[[<font size="3">]]
+  for N,line in Tx:lines() do
+    line = line:gsub("<(.-)>","&lt;%1&gt;")
+    line = line:gsub("\202\129(.-)\202\128","<b>%1</b>")
+    line = line:gsub("\202\129(.+)","<b>%1</b>")
+    line = line:gsub("  ","&nbsp;&nbsp;")
+    Hx:IL(line.."<br>")
+  end
+  Hx:IL[[</font></span>]]; Hx:IL[[</body></html>]]
+end
