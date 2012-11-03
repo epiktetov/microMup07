@@ -18,11 +18,11 @@ void LeStart() { blktspac(Lebuf, MAXLPAC); }
 
 tchar Lebuf[MAXLPAC];     /* Буфер строки                                    */
 tchar lfbuf[MAXLPAC];     /* альтернативный буфер                            */
-short Lleng;              /* Длина строки без хвостовых пробелов             */
-short Lxlm, Lxrm;         /* левая/правая граница для перемещения            */
-short Lxle, Lxre;         /* левая/правая граница для редактирования         */
+int   Lleng;              /* Длина строки без хвостовых пробелов             */
+int   Lxlm, Lxrm;         /* левая/правая граница для перемещения            */
+int   Lxle, Lxre;         /* левая/правая граница для редактирования         */
 long  Ly;                 /* Y строки в тексте (для окна)                    */
-short Lx;                 /* X курсора в строке (а не в окне!)               */
+int   Lx;                 /* X курсора в строке (а не в окне!)               */
 bool  LeInsMode;          /* Режим вставки (если 0, то режим замены)         */
 bool  Lclang;             /* Язык редактируемого текста (из Ttxt->clang)     */
 bool  Lredit;             /* Можно менять строку                             */
@@ -53,12 +53,12 @@ void leltab() { int x = (Lx - 1)/TABsize*TABsize; Lx = (x > Lxlm) ? x : Lxlm; }
 void lecentr()            /* Esc NN Ctrl+H => В позицию с номером KbCount-1  */
 {                         /*          else => Текущую позицию в центр экрана */
   if (KbRadix) {
-    short x = KbCount ? KbCount-1 : 0; if (Lxlm <= x && x <= Lxrm) Lx = x;
-                                       else                 exc(E_MOVEND); }
+    int x = KbCount ? KbCount-1 : 0; if (Lxlm <= x && x <= Lxrm) Lx = x;
+                                     else                 exc(E_MOVEND); }
   else {
-    short dx = (Lwnd->wsw - 1) / 2; if (Lx < dx) wadjust(Lwnd, 0,     Ly);
-                                    else {       wadjust(Lwnd, Lx+dx, Ly);
-                                                 wadjust(Lwnd, Lx-dx, Ly); }}
+    int dx = (Lwnd->wsw - 1) / 2; if (Lx < dx) wadjust(Lwnd, 0,     Ly);
+                                  else {       wadjust(Lwnd, Lx+dx, Ly);
+                                               wadjust(Lwnd, Lx-dx, Ly); }}
 }
 /*---------------------------------------------------------------------------*/
 void tleload (void)                                /* load LE line from text */
@@ -99,28 +99,28 @@ bool tleread(void)    /* read Lebuf from text (read-only), true if non-empty */
   Lleng  = TxTRead(Ttxt, Lebuf);                   return (Lleng > 0);
 }
 /*---------------------------------------- Базовый уровень строчных операций */
-void blktspac (tchar *p, short len)
+void blktspac (tchar *p, int len)
 {
   if (len) do { *p++ = (tchar)' '; } while(--len);
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-short lstrlen (short lmax, tchar *p0)
+int lstrlen (int lmax, tchar *p0)
 {
   if (p0 == NIL) return 0;
   else {
     tchar *p; for (p = p0+lmax; p > p0 && p[-1] == (tchar)' '; p--);
     return p-p0;
 } }
-static short leleng() { return lstrlen(MAXLPAC, Lebuf); }
+static int leleng() { return lstrlen(MAXLPAC, Lebuf); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-static void lefill (tchar* dest, short len, tchar *src)
+static void lefill (tchar* dest, int len, tchar *src)
 {
   for (; len; len--) *dest++ = (src != NIL) ? *src++ : (tchar)' ';
 }
-void llmove (short xl, short xr, short dx, tchar *ns) /* xl - start position */
-{                                                     /* xr - end position   */
-  if (dx == REPLACE) {                                /* dx - move direction */
-    lundoadd(Ltxt, xl, xr, dx, Lebuf+xl, ns);         /* ns - inserted chars */
+void llmove (int xl, int xr, int dx, tchar *ns) /* Move: xl - start position */
+{                                               /*       xr - end position   */
+  if (dx == REPLACE) {                          /*       dx - move direction */
+    lundoadd(Ltxt, xl, xr, dx, Lebuf+xl, ns);   /*       ns - inserted chars */
     lefill(Lebuf+xl, xr-xl, ns);
   } 
   else {
@@ -144,7 +144,7 @@ void ledeol();    /* == llmove(Lx, Lxre, REPLACE, NIL); used in leLLCE below */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static void llchar (tchar lchar)
 {
-  short x = Lx; lundoadd(Ltxt, x, x+1, REPLACE, Lebuf+x, &lchar);
+  int x = Lx; lundoadd(Ltxt, x, x+1, REPLACE, Lebuf+x, &lchar);
 
   if ((Lebuf[x++] = lchar) != ' ') { if (Lleng <  x) Lleng = x;        }
   else                             { if (Lleng == x) Lleng = leleng(); }
@@ -198,9 +198,9 @@ void lehchar2() { leLLCE(LeSCH_REPL_BEG); } /* Ctrl+.('>') ʈ>ʀ */
 void lehchar1() { leLLCE(LeSCH_REPL_END); } /* Ctrl+/('/') ʈ/ʀ */
 void lehchar0() { leLLCE(TmSCH_THIS_OBJ); } /* Ctrl+,('<')   */
 /*---------------------------------------------------------------------------*/
-bool leNword (short *cwbeg, /* Найти (unless ptr=0): начало текущего слова   */
-              short *cwend, /*                       конец текущего слова    */
-              short *nwbeg) /* (return "на слове?")  начало следующего слова */
+bool leNword (int *cwbeg,   /* Найти (unless ptr=0): начало текущего слова   */
+              int *cwend,   /*                       конец текущего слова    */
+              int *nwbeg)   /* (return "на слове?")  начало следующего слова */
 {
   bool onWord = TRUE;
   int x = Lx;
@@ -229,29 +229,32 @@ bool leNword (short *cwbeg, /* Найти (unless ptr=0): начало теку�
   return onWord;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void le2pword()    /* найти слово слева (ничего не делать если уже на слове) */
-{
-  if (Lx > Lxlm) for (Lx--; Lx > Lxlm && tcharIsBlank(Lebuf[Lx]); Lx--);
-}
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void lenword() { leNword(NIL, NIL, &Lx); }
-void lepword() 
+void lenword() { leNword(NIL, NIL, &Lx); }     /* в начало следующего  слова */
+void lepword()                                 /* в начало предыдущего слова */
 { 
   if (Lx > Lxlm) {
     for (Lx--; Lx > Lxlm && tcharIsBlank(Lebuf[Lx]); Lx--);
-    leNword(&Lx, NIL, NIL); 
+    leNword(&Lx, NIL, NIL);
+} }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+void lemark_word()    /* выделить текущее слово (или слово слева от курсора) */
+{
+  while (Lx > Lxlm && tcharIsBlank(Lebuf[Lx])) Lx--;
+  if (leNword(&BlockTx, &Lx, NIL)) {
+                  BlockMark = TRUE;
+    BlockTy = Ty; BlockTemp = TRUE; Lx++;
 } }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void ledword()   /* удалить слово и пробелы за ним (всегда схлопывает текст) */
 {
-  short xl, xr; if (!leNword(&xl, NIL, &xr)) xl = Lx;
+  int xl, xr; if (!leNword(&xl, NIL, &xr)) xl = Lx;
   if (xl < Lxle) xl = Lxle;
   if (xr > Lxre) xr = Lxre; llmove(Lx = xl, Lxre, xl-xr, NIL);
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void ledlword()        /* удалить слово влево (очистить или схлопнуть текст) */
 {
-  short old_Lx = Lx; lepword();
+  int old_Lx = Lx; lepword();
   if (Lx < Lxle) Lx = Lxle;
   if (Lx < old_Lx) {
     if (LeInsMode) llmove(Lx, Lxre, Lx-old_Lx, NIL);
@@ -487,6 +490,7 @@ comdesc lecmds[] =
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   { LE_NWORD,  lenword,                   CA_NEND }, /* следующее слово      */
   { LE_PWORD,  lepword,                   CA_NBEG }, /* предыдущее слово     */
+  { LE_MWORD,  lemark_word,     CA_RPT            }, /* выделить слово       */
   { LE_DWORD,  ledword,         CA_CHANGE|CA_NEND }, /* удалить слово        */
   { LE_DLWORD, ledlword,        CA_CHANGE|CA_NBEG }, /* удалить слово влево  */
   { LE_CENTRX, lecentrx, CA_RPT|CA_CHANGE         }, /* центрировать строку  */

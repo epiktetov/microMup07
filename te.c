@@ -14,7 +14,7 @@
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 wnd  *Twnd = NIL;                     /* Окно, в котором редактируется текст */
 txt  *Ttxt;                           /* Редактируемый текст                 */
-short Tx;                             /* X курсора в тексте                  */
+int   Tx;                             /* X курсора в тексте                  */
 long  Ty;                             /* Y курсора в тексте                  */
 /*---------------------------------------------------------------------------*/
 void qsety (long y)
@@ -22,7 +22,7 @@ void qsety (long y)
   bool q = TxSetY(Ttxt, y); Ty = Ttxt->txy;
   if (!q) exc(E_SETY);
 }
-bool tesetxy (short x, long y)
+bool tesetxy (int x, long y)
 {
   bool q = TxSetY(Ttxt,y); Tx = x;
                            Ty = Ttxt->txy; return q;
@@ -205,7 +205,7 @@ void teformat()
 //
   else if (Lleng > txw) {
     while (Lleng > txw) {
-      short wbeg;
+      int wbeg;
       Lx = txw-1; if (tcharIsBlank(Lebuf[Lx])) wbeg = Lx;
                   else          leNword(&wbeg, NIL, NIL);
       Lx = Tx;
@@ -225,7 +225,7 @@ void teformat()
     len = TxFRead(Ttxt, lfbuf);
     if (len == 0) TxDL(Ttxt);
     else {
-      short tbeg = 0;
+      int   tbeg = 0;
       while(tbeg < len && tcharIsBlank(lfbuf[tbeg])) tbeg++;
       if (Lleng+1+len-tbeg > txw) Ty++;
       else {

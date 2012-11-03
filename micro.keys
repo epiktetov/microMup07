@@ -184,7 +184,7 @@ for text modification:
   ------------+----------------------------------+--------------------------
   Ctrl+D     - delete from cursor to end of line
   Ctrl+U     - delete/clear all characters up to cursor position
-  Ctrl+W     - delete word under cursor (and trailing spaces) from the text
+  Ctrl+Q     - squeeze the word under cursor (and trailing spaces) from text
   Esc,Ctrl+D - delete everything from cursor to end of file
   Esc,Ctrl+U - delete everything from the beginning up to cursor (very strong)
 */
@@ -196,7 +196,7 @@ k_(LE_BS,           "Backspace", 0xc4003) /* удалить/очистить с�
 k_(LE_DLWORD, "Shift+Backspace", 0xc4203) /* удалить слово влево от курсора  */
 k_(LE_DEOL,   "Ctrl+D",          0xc4444) /* - конец строки за курсором      */
 k_(LE_DBGOL,  "Ctrl+U",          0xc4455) /* - начало строки до курсора      */
-k_(LE_DWORD,  "Ctrl+W",          0xc4457) /* - слово и пробелы за ним        */
+k_(LE_DWORD,  "Ctrl+Q",          0xc4451) /* - слово и пробелы за ним        */
 k_(TE_CLRBEG, "Esc,Ctrl+U",      0xc4c55) /* удалить текст за курсором       */
 k_(TE_CLREND, "Esc,Ctrl+D",      0xc4c44) /* - до курсора      (много строк) */
 /*
@@ -347,12 +347,12 @@ k_(LE_CPOPEN,  "Ctrl+F1", 0xf7430) /* наоборот, будем добавл�
 ʁSELECTION.ʀ Although text can be copied without selecting anything, MicroMir has
 mechanism of rectangular selections: Shift+{arrows} makes "temporary" selection
 (grey rectangle),  F5 followed by any regular cursor movement makes "permanent"
-one (light blue rectangle).
+selection (light blue rectangle).
                                        |       (any movement    - start/extend
         Shift+{arrows} - start/extend  |  F5 ..  except for   ..   "permanent"
    Alt +Shift+{arrows}    "temporary"  |       [Shift+]Return)       selection
    Ctrl+Shift+Left/Right    selection
-                                         Typing DO NOT overwrites selected text
+   Ctrl+W - select current word (or word left of cursor, if it's not on word)
 */
 a_(LE_LEFT,       "Shift+Left",  0xe0012) /* влево  |               */
 a_(TE_UP,         "Shift+Up",    0xe0013) /* вверх  | с отметкой    */
@@ -362,12 +362,14 @@ a_(TW_UP,     "Alt+Shift+Up",    0xe0813) /* на несколько строк 
 a_(TW_DOWN,   "Alt+Shift+Down",  0xe0815) /*  вверх/вниз с отметкой */
 a_(LE_NWORD,  "Alt+Shift+Right", 0xe0814) /* -> следующее слово     */
 a_(LE_PWORD,  "Alt+Shift+Left",  0xe0812) /* -> предыдущее слово    */
+k_(LE_MWORD,          "Ctrl+W",  0xc8057) /* выделить текущее слово */
 a_(LE_BEG,   "Ctrl+Shift+Left",  0xe0412) /* в начало строки        */
 a_(LE_END,   "Ctrl+Shift+Right", 0xe0414) /* в конец строки         */
 k_(TX_MCBLOCK,             "F5", 0xc8034) /* == "постоянный" блок   */
 /*
 When selection (of either type) is active, some commands operate with selected
-text instead of current character, namely:
+text instead of current character,
+namely:                               !! Typing DO NOT overwrites selected text
 
         F1 (Ctrl/Meta+C) - add selected text to copy/paste buffer
   Shift+F1               - save selection and delete from text
@@ -522,7 +524,7 @@ NOTE:
   Tx:DL(N) -- delete N lines at cursor (default = 1)
   Tx:gtl() -- get-text-left convenience method = gets first chunk of non-spaces
                                        from text to the left of cursor position
-[line 525] xref: new.lua
+[line 527] xref: new.lua
 
   re = Re("..regex..",true/false) -- regular expression (arg: case sensitivity,
   re = Re[[..regex..]]                                default = case-sensitive)
@@ -581,7 +583,7 @@ k_(TE_SHBRAK, "Ctrl+O",       0xce44f) /* переключить режим   */
   Ctrl+A - abandon (cancel) current command (e.g. stop entering search pattern)
   Ctrl+K - display unicode value of the current character in the info window
   Ctrl+L - display line number in the info window (default)
-  Ctrl+Q - ask for shell command and execute it (MacOS X/Linux only)
+  Ctrl+Y - (sYstem) = ask for shell command and execute it (MacOS X/Linux only)
    in shell command:
         light blue 'ʈ•ʀ' (Ctrl+'<') is replaced with the name of current file,
         light blue 'ʈ/ʀ' (Ctrl+'/') replaced with full path to current file
@@ -590,7 +592,7 @@ k_(TK_NONE,   NULL,     0xce000) /* None command */
 k_(TK_BREAK,  "Ctrl+A", 0xce441)
 k_(TK_CHARK,  "Ctrl+K", 0xce44b)
 k_(TK_LINFO,  "Ctrl+L", 0xce44c)
-k_(TM_SHELL,  "Ctrl+Q", 0xce451) /* ввести и выполнить команду shell         */
+k_(TM_SHELL,  "Ctrl+Y", 0xce459) /* ввести и выполнить команду shell         */
 k_(TM_FEXEC,  NULL,     0xceef1) /* в том же окне:                    Return */
 k_(TM_F2EXEC, NULL,     0xceef2) /* в новом окне:               Shift+Return */
 /*

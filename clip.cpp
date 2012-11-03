@@ -52,7 +52,7 @@ void clipFocusOff()
 //
 txt *LCtxt = NULL;           /* Текст-хранилище строк (и всего прочего тоже) */
 static tchar ccbuf[MAXLPAC]; /* Буфер запомненных символов (неполная строка) */
-static short cclen = 0;      /* Мощность буфера запомненных символов/слов    */
+static int  cclen  = 0;      /* Мощность буфера запомненных символов/слов    */
 static bool cpopen = false;  /* Буфер "открыт" (идет запоминание, добавлять) */
 static bool cpnocl = false;  /* Запрещено сохранение строк (запоминаем char) */
 static bool cpempt = true;   /* Буфер пустой -- гарантировано ничего там нет */
@@ -94,8 +94,8 @@ void lecdchar() { CSsave1(Lx,   1, false); leDC(); }  /* le "copy & delete"  */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static int CSsaveW()                                  /* Save word at cursor */
 {
-  short xl, xr; if (!leNword(&xl, NULL, &xr)) exc(E_NOOP);
-                CSsave1(xl, xr-xl, true);       return xr;
+  int xl, xr; if (!leNword(&xl, NULL, &xr)) exc(E_NOOP);
+                  CSsave1(xl, xr-xl, true);   return xr;
 }
 void lecword()  { Lx = CSsaveW();            }    /* le "copy word"          */
 void lecdword() {      CSsaveW(); ledword(); }    /* le "copy & delete word" */

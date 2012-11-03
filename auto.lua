@@ -21,7 +21,7 @@ function Txt.openXref(Tx)        Tx.refs = { }       -- open new (throw-away)
                            Rx.refs[rxN] = txN --   for N,line in Tx:lines() do
   end; return newTx                           --     if ... end
 end                                           --       Rx:IL(smth); Tx:Xref(N)  end
-Mk["Ctrl+Y"] = function(Tx)                   --     end
+Mk["Ctrl+X"] = function(Tx)                   --     end
   local Rx = Tx.refTx and Txt[Tx.refTx]       --   end  --  use Ctrl+Y to jump
   if not Rx then return end                   -- end    -- between these texts
   for i=Tx.Y,1,-1 do

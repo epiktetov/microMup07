@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07    le = Line Editor -- Редактор строки    | (c) Epi MG, 2006-2011
+// МикроМир07    le = Line Editor -- Редактор строки    | (c) Epi MG, 2006-2012
 //------------------------------------------------------+--------------------*/
 #ifndef LE_H_INCLUDED      /* Old "le.h" (c) Attic 1989, (c) EpiMG 1996-2003 */
 #define LE_H_INCLUDED
@@ -8,25 +8,25 @@ void tleload(void), /* load LE line from text, see also EnterLEmode in vip.h */
    tleunload(void); /* unload LE line to text, see also ExitLEmode (ibid)    */
 bool tleread(void); /* read Lebuf from text (read-only), true if non-empty   */
 void LeStart();
-void  blktspac(tchar *p, short len);
-short lstrlen (short lmax, tchar *string);
-void  llmove  (short xl, short xr, short dx, tchar *ns);
+void  blktspac(tchar *p, int len);
+int   lstrlen (int lmax, tchar *string);
+void  llmove  (int xl, int xr, int dx, tchar *ns);
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 extern tchar  Lebuf[];    /* Буфер строки                                    */
 extern tchar  lfbuf[];    /* альтернативный буфер                            */
-extern short  Lleng;      /* Длина строки без хвостовых пробелов             */
-extern short  Lxlm, Lxrm; /* левая/правая граница для перемещения            */
-extern short  Lxle, Lxre; /* левая/правая граница для редактирования         */
+extern int    Lleng;      /* Длина строки без хвостовых пробелов             */
+extern int    Lxlm, Lxrm; /* левая/правая граница для перемещения            */
+extern int    Lxle, Lxre; /* левая/правая граница для редактирования         */
 extern long   Ly;         /* Y строки в тексте (для окна)                    */
-extern short  Lx;         /* X курсора в строке (а не в окне!)               */
+extern int    Lx;         /* X курсора в строке (а не в окне!)               */
 extern bool   Lredit;     /* Можно менять строку                             */
 extern bool   Lchange;    /* Строка изменялась                               */
 extern txt   *Ltxt;       /* Текст, в который сливается откатка              */
 void tlesniff(txt *tx);   /* sets Lxlm, Lxrm, Lxle, Lxre from text and Lebuf */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-bool leNword(short *cwbeg,  /* Найти (unless ptr=0): начало текущего слова   */
-             short *cwend,  /*                       конец текущего слова    */
-             short *nwbeg); /* (return "на слове?")  начало следующего слова */
+bool leNword(int *cw_beg,   /* Найти (unless ptr=0): начало текущего слова   */
+             int *cw_end,   /*                       конец текущего слова    */
+             int *nw_beg);  /* (return "на слове?")  начало следующего слова */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void leIC(), ledword(),       /* некоторые команды (используются в clip.cpp) */
      leDC(), lepword();

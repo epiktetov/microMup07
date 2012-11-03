@@ -1,12 +1,12 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07    te = Text editor - Редактор текста     | (c) Epi MG, 2007,2011
+// МикроМир07    te = Text editor - Редактор текста     | (c) Epi MG, 2007,2012
 //------------------------------------------------------+--------------------*/
 #ifndef TE_H_INCLUDED           /* Old "te.h" (c) Attic 1989, (c) EpiMG 2001 */
 #define TE_H_INCLUDED
 
 void TeInit(void);
-void qsety           (long y); /* exception if cannot */
-bool tesetxy(short x, long y);
+void qsety         (long y); /* exception if cannot */
+bool tesetxy(int x, long y);
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void teIL(),              /* некоторые команды (используются в clip.cpp etc) */
      teCR();

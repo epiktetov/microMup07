@@ -61,7 +61,7 @@ void x2enter (void)           /* command line enter (2) ввести коман�
                         &tcmdbufFlag, TM_FEXEC, TM_F2EXEC, 0);
 }
 /*---------------------------------------------------------------------------*/
-static void appendText(txt *Stxt, short& Sx, char *text, char *tend)
+static void appendText(txt *Stxt, int& Sx, char *text, char *tend)
 {
 //  if (qTxBottom(Ttxt)) { teIL(); Lleng = 0; } // insert new empty line here,
 //  else       Lleng = TxTRead(Ttxt, Lebuf);    // or get partially filled one
@@ -81,13 +81,13 @@ static void appendText(txt *Stxt, short& Sx, char *text, char *tend)
     Lleng += aftotc(text, tend-text, Lebuf+Lleng);
     TxTRep(Stxt, Lebuf, Sx = Lleng);
 } }
-static void appendCR(txt *Stxt, short& Sx, long& Sy)
+static void appendCR(txt *Stxt, int& Sx, long& Sy)
 {
   TxDown(Stxt); Sx = Stxt->txlm; Sy++;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-static void shellexec (txt *Stxt, short& Sx,
-                                  long & Sy, const char *cmd, wnd *Swnd = NULL)
+static void shellexec (txt *Stxt, int  &Sx,
+                                  long &Sy, const char *cmd, wnd *Swnd = NULL)
 {
   int fdsin[2], fdsout[2];
   int pid;
@@ -235,9 +235,9 @@ void tmLoadXeq (txt *t) /* load text by executing command from t->file->name */
   TxEmpt(t);                      //
   if (t->txudeq) { DqDel(t->txudeq); t->txudeq  =     NULL;
                                      t->txstat &= ~TS_UNDO; }
-  short Sx = 0;
-  long  Sy = 0; QString cmd =  t->file->name; // <- copy the value first, since
-                cmd.remove(0,1).remove(-1,1); //  remove() changes the argument
+  int  Sx = 0;
+  long Sy = 0; QString cmd =  t->file->name; // <- copy the value first, since
+               cmd.remove(0,1).remove(-1,1); //  remove() changes the argument
   shellexec(t, Sx, Sy, cmd.cStr());
 }
 /*---------------------------------------------------------------------------*/

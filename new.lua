@@ -1,7 +1,7 @@
---  see :/help, line 525 for ʁLua SCRIPTINGʀ reference (use Meta+Enter to open)
+--  see :/help, line 527 for ʁLua SCRIPTINGʀ reference (use Meta+Enter to open)
 --  :/auto.lua, line 19 for the source of auto-loaded script (incl. openXref)
 --
-Mk['^J,Y'] = function(Tx,count)
+Mk['^J,X'] = function(Tx,count)
   local Rx = Txt.openXref(Tx)
   for N,line in Tx:lines() do
     if ... then

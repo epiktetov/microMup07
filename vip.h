@@ -82,7 +82,7 @@ extern wnd * Lwnd; /* Окно, в котором редактируется с�
 extern wnd * Twnd; /* Окно, в котором редактируется текст (used in te.c)     */
 extern txt * Ttxt; /* Редактируемый текст                                    */
 extern long  Ty;   /* Y курсора в тексте      (real programmers use global   */
-extern short Tx;   /* X курсора в тексте      vars for most important stuff) */
+extern int   Tx;   /* X курсора в тексте      vars for most important stuff) */
 /*
  * Positioning in text (returns FALSE if could not reach specified line) and
  * principal method of getting text info (used for window re-paint):
