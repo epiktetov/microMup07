@@ -1,9 +1,10 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07  Clipboard (using wxClipboard) & CS/LS op | (c) Epi MG, 2007-2011
+// МикроМир07  Clipboard (using wxClipboard) & CS/LS op | (c) Epi MG, 2007-2012
 //------------------------------------------------------+--------------------*/
 #ifndef CLIP_H_INCLUDED
 #define CLIP_H_INCLUDED
 #include "mic.h"
+#include "ccd.h"
 #define SAVFILNAM "~/.micro7.clip"
 
 void clipStart();
@@ -19,14 +20,13 @@ void cpclose(), cpreopen();          /* close/re-open CP-buffer for savings  */
 void lecchar(), lecdchar();          /* le "copy character", "copy & delete" */
 void lecword(), lecdword();          /* le "copy word", "copy & delete word" */
 void cpaste();                       /* paste anything (works in LE/TE mode) */
+void tallblockop(comdesc *cp);       /* "tall cursor" block ops (exits LE)   */
 void clipToCB(), clipFromCB();       /* forced to/from clipboard operation   */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void teclin(), tecdlin();            /* te "copy line" and "copy & delete"   */
-void teicblock(), tedcblock();       /*                     IC/DC for blocks */
 void tecsblock(),                    /*          "character save" for blocks */
-     tesdblock();                    /*  save & delete / collapse for blocks */
-void teclrblock(),                   /* clear the block                      */
-     teicharblk();                   /* block char insert (tall cursor mode) */
+     tesdblock(),                    /*  save & delete / collapse for blocks */
+     teclrblock();                   /* clear the block                      */
 extern txt *LCtxt;                   /* Текст-хранилище строк (just in case) */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 int  Block1size (int *x0, int *x1);  /* <- Return 1-line block size (+x0/x1) */

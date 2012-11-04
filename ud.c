@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07              Откатка - Undo               | (c) Epi MG, 2007,2011
+// МикроМир07              Откатка - Undo               | (c) Epi MG, 2007,2012
 //------------------------------------------------------+--------------------*/
 #include "mic.h"                  /* Old ud.c (c) Attic 1989, (c) EpiMG 1998 */
 #include "twm.h"
@@ -9,7 +9,6 @@
 #include "te.h"
 #include "tx.h"
 #include "ud.h"
-#include <stdio.h>
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 /*                 Undo буфер - дек, растущий только с конца.                */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -68,14 +67,14 @@ static void undogadd (txt *t, short typ)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tundoload (txt *t)                         /* Загрузка редактора строки */
 {
-  if (undo_blocked || t->txudeq == NULL) return;
+  if (undo_blocked || t->txudeq == NIL) return;
   ((textlundo*)ubuf)->uytext =   t->txy;
   eubuf =      ubuf + sizeof(textlundo); undogadd(t, UT_LOAD);
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tundounload (txt *t)                                /* Покидание строки */
 {
-  UndoMark = true; if (undo_blocked || t->txudeq == NULL) return;
+  if (undo_blocked || t->txudeq == NIL) return;
   DqCutE_toX(t->txudeq, t->txudlptr);
   t->txudcptr =         t->txudlptr;
 }
@@ -88,7 +87,7 @@ void lundoadd (txt *t,
              tchar *os,
              tchar *ns) /* Старая и новая подстроки (NIL для одних пробелов) */
 {
-  if (undo_blocked || !t || t->txudeq == NULL) return;
+  if (undo_blocked || !t || t->txudeq == NIL) return;
   short slen = (dx == REPLACE) ? xr-xl : my_abs(dx);
   char *p = ubuf;
   lineundo *pl = (lineundo*)p;
@@ -108,7 +107,7 @@ void lundoadd (txt *t,
 void tundo1add (txt  *t, short typ, /* Тип записи - UT_IL или UT_DL */
                 char *a, short len) /* Строка и ее длина            */
 {
-  if (undo_blocked || t->txudeq == NULL) return;
+  if (undo_blocked || t->txudeq == NIL) return;
   text1undo *pt = (text1undo*)ubuf;
   pt->uytext = t->txy;
   pt->uslen = len;
@@ -143,7 +142,7 @@ static short midind (char *ao, short *plo, char *an, short *pln)
 void tundo2add (txt *t, char *ao, short lo, /* Старая строка */
                         char *an, short ln) /* Новая  строка */
 {
-  if (undo_blocked || t->txudeq == NULL) return;
+  if (undo_blocked || t->txudeq == NIL) return;
   short k = midind(ao, &lo, an, &ln);
   text2undo *pt = (text2undo*)ubuf;
   pt->uytext = t->txy;
@@ -213,7 +212,7 @@ static void genundo (int undodir)
 static void tsundo (bool slow)
 {
   txt *t = Lwnd ? Ltxt : Ttxt;
-  if (!t || t->txudeq == NULL || t->txudcptr == 0) exc(E_NOUNDO);
+  if (!t || t->txudeq == NIL || t->txudcptr == 0) exc(E_NOUNDO);
   int undone = 0;
   while (t->txudcptr) {                        int real_len;
     DqCopyBackward(t->txudeq, t->txudcptr, ubuf, &real_len);

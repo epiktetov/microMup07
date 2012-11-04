@@ -13,6 +13,7 @@ extern "C" {
 #include "le.h"
 #include "te.h"
 #include "tx.h"
+#include "ud.h"
 }
 QClipboard  *theClipboard; dummyClip *theDummyClip;
 QClipboard::Mode clipMode;
@@ -236,7 +237,7 @@ int Block1size (int *x0, int *x1) /*- - - - - - - - - - - - - - - - - - - - -*/
   if (BlockMark) {  if (BlockTy != Ty) exc(E_BLOCKOUT); // value when block is
     make_blkXYsize(); *x0 = blkXmin;                    // taller than one line
                       *x1 = blkXmax+1; return blkXsize;
-  }                                    return        0;
+  } else                               return        0;
 }
 bool BlockXYsize (int *dx, int *dy) /*- - - - - - - - - - - - - - - - - - - -*/
 {
@@ -244,38 +245,22 @@ bool BlockXYsize (int *dx, int *dy) /*- - - - - - - - - - - - - - - - - - - -*/
                                      *dy = blkYsize; return TRUE; }
   else return FALSE;
 }
-/*-----------------------------------------------------------------------------
- *   Block insert/delete character, microMir style, plus "tall cursor" mode:
- */
-#define C_IC  1    /* Insert character in block mode (сдвинуть текст влево)  */
-#define C_DC -1    /* Delete character in block mode (сдвинуть текст вправо) */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-static void gblockicdc (int op, tchar tc)
+void tallblockop (comdesc *cp)             /* "tall cursor" block operations */
 {
-  int y, trm = my_min(Ttxt->txrm, MAXTXRM); make_blkXYsize();
-  tchar *LebufX0 = Lebuf+blkXmin,
-        *LebufX1 = Lebuf+blkXmin+1;  int len = trm-blkXmin-1;
-  if (op == C_IC) {
-    for (y = blkYmax; y >= blkYmin; y--) {
-      TxSetY(Ttxt, y);  Lleng = TxTRead(Ttxt, Lebuf); // make sure we can do IC
-      if (!tcharIsBlank(Lebuf[trm-1])) exc(E_EDTEND); // operation in all lines
-  } }
-  for (y = blkYmin; y <= blkYmax; y++) {
-    TxSetY(Ttxt, y);
-    Lleng = TxFRead(Ttxt, Lebuf);
-    switch (op) {
-    case C_IC: blktmov(LebufX0, LebufX1, len); *LebufX0     = tc; break;
-    case C_DC: blktmov(LebufX1, LebufX0, len); Lebuf[trm-1] = tc; break;
-    }
-    TxFRep(Ttxt, Lebuf);
-} }
-void teicblock() { gblockicdc(C_IC, (tchar)' '); }
-void tedcblock() { gblockicdc(C_DC, (tchar)' '); }
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void teicharblk()
-{
-  make_blkXYsize(); if (blkXsize > 1) exc(E_BLOCKOUT);
-                    else     gblockicdc(C_IC, KbCode); BlockTx++; Tx++;
+  bool umark = UndoMark; if (Lwnd) ExitLEmode();
+  int cTx = Tx;                make_blkXYsize();
+  int cTy = Ty;
+  for (Ty = blkYmin; Ty <= blkYmax; Ty++) { TxSetY(Ttxt, Ty); Tx = cTx;
+    tleload();                               // ^
+    if (cp->mi_ev == LE_CHAR) leic2(KbCode); // make sure text positioned to Y,
+    else                     (*cp->cfunc)(); // and X is the same for all lines
+    UndoMark = umark;
+    umark  = false;               // set UndoMark to stored value on first line
+    Lchange = true;  tleunload(); // only (so the operation is undone as whole,
+  }                               // whether it has repetition or not): we need
+  if (cp->mi_ev == LE_CHAR) Tx++; // this trick because tleload resets the mark
+  Ty = cTy;         BlockTx = Tx;
 }
 /*-----------------------------------------------------------------------------
  *   Запоминание блоков (и очистка):

@@ -82,8 +82,8 @@ void EnterLEmode (void) { TxSetY(Ttxt, Ty); tleload(); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tleunload (void)                              /* unload LE line to text */
 {
-  if (Lwnd) {   Lwnd = NIL;
-    tundounload(Ttxt);
+  if (Lwnd) {
+    Lwnd = NIL; tundounload(Ttxt);
     Tx = Lx;
     if (Lchange) { TxSetY(Ttxt, Ty); TxTRep(Ttxt, Lebuf, Lleng);
                                      Ttxt->txstat |= TS_CHANGED; tesmark(); }
@@ -91,7 +91,7 @@ void tleunload (void)                              /* unload LE line to text */
       if (Lclang) vipRedrawLine(Twnd, Ty - Twnd->wty);
 } }
 void ExitLEmode (void) { if (leARGmode) LenterARGcomplete(0);
-                         else                    tleunload(); }
+                         else { UndoMark = true; tleunload(); } }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 bool tleread(void)    /* read Lebuf from text (read-only), true if non-empty */
 {
@@ -153,7 +153,7 @@ static void llchar (tchar lchar)
   else vipRedraw    (Lwnd, Lx - Lwnd->wtx, Ly - Lwnd->wty, 1,1);
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-static void leic2 (tchar lchar) /* low-level character insert and char entry */
+void leic2 (tchar lchar)        /* low-level character insert and char entry */
 {
   if (tcharIsBlank(Lebuf[Lxre-1])) llmove(Lx, Lxre, 1, &lchar);
   else                                           exc(E_EDTEND);
@@ -247,18 +247,17 @@ void lemark_word()    /* выделить текущее слово (или сл
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void ledword()   /* удалить слово и пробелы за ним (всегда схлопывает текст) */
 {
-  int xl, xr; if (!leNword(&xl, NIL, &xr)) xl = Lx;
-  if (xl < Lxle) xl = Lxle;
-  if (xr > Lxre) xr = Lxre; llmove(Lx = xl, Lxre, xl-xr, NIL);
+  int xr; if (Lx < Lxle) Lx = Lxle; leNword(NIL, NIL, &xr);
+          if (xr > Lxre) xr = Lxre; llmove(Lx, Lxre, Lx-xr, NIL);
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void ledlword()        /* удалить слово влево (очистить или схлопнуть текст) */
 {
-  int old_Lx = Lx; lepword();
+  int saved_Lx = Lx; lepword();
   if (Lx < Lxle) Lx = Lxle;
-  if (Lx < old_Lx) {
-    if (LeInsMode) llmove(Lx, Lxre, Lx-old_Lx, NIL);
-    else           llmove(Lx, old_Lx, REPLACE, NIL);
+  if (Lx < saved_Lx) {
+    if (LeInsMode) llmove(Lx, Lxre, Lx-saved_Lx, NIL);
+    else           llmove(Lx, saved_Lx, REPLACE, NIL);
 } }
 /*---------------------------------------------------------------------------*/
 void lecentrx()    /* центрировать текст в текущей строке (по размерам окна) */
@@ -466,7 +465,7 @@ void lequit()
 /*---------------------------------------------------------------------------*/
 comdesc lecmds[] =
 {
-  { LE_CHAR,   lechar,   CA_EXT|CA_CHANGE|CA_NEND }, /* обычный символ (1st) */
+  { LE_CHAR,   lechar,   CA_EXT|CA_LinMOD|CA_NEND }, /* обычный символ (1st) */
   { LE_RIGHT,  leright,                   CA_NEND }, /* курсор вправо        */
   { LE_LEFT,   leleft,                    CA_NBEG }, /* курсор влево         */
   { LE_BEG,    lebeg,    CA_RPT                   }, /* - в начало строки    */
@@ -477,32 +476,32 @@ comdesc lecmds[] =
   { LE_LTAB,   leltab,                    CA_NBEG }, /* в предыдущую TAB     */
   { LE_CENTR,  lecentr,  0                        }, /* курсор в центр окна  */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-  { LE_IC,     leIC,   CA_BLOCK|CA_CHANGE|CA_NEND }, /* вставить пробел      */
-  { LE_DC,     leDC,   CA_BLOCK|CA_CHANGE|CA_NEND }, /* удалить за курсором  */
-  { LE_DEOL,   ledeol,          CA_CHANGE         }, /* - конец строки       */
-  { LE_DBGOL,  ledbgol,         CA_CHANGE         }, /* - начало строки      */
-  { LE_BS,     lebs,            CA_CHANGE|CA_NBEG }, /* удалить до курсора   */
-  { LE_SPCHAR, lespchar, CA_EXT|CA_CHANGE|CA_NEND|CA_RPT },
-  { LE_TABCHR, letabchr, CA_EXT|CA_CHANGE|CA_NEND }, /* insert TAB           */
-  { LE_HCHAR0, lehchar0, CA_EXT|CA_CHANGE|CA_NEND }, /* ins: TmSCH_THIS_OBJ  */
-  { LE_HCHAR1, lehchar1, CA_EXT|CA_CHANGE|CA_NEND }, /* ins: LeSCH_REPL_END  */
-  { LE_HCHAR2, lehchar2, CA_EXT|CA_CHANGE|CA_NEND }, /* ins: LeSCH_REPL_BEG  */
+  { LE_IC,     leIC,            CA_LinMOD|CA_NEND }, /* вставить пробел      */
+  { LE_DC,     leDC,            CA_LinMOD|CA_NEND }, /* удалить за курсором  */
+  { LE_DEOL,   ledeol,          CA_LinMOD         }, /* - конец строки       */
+  { LE_DBGOL,  ledbgol,         CA_LinMOD         }, /* - начало строки      */
+  { LE_BS,     lebs,            CA_LinMOD|CA_NBEG }, /* удалить до курсора   */
+  { LE_SPCHAR, lespchar, CA_EXT|CA_LinMOD|CA_NEND|CA_RPT },
+  { LE_TABCHR, letabchr, CA_EXT|CA_LinMOD|CA_NEND }, /* insert TAB           */
+  { LE_HCHAR0, lehchar0, CA_EXT|CA_LinMOD|CA_NEND }, /* ins: TmSCH_THIS_OBJ  */
+  { LE_HCHAR1, lehchar1, CA_EXT|CA_LinMOD|CA_NEND }, /* ins: LeSCH_REPL_END  */
+  { LE_HCHAR2, lehchar2, CA_EXT|CA_LinMOD|CA_NEND }, /* ins: LeSCH_REPL_BEG  */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-  { LE_NWORD,  lenword,                   CA_NEND }, /* следующее слово      */
-  { LE_PWORD,  lepword,                   CA_NBEG }, /* предыдущее слово     */
-  { LE_MWORD,  lemark_word,     CA_RPT            }, /* выделить слово       */
-  { LE_DWORD,  ledword,         CA_CHANGE|CA_NEND }, /* удалить слово        */
-  { LE_DLWORD, ledlword,        CA_CHANGE|CA_NBEG }, /* удалить слово влево  */
-  { LE_CENTRX, lecentrx, CA_RPT|CA_CHANGE         }, /* центрировать строку  */
-  { LE_RINS,   lerins,   0                        }, /* режим вставки        */
-  { LE_RREP,   lerrep,   0                        }, /* режим замены         */
-  { LE_CCUP,   leccup,          CA_CHANGE|CA_NEND }, /* -> прописная         */
-  { LE_CCDWN,  leccdwn,         CA_CHANGE|CA_NEND }, /* -> строчная          */
-  { LE_CWDEC,  lecwdec,  CA_RPT|CA_CHANGE         }, /* word -> decimal      */
-  { LE_CWHEX,  lecwhex,  CA_RPT|CA_CHANGE         }, /* word -> hex               */
-  { LE_CBOLD,  lecbold,         CA_CHANGE|CA_NEND }, /* сделать жирным       */
-  { LE_MOVRIGHT, lemovright,    CA_CHANGE|CA_NEND }, /* сдвинуть вправо      */
-  { LE_MOVLEFT,  lemovleft,     CA_CHANGE|CA_NBEG }, /* сдвинуть влево       */
+  { LE_NWORD,  lenword,                CA_NEND }, /* на следующее слово      */
+  { LE_PWORD,  lepword,                CA_NBEG }, /* на предыдущее слово     */
+  { LE_MWORD,  lemark_word,     CA_RPT         }, /* выделить текущее слово  */
+  { LE_DWORD,  ledword,      CA_LinMOD|CA_NEND }, /* удалить слово справа    */
+  { LE_DLWORD, ledlword,        CA_MOD|CA_NBEG }, /* удалить слово влево     */
+  { LE_CENTRX, lecentrx, CA_RPT|CA_MOD         }, /* центрировать строку     */
+  { LE_RINS,   lerins,   0                     }, /* режим вставки           */
+  { LE_RREP,   lerrep,   0                     }, /* режим замены            */
+  { LE_CCUP,   leccup,          CA_MOD|CA_NEND }, /* -> прописная            */
+  { LE_CCDWN,  leccdwn,         CA_MOD|CA_NEND }, /* -> строчная             */
+  { LE_CWDEC,  lecwdec,  CA_RPT|CA_MOD         }, /* word -> decimal         */
+  { LE_CWHEX,  lecwhex,  CA_RPT|CA_MOD         }, /* word -> hex             */
+  { LE_CBOLD,  lecbold,         CA_MOD|CA_NEND }, /* сделать жирным          */
+  { LE_MOVRIGHT, lemovright,    CA_MOD|CA_NEND }, /* сдвинуть вправо         */
+  { LE_MOVLEFT,  lemovleft,     CA_MOD|CA_NBEG }, /* сдвинуть влево          */
 /*
  * Only works for leARGmode (do not process unless leARGmode):
  */
@@ -517,20 +516,20 @@ comdesc lecmds[] =
 /*
  * Implemented in clip.cpp (declaration in "clip.h"):
  */
-  { LE_CCHAR,  lecchar,  CA_BLOCK|          CA_NEND }, /* запомнить символ   */
-  { LE_CDCHAR, lecdchar, CA_BLOCK|CA_CHANGE|CA_NEND }, /* - с удалением      */
-  { LE_CWORD,  lecword,                     CA_NEND }, /* запомнить слово    */
-  { LE_CDWORD, lecdword,          CA_CHANGE|CA_NEND }, /* - с удалением      */
-  { LE_PASTE,  cpaste,            CA_CHANGE|CA_NEND }, /* вспомнить          */
-  { LE_CPCLOS, cpclose,  0                          }, /* запоминать сначала */
-  { LE_CPOPEN, cpreopen, 0                          }, /* переоткрыть буфер  */
+  { LE_CCHAR,  lecchar,  CA_BLOCK|       CA_NEND }, /* запомнить символ   */
+  { LE_CDCHAR, lecdchar, CA_BLOCK|CA_MOD|CA_NEND }, /* - с удалением      */
+  { LE_CWORD,  lecword,                  CA_NEND }, /* запомнить слово    */
+  { LE_CDWORD, lecdword,          CA_MOD|CA_NEND }, /* - с удалением      */
+  { LE_PASTE,  cpaste,            CA_MOD|CA_NEND }, /* вспомнить          */
+  { LE_CPCLOS, cpclose,  0                       }, /* запоминать сначала */
+  { LE_CPOPEN, cpreopen, 0                       }, /* переоткрыть буфер  */
 /*
  * Implemented in ud.c (declaration in "ud.h"), the same functions as in te.c
  */
-  { TE_UNDO,    leundo,    CA_CHANGE }, /* откатка (always set Lchange) */
-  { TE_UNUNDO,  leunundo,  CA_CHANGE }, /* откатка откатки              */
-  { TE_SUNDO,   lesundo,   CA_CHANGE }, /* "медленная" откатка          */
-  { TE_SUNUNDO, lesunundo, CA_CHANGE }, /* "медленная" откатка откатки  */
+  { TE_UNDO,    leundo,    CA_MOD }, /* откатка (always set Lchange) */
+  { TE_UNUNDO,  leunundo,  CA_MOD }, /* откатка откатки              */
+  { TE_SUNDO,   lesundo,   CA_MOD }, /* "медленная" откатка          */
+  { TE_SUNUNDO, lesunundo, CA_MOD }, /* "медленная" откатка откатки  */
   { 0,0,0 }
 };
 comdesc lequitcmd[] =
@@ -555,11 +554,11 @@ int LeCommand (comdesc *cp)
   jmp_buf *nextexc, leenv;
   int x, rpt;
   if ((cp->attr & CA_EXT) && !Lredit && Ttxt->txredit == TXED_YES) {
-    tleunload(); 
-    TxSetY(Ttxt, Ty); teIL(); tleload(); // the only case Lredit may be false
-  }                                      // for editable text is when current
-  if (cp->attr & CA_CHANGE) {            // line is end-of-text, insert empty
-    if (Lredit) UndoMark = TRUE;
+    UndoMark = true;       tleunload();
+    TxSetY(Ttxt,Ty); teIL(); tleload(); // the only case Lredit may be false
+  }                                     // for editable text is when current
+  if (cp->attr & CA_MOD) {              // line is end-of-text, insert empty
+    if (Lredit) UndoMark = true;
     else        return E_CHANGE;
   }
   for (rpt = (cp->attr & CA_RPT) ? 1 : KbCount; rpt; rpt--) {
@@ -567,19 +566,25 @@ int LeCommand (comdesc *cp)
       x = Lx;
       if ((cp->attr & CA_NBEG) && Lx <= Lxlm) return E_MOVBEG;
       if ((cp->attr & CA_NEND) && Lx >= Lxrm) return E_MOVEND;
-      if (cp->attr & CA_CHANGE) {
+      if (cp->attr & CA_MOD) {
         x = (cp->attr & CA_NBEG) ? Lx-1 : Lx; // for NBEG check pos to the left
         if (x >= Lxre)              return E_EDTEND;
         if (x <  Lxle) { Lx = Lxle; return E_EDTBEG; }
     } }
-    nextexc = excptr; 
-              excptr = & leenv; if ((x = setjmp(leenv)) == 0) (*cp->cfunc)();
-              excptr = nextexc; if  (x)                             return x;
-
-    if (leARGmode) leARGmode++; // any command makes next entered char not 1st
-    else Tx = Lx;
-    if (cp->attr & CA_CHANGE) Lchange = TRUE;
-    if (qkbhin())            return E_KBREAK;
+    nextexc = excptr; excptr = &leenv;           // "tall cursor" works only if
+    if ((x = setjmp(leenv)) == 0) {              // block is 1 char wide + make
+      if ((cp->attr & CA_LINEAR) && BlockMark) { // sure we're not in leARGmode
+        if (leARGmode || BlockTx != Tx ||        //
+                         BlockTy == Ty) exc(E_BLOCKOUT);
+        tallblockop(cp);
+      }
+      else {        (*cp->cfunc)(); // <-- perform requested operation here;
+        if (leARGmode) leARGmode++; // any command makes next char not first
+        else Tx = Lx;
+        if (cp->attr & CA_MOD) Lchange = TRUE; // mark text as "changed" (tall
+    } }                                        // block ops also do that mark)
+    excptr = nextexc;
+    if (x)  return x; if (qkbhin()) return E_KBREAK;
   }
   return E_OK;
 }

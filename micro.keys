@@ -126,11 +126,11 @@ inserting TAB into text and splitting lines at cursor, though).
 k_(LE_TAB,          "Tab",          0xd2001) /* в следующую...        */
 k_(LE_LTAB,   "Shift+Tab",          0xd2202) /* в предыдущую...       */
 a_(LE_LTAB,   "Shift+Backtab",      0xd2202) /*     позицию табуляции */
-k_(LE_TABCHR, "Ctrl+Shift+Tab",     0xc2602) /* вставить символ TAB   */
-a_(LE_TABCHR, "Ctrl+Shift+Backtab", 0xc2602) /*  (BkTAB ≈ Shift+TAB)  */
+k_(LE_TABCHR, "Ctrl+Shift+Tab",     0xf2602) /* вставить символ TAB   */
+a_(LE_TABCHR, "Ctrl+Shift+Backtab", 0xf2602) /*  (BkTAB ≈ Shift+TAB)  */
 k_(TE_CMARK,  "Ctrl+Tab",           0xd2401) /* курсор --> где были   */
 #ifdef Q_OS_MAC                              /* синонимы для Mac KB:  */
-a_(LE_TABCHR, "Alt+Shift+Backtab",  0xc2602) /*   вставить символ TAB */
+a_(LE_TABCHR, "Alt+Shift+Backtab",  0xf2602) /*   вставить символ TAB */
 a_(TE_CMARK,  "Alt+Tab",            0xd2401) /*   курсор --> где были */
 #endif
 k_(TE_SMARK0, "Ctrl+Shift+`", 0xd2630) /* установить маркер 0, wheat */
@@ -184,7 +184,7 @@ for text modification:
   ------------+----------------------------------+--------------------------
   Ctrl+D     - delete from cursor to end of line
   Ctrl+U     - delete/clear all characters up to cursor position
-  Ctrl+Q     - squeeze the word under cursor (and trailing spaces) from text
+  Ctrl+Q     - squeeze the word after cursor (and trailing spaces) from text
   Esc,Ctrl+D - delete everything from cursor to end of file
   Esc,Ctrl+U - delete everything from the beginning up to cursor (very strong)
 */
@@ -192,11 +192,11 @@ k_(LE_IC,     "Ins",          0xf4006) /* вставить пробел на м�
 k_(LE_DC,     "Del",          0xf4007) /*    удалить символ под курсором     */
 k_(TE_IL,     "Shift+Ins",       0xc4206) /* вставить пустую строку          */
 k_(TE_DL,     "Shift+Del",       0xf4207) /* удалить текущую строку          */
-k_(LE_BS,           "Backspace", 0xc4003) /* удалить/очистить символ слева   */
+k_(LE_BS,           "Backspace", 0xf4003) /* удалить/очистить символ слева   */
 k_(LE_DLWORD, "Shift+Backspace", 0xc4203) /* удалить слово влево от курсора  */
-k_(LE_DEOL,   "Ctrl+D",          0xc4444) /* - конец строки за курсором      */
-k_(LE_DBGOL,  "Ctrl+U",          0xc4455) /* - начало строки до курсора      */
-k_(LE_DWORD,  "Ctrl+Q",          0xc4451) /* - слово и пробелы за ним        */
+k_(LE_DEOL,   "Ctrl+D",          0xf4444) /* - конец строки за курсором      */
+k_(LE_DBGOL,  "Ctrl+U",          0xf4455) /* - начало строки до курсора      */
+k_(LE_DWORD,  "Ctrl+Q",          0xf4451) /* - слово справа и пробелы за ним */
 k_(TE_CLRBEG, "Esc,Ctrl+U",      0xc4c55) /* удалить текст за курсором       */
 k_(TE_CLREND, "Esc,Ctrl+D",      0xc4c44) /* - до курсора      (много строк) */
 /*
@@ -282,9 +282,9 @@ selected when entering search/replace pattern.
 k_(TE_SENTR,        "Home,End", 0xc6811) /* ввод подстроки поиска и замены   */
 a_(TE_SENTR,          "Meta+F", 0xc6811) /*    (Return или End - поиск вниз, */
 a_(TE_SENTR,          "Ctrl+F", 0xc6811) /*            +Shift - поиск вверх) */
-k_(LE_HCHAR0,         "Ctrl+,", 0xc642c) /*                                  */
-k_(LE_HCHAR1,         "Ctrl+/", 0xc642f) /* начало списка файлов (для grep)  */
-k_(LE_HCHAR2,         "Ctrl+.", 0xc642e) /* начало подстроки замены          */
+k_(LE_HCHAR0,         "Ctrl+,", 0xf642c) /*                                  */
+k_(LE_HCHAR1,         "Ctrl+/", 0xf642f) /* начало списка файлов (для grep)  */
+k_(LE_HCHAR2,         "Ctrl+.", 0xf642e) /* начало подстроки замены          */
 k_(LA_STDMODE,        "Ctrl+6", 0xc6436) /*               | стандартный ‹st› */
 k_(LA_REMODE,         "Ctrl+7", 0xc6437) /* Режим поиска: | regexp      ‹re› */
 k_(LA_WCMODE,         "Ctrl+8", 0xc6438) /*               | wildcards   ‹wx› */
@@ -347,11 +347,12 @@ k_(LE_CPOPEN,  "Ctrl+F1", 0xf7430) /* наоборот, будем добавл�
 ʁSELECTION.ʀ Although text can be copied without selecting anything, MicroMir has
 mechanism of rectangular selections: Shift+{arrows} makes "temporary" selection
 (grey rectangle),  F5 followed by any regular cursor movement makes "permanent"
-selection (light blue rectangle).
-                                       |       (any movement    - start/extend
-        Shift+{arrows} - start/extend  |  F5 ..  except for   ..   "permanent"
-   Alt +Shift+{arrows}    "temporary"  |       [Shift+]Return)       selection
-   Ctrl+Shift+Left/Right    selection
+selection (light blue rectangle). -- Typing DO NOT overwrites selected text --
+
+        Shift+{arrows} - start/extend  |       (any movement    - start/extend
+   Alt +Shift+{arrows}    "temporary"  |  F5 ..  except for   ..   "permanent"
+   Ctrl+Shift+Left/Right    selection  |       [Shift+]Return)       selection
+
    Ctrl+W - select current word (or word left of cursor, if it's not on word)
 */
 a_(LE_LEFT,       "Shift+Left",  0xe0012) /* влево  |               */
@@ -368,16 +369,18 @@ a_(LE_END,   "Ctrl+Shift+Right", 0xe0414) /* в конец строки         
 k_(TX_MCBLOCK,             "F5", 0xc8034) /* == "постоянный" блок   */
 /*
 When selection (of either type) is active, some commands operate with selected
-text instead of current character,
-namely:                               !! Typing DO NOT overwrites selected text
+text instead of current character, namely:
 
         F1 (Ctrl/Meta+C) - add selected text to copy/paste buffer
   Shift+F1               - save selection and delete from text
-  Ins                    - insert column of spaces at left edge of selection
-  Del                    - delete column at left edge of selection
   Shift+Del              - clear the text covered by selection rectangle
-  {character}            - insert character at block position in all lines
-  (last command works only when block width is 1 column, "tall cursor" mode)
+
+If the selection is one character wide, then most line editing commands work on
+all lines affected, for example:
+
+  Ins             - insert column of spaces at the selection
+  Del             - delete column at the selection
+  {any character} - insert character at the block position in all lines
 
 The following commands also can work with selections, but only with single-line
 ones (without selection, current character is converted and cursor moves right)
@@ -468,7 +471,7 @@ Note: without repetition prefix, the last two commands work differently, which
 k_(TK_PREFIX, "Home",         0xcc00a) /* Home (generic) префикс          */
 k_(TK_ESC,    "Esc",          0xcc00e) /* Esc префикс (повторитель и пр.) */
 k_(TK_CtrJ,   "Ctrl+J",       0xcc010) /* ^J префикс (используется в Lua) */
-k_(LE_SPCHAR, "Alt+Ins",      0xcb606) /* ввести символ по Unicode коду   */
+k_(LE_SPCHAR, "Alt+Ins",      0xfb606) /* ввести символ по Unicode коду   */
 k_(LE_CWDEC,  "Meta+Alt+,",   0xfb92c) /* ʁ<ʀ  перевести число в десятичное */
 k_(LE_CWHEX,  "Meta+Alt+.",   0xfb92e) /* ʁ>ʀ  - в 16-ричное / основание N  */
 k_(TE_SWIDTH, "Ctrl+Shift+}", 0xcb65d) /* ʁ]ʀ  установить ширину текста     */
@@ -524,7 +527,7 @@ NOTE:
   Tx:DL(N) -- delete N lines at cursor (default = 1)
   Tx:gtl() -- get-text-left convenience method = gets first chunk of non-spaces
                                        from text to the left of cursor position
-[line 527] xref: new.lua
+[line 530] xref: new.lua
 
   re = Re("..regex..",true/false) -- regular expression (arg: case sensitivity,
   re = Re[[..regex..]]                                default = case-sensitive)

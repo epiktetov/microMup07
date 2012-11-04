@@ -30,7 +30,8 @@ bool leNword(int *cw_beg,   /* Найти (unless ptr=0): начало теку�
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void leIC(), ledword(),       /* некоторые команды (используются в clip.cpp) */
      leDC(), lepword();
-void leLLCE (tchar lchar), ledeol();            /* low-level character entry */
+void leic2 (tchar lchar),
+     leLLCE(tchar lchar), ledeol();     /* low-level character insert/entry  */
 /*---------------------------------------------------------------------------*/
 void LenterARG(tchar *buf, int *bufLen, /* buffer for argument & its length  */
                            int promLen, /* len of prompt (in buffer already) */

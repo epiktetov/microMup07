@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07  Command Codes Definition / transcoding   | (c) Epi MG, 2006-2011
+// МикроМир07  Command Codes Definition / transcoding   | (c) Epi MG, 2006-2012
 //------------------------------------------------------+--------------------*/
 #ifdef MAKE_TRANS_TABLE
 # define k_BEGIN        static microCCD CCD[] = {
@@ -53,9 +53,11 @@ void MkInitCCD(void);
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #define CA_BLOCK   001 /* block command (работает по другому если есть блок) */
 #define CA_LEARG   002 /* работает иначе внутри LenterARG                    */
-#define CA_CHANGE  004 /* изменяет состояние текста/строки                   */
+#define CA_MOD     004 /* изменяет состояние текста/строки                   */
 #define CA_EXT     010 /* добавление строки текста в конец                   */
 #define CA_RPT     020 /* сама обрабатывает аргумент (в т.ч. не повторяема)  */
+#define CA_LINEAR  040 /* "линейная" команда - может выполнятхся над многими */
+#define CA_LinMOD  044 /*       строками сразу (tall cursor), изменяет текст */
 #define CA_NEND   0100 /* указатель не в конце  строки/текста                */
 #define CA_NBEG   0200 /* указатель не в начале строки/текста                */
 #define CA_LCUT   0400 /* работает с текстом запомненных строк               */
@@ -71,7 +73,7 @@ extern int KbRadix;                   /*  основание,   если не в
 typedef struct {
   enum micom_enum mi_ev;  /* код команды */
   void  (*cfunc)(void);   /* подпрограмма, выполняющая команду */
-  int attr;               /* атрибуты команды (CA_xxx below)   */
+  int attr;               /* атрибуты команды (CA_xxx above)   */
 } comdesc;
 /*---------------------------------------------------------------------------*/
 #endif                                                     /* CCD_H_INCLUDED */

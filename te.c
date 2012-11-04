@@ -366,26 +366,26 @@ comdesc tecmds[] =
   { TE_CMARK2, tecmarkN, CA_RPT }, { TE_SMARK2, tesmarkN, CA_RPT },
   { TE_CMARK3, tecmarkN, CA_RPT }, { TE_SMARK3, tesmarkN, CA_RPT },
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-  { TE_CR,     teCR,                       CA_NEND        }, /*       Enter  */
-  { TE_RCR,    teRCR,                      CA_NEND        }, /* Shift+Enter  */
-  { TE_IL,     teIL,     CA_CHANGE                        }, /* вставить стр */
-  { TE_DL,     teDL,     CA_CHANGE|        CA_NEND        }, /* удалить стр. */
-  { TE_CLRBEG, teclrbeg, CA_CHANGE|CA_NBEG|CA_NEND|CA_RPT }, /* - начало     */
-  { TE_CLREND, teclrend, CA_CHANGE|CA_NBEG|CA_NEND|CA_RPT }, /* - конец EOF  */
-  { TE_BLIN,   teblin,   CA_CHANGE|        CA_NEND|CA_RPT }, /* разрезать    */
-  { TE_SLIN,   teslin,   CA_CHANGE|        CA_NEND|CA_RPT }, /* -вертикально */
-  { TE_NBLIN,  tenblin,  CA_CHANGE|        CA_NEND|CA_RPT }, /* склеить      */
-  { TE_NSLIN,  tenslin,  CA_CHANGE|        CA_NEND        }, /* -вертикально */
-  { TE_MOVUP,  temovup,  CA_CHANGE|CA_NBEG|CA_NEND        }, /* сдвинуть     */
-  { TE_MOVDOWN,temovdown,CA_CHANGE|        CA_NEND        }, /* - вниз       */
-  { TE_FORMAT, teformat, CA_CHANGE|        CA_NEND        },
+  { TE_CR,     teCR,                    CA_NEND        }, /*       Enter     */
+  { TE_RCR,    teRCR,                   CA_NEND        }, /* Shift+Enter     */
+  { TE_IL,     teIL,     CA_MOD                        }, /* вставить строку */
+  { TE_DL,     teDL,     CA_MOD|        CA_NEND        }, /* удалить строку  */
+  { TE_CLRBEG, teclrbeg, CA_MOD|CA_NBEG|CA_NEND|CA_RPT }, /* - начало        */
+  { TE_CLREND, teclrend, CA_MOD|CA_NBEG|CA_NEND|CA_RPT }, /* - конец EOF     */
+  { TE_BLIN,   teblin,   CA_MOD|        CA_NEND|CA_RPT }, /* разрезать       */
+  { TE_SLIN,   teslin,   CA_MOD|        CA_NEND|CA_RPT }, /* - вертикально   */
+  { TE_NBLIN,  tenblin,  CA_MOD|        CA_NEND|CA_RPT }, /* склеить         */
+  { TE_NSLIN,  tenslin,  CA_MOD|        CA_NEND        }, /* - вертикально   */
+  { TE_MOVUP,  temovup,  CA_MOD|CA_NBEG|CA_NEND        }, /* сдвинуть        */
+  { TE_MOVDOWN,temovdown,CA_MOD|        CA_NEND        }, /* - вниз          */
+  { TE_FORMAT, teformat, CA_MOD|        CA_NEND        },
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-  { TE_SENTR, tesentr,  0                 }, /* ввод строки поиска/замены    */
-  { TE_GENTR, tegentr,  0                 }, /* ввод строки поиска для grep  */
-  { TE_SDOWN, tesdown,           CA_NEND  }, /* поиск вниз                   */
-  { TE_SUP,   tesup,    0                 }, /* поиск вверх                  */
-  { TE_RUP,   terup,    CA_CHANGE         }, /* замена и поиск вверх         */
-  { TE_RDOWN, terdown,  CA_CHANGE|CA_NEND }, /* замена и поиск вниз          */
+  { TE_SENTR,  tesentr,  0              }, /* ввод строки поиска/замены      */
+  { TE_GENTR,  tegentr,  0              }, /* ввод строки поиска для grep    */
+  { TE_SDOWN,  tesdown,         CA_NEND }, /* поиск вниз                     */
+  { TE_SUP,    tesup,    0              }, /* поиск вверх                    */
+  { TE_RUP,    terup,    CA_MOD         }, /* замена и поиск вверх           */
+  { TE_RDOWN,  terdown,  CA_MOD|CA_NEND }, /* замена и поиск вниз            */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   { TE_SWIDTH, teswidth, CA_RPT }, /* установить ширину текста               */
   { TE_SRO,    tesro,    CA_RPT }, /* режим просмотра текста                 */
@@ -393,16 +393,16 @@ comdesc tecmds[] =
 /*
  * Implemented in clip.cpp (declaration in "clip.h"):
  */
-  { LE_CHAR,   teicharblk, CA_BLOCK|CA_CHANGE|CA_NEND }, /* tall cursor mode */
-  { LE_IC,     teicblock,  CA_BLOCK|CA_CHANGE|CA_NEND },
-  { LE_DC,     tedcblock,  CA_BLOCK|CA_CHANGE|CA_NEND },
-  { LE_CCHAR,  tecsblock,  CA_BLOCK          |CA_RPT  }, /* запомнить блок   */
-  { LE_CDCHAR, tesdblock,  CA_BLOCK|CA_CHANGE|CA_RPT  }, /* - и очистить     */
-  { TE_CLIN,   teclin,     CA_LCUT |          CA_NEND }, /* запомнить строку */
-  { TE_CDLIN,  tecdlin,    CA_LCUT |CA_CHANGE|CA_NEND }, /* - с удалением    */
-  { LE_PASTE,  cpaste,              CA_CHANGE         }, /* вспомнить        */
-  { TE_TOCLIP, clipToCB,            0                 },
-  { TE_FROMCB, clipFromCB,          CA_CHANGE         },
+//+  { LE_CHAR,   teicharblk, CA_BLOCK|CA_CHANGE|CA_NEND }, /* tall cursor mode */
+//+  { LE_IC,     teicblock,  CA_BLOCK|CA_CHANGE|CA_NEND },
+//+  { LE_DC,     tedcblock,  CA_BLOCK|CA_CHANGE|CA_NEND },
+  { LE_CCHAR,  tecsblock,  CA_BLOCK       |CA_RPT  }, /* запомнить блок   */
+  { LE_CDCHAR, tesdblock,  CA_BLOCK|CA_MOD|CA_RPT  }, /* - и очистить     */
+  { TE_CLIN,   teclin,     CA_LCUT |       CA_NEND }, /* запомнить строку */
+  { TE_CDLIN,  tecdlin,    CA_LCUT |CA_MOD|CA_NEND }, /* - с удалением    */
+  { LE_PASTE,  cpaste,              CA_MOD         }, /* вспомнить        */
+  { TE_TOCLIP, clipToCB,            0              },
+  { TE_FROMCB, clipFromCB,          CA_MOD         },
 /*
  * Implemented in ud.c (declaration in "ud.h"), the same functions as in le.c
  */
@@ -435,7 +435,7 @@ int TeCommand (comdesc *cp)
   jmp_buf *nextexc, teenv; /* TODO: remove nextexc (no recursion anymore) */
   int x, rpt;
   if (cp->attr & CA_LCUT && Ttxt == LCtxt) return E_LCUT;
-  if (cp->attr & CA_CHANGE) {
+  if (cp->attr & CA_MOD) {
     if (Ttxt->txredit == TXED_YES) UndoMark = TRUE;
     else                           return E_CHANGE;
   }
@@ -452,8 +452,8 @@ int TeCommand (comdesc *cp)
               excptr = & teenv; if ((x = setjmp(teenv)) == 0) (*cp->cfunc)();
               excptr = nextexc; if  (x)                             return x;
 
-    if (cp->attr & CA_CHANGE) Ttxt->txstat |= TS_CHANGED;
-    if (qkbhin())                        return E_KBREAK;
+    if (cp->attr & CA_MOD) Ttxt->txstat |= TS_CHANGED;
+    if (qkbhin())                     return E_KBREAK;
   }
   return E_OK;
 }
