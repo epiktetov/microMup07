@@ -158,6 +158,11 @@ void leic2 (tchar lchar)        /* low-level character insert and char entry */
   if (tcharIsBlank(Lebuf[Lxre-1])) llmove(Lx, Lxre, 1, &lchar);
   else                                           exc(E_EDTEND);
 }
+void leic20 (tchar *buf, int len)
+{
+  if (lstrlen(len, Lebuf+Lxre-len) == 0) llmove(Lx, Lxre, len, buf);
+  else                                                exc(E_EDTEND);
+}
 void leLLCE (tchar lchar)
 {
   if (leARGmode == 1) { Lx = Lxle;   /* clear the line if fist key / command */
@@ -252,7 +257,7 @@ void ledword()   /* удалить слово и пробелы за ним (в�
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void ledlword()        /* удалить слово влево (очистить или схлопнуть текст) */
-{
+{                      /*         (если выделен блок => схлопнуть его, te.c) */
   int saved_Lx = Lx; lepword();
   if (Lx < Lxle) Lx = Lxle;
   if (Lx < saved_Lx) {
@@ -369,18 +374,20 @@ void LenterARG(tchar *buf, int *bufLen, /* buffer for argument & its length  */
                          int opt_flag)  /* allowed options (st/wc/re//ic/cs) */
 {
   if (Atxt == NIL) { Atxt = TxNew(TRUE); Atxt->txstat |= TS_PERM+TS_PSEUDO; }
-  TxEmpt(Atxt);
-  Lleng = *bufLen; blktmov (buf,  Lebuf,         Lleng);
-                   blktspac(Lebuf+Lleng, MAXLPAC-Lleng);
-  Lwnd    = Twnd;
-  Ltxt    = Atxt;                Ly = Ty;
-  Lredit  = TRUE;  Lxlm = Lxle = Lx = promLen;
-  Lchange = FALSE; Lxrm = Lxre = MAXTXRM;
-  leARGmode = 1;       leResARG    = buf;
-  leHistory = history; leResARGlen = bufLen;
-  leRetCode = kbcode;  leKBCode[0] = do_on_CR;
-                       leKBCode[1] = do_on_RCR; 
-  if (opt_flag) {
+  TxEmpt(Ltxt = Atxt);
+  Lwnd    = Twnd;                Ly = Ty;      leResARG    = buf;
+  Lredit  = TRUE;  Lxlm = Lxle = Lx = promLen; leResARGlen = bufLen;
+  Lchange = FALSE; Lxrm = Lxre = MAXTXRM;      leKBCode[0] = do_on_CR;
+                          leARGmode =  1;      leKBCode[1] = do_on_RCR;
+                          leHistory = history; leRetCode   = kbcode;
+  if (BlockMark) {
+    if (BlockTy == Ty) { int len = Block1move(buf+promLen, MAXLPAC-promLen);
+                         *bufLen = Lx =       len+promLen;      leARGmode++; }
+    scblkoff();                                          // ^
+  }                                                      // block selected =>
+  Lleng = *bufLen; blktmov (buf,  Lebuf,         Lleng); //  copy the contents
+                   blktspac(Lebuf+Lleng, MAXLPAC-Lleng); // (only when 1-line)
+  if (opt_flag) {                                        //  + always unselect
     switch (Lebuf[1] & AT_CHAR) {
     case 's': leOptMode = LeARG_STANDARD; break;
     case 'r': leOptMode = LeARG_REGEXP;   break;
@@ -389,7 +396,8 @@ void LenterARG(tchar *buf, int *bufLen, /* buffer for argument & its length  */
     leOptFlags = opt_flag;           laSetOption(leOptMode);
     if ((Lebuf[4] & AT_CHAR) == 'i') laSetOption(LeARG_IGNORECASE);
   }
-  else leOptMode = LeARG_STANDARD;   redrawLwnd();   exc(E_LENTER);
+  else { leOptFlags = 0; leOptMode = LeARG_STANDARD; }
+  redrawLwnd();                       exc(E_LENTER);
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static void laToggle (int option)
@@ -425,10 +433,10 @@ static void LeHistorySelect (int delta)
 
   if (0 <= cPos && cPos < LE_HISTORY_SIZE && leHistory[cPos]) {
     int len = *leHistory[cPos];
-    Lleng = Lxle + len;
-    blktmov(leHistory[cPos]+1, Lebuf+Lxle, len);
-    blktspac(Lebuf+Lleng, MAXLPAC-Lleng);
-    if (Lleng > Lxle) {
+    Lleng = Lxle + len;                          // Restore search mode from
+    blktmov(leHistory[cPos]+1, Lebuf+Lxle, len); // history string only when
+    blktspac(Lebuf+Lleng, MAXLPAC-Lleng);        // modes are allowed (Find)
+    if (leOptFlags && Lleng > Lxle) {            //
            if (Lebuf[Lxle] & AT_PROMPT) laSetOption(LeARG_WILDCARD);
       else if (Lebuf[Lxle] & AT_REGEX)  laSetOption(LeARG_REGEXP);
       else                              laSetOption(LeARG_STANDARD);
@@ -487,21 +495,21 @@ comdesc lecmds[] =
   { LE_HCHAR1, lehchar1, CA_EXT|CA_LinMOD|CA_NEND }, /* ins: LeSCH_REPL_END  */
   { LE_HCHAR2, lehchar2, CA_EXT|CA_LinMOD|CA_NEND }, /* ins: LeSCH_REPL_BEG  */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-  { LE_NWORD,  lenword,                CA_NEND }, /* на следующее слово      */
-  { LE_PWORD,  lepword,                CA_NBEG }, /* на предыдущее слово     */
-  { LE_MWORD,  lemark_word,     CA_RPT         }, /* выделить текущее слово  */
-  { LE_DWORD,  ledword,      CA_LinMOD|CA_NEND }, /* удалить слово справа    */
-  { LE_DLWORD, ledlword,        CA_MOD|CA_NBEG }, /* удалить слово влево     */
-  { LE_CENTRX, lecentrx, CA_RPT|CA_MOD         }, /* центрировать строку     */
-  { LE_RINS,   lerins,   0                     }, /* режим вставки           */
-  { LE_RREP,   lerrep,   0                     }, /* режим замены            */
-  { LE_CCUP,   leccup,          CA_MOD|CA_NEND }, /* -> прописная            */
-  { LE_CCDWN,  leccdwn,         CA_MOD|CA_NEND }, /* -> строчная             */
-  { LE_CWDEC,  lecwdec,  CA_RPT|CA_MOD         }, /* word -> decimal         */
-  { LE_CWHEX,  lecwhex,  CA_RPT|CA_MOD         }, /* word -> hex             */
-  { LE_CBOLD,  lecbold,         CA_MOD|CA_NEND }, /* сделать жирным          */
-  { LE_MOVRIGHT, lemovright,    CA_MOD|CA_NEND }, /* сдвинуть вправо         */
-  { LE_MOVLEFT,  lemovleft,     CA_MOD|CA_NBEG }, /* сдвинуть влево          */
+  { LE_NWORD,  lenword,                 CA_NEND }, /* на следующее слово     */
+  { LE_PWORD,  lepword,                 CA_NBEG }, /* на предыдущее слово    */
+  { LE_MWORD,  lemark_word,      CA_RPT         }, /* выделить текущее слово */
+  { LE_DWORD,  ledword,       CA_LinMOD|CA_NEND }, /* удалить слово справа   */
+  { LE_DLWORD, ledlword,CA_BLOCK|CA_MOD|CA_NBEG }, /* удалить слово влево    */
+  { LE_CENTRX, lecentrx,  CA_RPT|CA_MOD         }, /* центрировать строку    */
+  { LE_RINS,   lerins,    0                     }, /* режим вставки          */
+  { LE_RREP,   lerrep,    0                     }, /* режим замены           */
+  { LE_CCUP,   leccup,           CA_MOD|CA_NEND }, /* -> прописная           */
+  { LE_CCDWN,  leccdwn,          CA_MOD|CA_NEND }, /* -> строчная            */
+  { LE_CWDEC,  lecwdec,   CA_RPT|CA_MOD         }, /* word -> decimal        */
+  { LE_CWHEX,  lecwhex,   CA_RPT|CA_MOD         }, /* word -> hex            */
+  { LE_CBOLD,  lecbold,          CA_MOD|CA_NEND }, /* сделать жирным         */
+  { LE_MOVRIGHT, lemovright,     CA_MOD|CA_NEND }, /* сдвинуть вправо        */
+  { LE_MOVLEFT,  lemovleft,      CA_MOD|CA_NBEG }, /* сдвинуть влево         */
 /*
  * Only works for leARGmode (do not process unless leARGmode):
  */
@@ -537,11 +545,11 @@ comdesc lequitcmd[] =
   { TK_NONE, lequit, CA_LEARG }       /* any non-LE command in ArgEnter mode */
 };
 comdesc *Ldecode (int kcode)  /*- - - - - - - - - - - - - - - - - - - - - - -*/
-{
-  if (Mk_IsCHAR(kcode)) kcode = LE_CHAR; // return lecmds;
-  comdesc *cp;
-  for (cp = lecmds; cp->cfunc; cp++) {
-    if ((int)cp->mi_ev == kcode) {
+{                                        // for LE, attribute CA_BLOCK marks
+  if (Mk_IsCHAR(kcode)) kcode = LE_CHAR; // commands that are NOT processed
+  comdesc *cp;                           // here when block is selected (but
+  for (cp = lecmds; cp->cfunc; cp++) {   // should be passed to TE instead)
+    if ((int)cp->mi_ev == kcode) {       //
       if ((cp->attr & CA_BLOCK) && BlockMark ) return NIL;
       if ((cp->attr & CA_LEARG) && !leARGmode) return NIL;
       else                                     return cp;

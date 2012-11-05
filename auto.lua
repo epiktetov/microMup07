@@ -90,6 +90,8 @@ function Mk2html(Tx)        -- convert MicroMir text (with ʁboldʀ etc) to HTML
     line = line:gsub(">","&gt;")
     line = line:gsub("\202\129(.-)\202\128","<b>%1</b>") -- bold
     line = line:gsub("\202\129(.+)","<b>%1</b>")
+    line = line:gsub("\202\130(.-)\202\128","%1") -- prompt
+    line = line:gsub("\202\136(.-)\202\128","%1") -- super (sky blue chars)
     Hx:IL(line.."<br>")
   end
   Hx:IL[[</font></span>]]

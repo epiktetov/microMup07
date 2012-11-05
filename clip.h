@@ -26,11 +26,12 @@ void clipToCB(), clipFromCB();       /* forced to/from clipboard operation   */
 void teclin(), tecdlin();            /* te "copy line" and "copy & delete"   */
 void tecsblock(),                    /*          "character save" for blocks */
      tesdblock(),                    /*  save & delete / collapse for blocks */
-     teclrblock();                   /* clear the block                      */
+     teclrblock(), tedelblock();     /* clear / delete (collapse) the block  */
 extern txt *LCtxt;                   /* Текст-хранилище строк (just in case) */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 int  Block1size (int *x0, int *x1);  /* <- Return 1-line block size (+x0/x1) */
 bool BlockXYsize(int *dx, int *dy);  /*   0 if no block, exc() if multi-line */
+int  Block1move(tchar *b, int max);
 /*---------------------------------------------------------------------------*/
 #ifdef __cplusplus
 }

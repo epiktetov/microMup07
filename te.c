@@ -393,11 +393,9 @@ comdesc tecmds[] =
 /*
  * Implemented in clip.cpp (declaration in "clip.h"):
  */
-//+  { LE_CHAR,   teicharblk, CA_BLOCK|CA_CHANGE|CA_NEND }, /* tall cursor mode */
-//+  { LE_IC,     teicblock,  CA_BLOCK|CA_CHANGE|CA_NEND },
-//+  { LE_DC,     tedcblock,  CA_BLOCK|CA_CHANGE|CA_NEND },
   { LE_CCHAR,  tecsblock,  CA_BLOCK       |CA_RPT  }, /* запомнить блок   */
   { LE_CDCHAR, tesdblock,  CA_BLOCK|CA_MOD|CA_RPT  }, /* - и очистить     */
+  { LE_DLWORD, tedelblock, CA_BLOCK|CA_MOD|CA_RPT  }, /* схлопнуть блок   */
   { TE_CLIN,   teclin,     CA_LCUT |       CA_NEND }, /* запомнить строку */
   { TE_CDLIN,  tecdlin,    CA_LCUT |CA_MOD|CA_NEND }, /* - с удалением    */
   { LE_PASTE,  cpaste,              CA_MOD         }, /* вспомнить        */

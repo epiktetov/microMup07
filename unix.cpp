@@ -208,15 +208,16 @@ void tmshell (int kcode)
   TxDown(Ttxt);
   shellexec(Ttxt, Tx, Ty, cmdbuffer, Twnd); tmCheckFiles();
 }
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-int tmGrep (int kcode)                                               /* grep */
-{
-  QString grep_command = "grep ";                     tesParse();
-       if (leOptMode & LeARG_STANDARD) grep_command.append("-F");
-  else if (leOptMode & LeARG_REGEXP)   grep_command.append("-E");
-  else return -1;
-  if (leOptMode & LeARG_IGNORECASE) grep_command.append("i");
-                                    grep_command.append("n '");
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - grep - - */
+int tmGrep (int kcode)
+{                                                 // neither POSIX nor GNU grep
+  QString grep_command = "grep ";                 //  support wildcard searches
+       if (leOptMode & LeARG_WILDCARD) return -1; //
+  else if (leOptMode & LeARG_REGEXP) grep_command.append("-E");
+  else                               grep_command.append("-F");
+  if  (leOptMode & LeARG_IGNORECASE) grep_command.append("i");
+                                     grep_command.append("n '");
+  tesParse();
   if (spl <= 0) return -1;
   tchar *tcmd = tcmdbuffer + tcmdpromptlen;
   tcmd += qstr2tcs(grep_command, tcmd);

@@ -88,9 +88,9 @@ a_(TM_VFORK,   "Meta+F11", 0xc103d) /*        же самым содержимы
 a_(TM_VFORK,   "Ctrl+[+]", 0xc103d) /*                            */
 k_(TM_HFORK,   "Meta+-",   0xc102d) /* поделить окно пополам      */
 a_(TM_HFORK,   "Ctrl+[-]", 0xc102d) /*                            */
-k_(TM_FENTR,   "Meta+Del", 0xc1007) /* ввести имя и войти         */
-a_(TM_FENTR,   "Meta+F12", 0xc1007) /*           в указанный файл */
-a_(TM_FENTR,   "Ctrl+[*]", 0xc1007) /*                            */
+k_(TM_FENTR,   "Meta+Del", 0xf1007) /* ввести имя и войти         */
+a_(TM_FENTR,   "Meta+F12", 0xf1007) /*           в указанный файл */
+a_(TM_FENTR,   "Ctrl+[*]", 0xf1007) /*                            */
 k_(TM_F1ENTR,        NULL, 0xc10f1) /* в том же окне:      Return */
 k_(TM_F2ENTR,        NULL, 0xc10f2) /* в новом окне: Shift+Return */
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -193,7 +193,7 @@ k_(LE_DC,     "Del",          0xf4007) /*    удалить символ под 
 k_(TE_IL,     "Shift+Ins",       0xc4206) /* вставить пустую строку          */
 k_(TE_DL,     "Shift+Del",       0xf4207) /* удалить текущую строку          */
 k_(LE_BS,           "Backspace", 0xf4003) /* удалить/очистить символ слева   */
-k_(LE_DLWORD, "Shift+Backspace", 0xc4203) /* удалить слово влево от курсора  */
+k_(LE_DLWORD, "Shift+Backspace", 0xf4203) /* удалить слово влево от курсора  */
 k_(LE_DEOL,   "Ctrl+D",          0xf4444) /* - конец строки за курсором      */
 k_(LE_DBGOL,  "Ctrl+U",          0xf4455) /* - начало строки до курсора      */
 k_(LE_DWORD,  "Ctrl+Q",          0xf4451) /* - слово справа и пробелы за ним */
@@ -279,12 +279,12 @@ selected when entering search/replace pattern.
   Ctrl+B == Ctrl+      End - replace (if matches) or search down (if not)
             Ctrl+Shift+End - replace (if matches) or search up (if not)
 */
-k_(TE_SENTR,        "Home,End", 0xc6811) /* ввод подстроки поиска и замены   */
-a_(TE_SENTR,          "Meta+F", 0xc6811) /*    (Return или End - поиск вниз, */
-a_(TE_SENTR,          "Ctrl+F", 0xc6811) /*            +Shift - поиск вверх) */
+k_(TE_SENTR,        "Home,End", 0xf6811) /* ввод подстроки поиска и замены   */
+a_(TE_SENTR,          "Meta+F", 0xf6811) /*    (Return или End - поиск вниз, */
+a_(TE_SENTR,          "Ctrl+F", 0xf6811) /*            +Shift - поиск вверх) */
 k_(LE_HCHAR0,         "Ctrl+,", 0xf642c) /*                                  */
 k_(LE_HCHAR1,         "Ctrl+/", 0xf642f) /* начало списка файлов (для grep)  */
-k_(LE_HCHAR2,         "Ctrl+.", 0xf642e) /* начало подстроки замены          */
+k_(LE_HCHAR2,         "Ctrl+.", 0xf642e) /* ('>') начало подстроки замены    */
 k_(LA_STDMODE,        "Ctrl+6", 0xc6436) /*               | стандартный ‹st› */
 k_(LA_REMODE,         "Ctrl+7", 0xc6437) /* Режим поиска: | regexp      ‹re› */
 k_(LA_WCMODE,         "Ctrl+8", 0xc6438) /*               | wildcards   ‹wx› */
@@ -297,11 +297,11 @@ k_(TE_RUP,    "Ctrl+Shift+End", 0xc6611) /* замена/поиск вверх *
 k_(TE_RDOWN,  "Ctrl+End",       0xc6411) /* замена/поиск вниз  */
 a_(TE_RDOWN,  "Ctrl+B",         0xc6411)
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-k_(TE_GENTR,  "Meta+Ctrl+F",    0xc6511) /* глобальный поиск (grep, по всем  */
-a_(TE_GENTR,  "Meta+Ctrl+End",  0xc6511) /*                файлам из списка) */
-a_(TE_GENTR,  "Meta+End",       0xc6511) /* искать                           */
-k_(TM_GREP,              NULL,  0xc65f1) /*   в том же окне:          Return */
-k_(TM_GREP2,             NULL,  0xc65f2) /*   в новом окне:     Shift+Return */
+k_(TE_GENTR,  "Meta+Ctrl+F",    0xf6511) /* глобальный поиск (grep, по всем  */
+a_(TE_GENTR,  "Meta+Ctrl+End",  0xf6511) /*                файлам из списка) */
+a_(TE_GENTR,  "Meta+End",       0xf6511) /* искать                           */
+k_(TM_GREP,              NULL,  0xf65f1) /*   в том же окне:          Return */
+k_(TM_GREP2,             NULL,  0xf65f2) /*   в новом окне:     Shift+Return */
 /*
 ʁSecond MicroMir principle:ʀ text is moved around using copy / paste buffer, with
 basic operations being "add something to the buffer" and "paste the buffer into
@@ -330,7 +330,7 @@ k_(LE_CWORD,        "F2", 0xc7031) /* запомнить текущее слов
 k_(LE_CDWORD, "Shift+F2", 0xc7231) /* - - текущее слово с удалением         */
 k_(TE_CLIN,         "F3", 0xc7032) /* добавить строку в буфер ("запомнить") */
 k_(TE_CDLIN,  "Shift+F3", 0xc7232) /* - - запомнить строку с удалением      */
-k_(LE_PASTE,        "F4", 0xc7033) /* вспомнить все запомненное             */
+k_(LE_PASTE,        "F4", 0xf7033) /* вспомнить все запомненное             */
 /*
   Ctrl/Meta+C - save selection (if any), and force copy to system clipboard
   Ctrl/Meta+V - paste from system clipboard
@@ -374,6 +374,7 @@ text instead of current character, namely:
         F1 (Ctrl/Meta+C) - add selected text to copy/paste buffer
   Shift+F1               - save selection and delete from text
   Shift+Del              - clear the text covered by selection rectangle
+  Shift+Backspace        - remove the selected area from text (collapse)
 
 If the selection is one character wide, then most line editing commands work on
 all lines affected, for example:
@@ -427,7 +428,17 @@ text that have name of other file included: just move cursor to that name, then
 press Esc <down> (the name should be separated from surrounding text by spaces,
 commas or quotes - if is't not, you'll need to use block selection to mark it)
 
-Special ʁFILESʀ (MacOS X/Linux only):
+ In that case MicroMir searches for the file in stadard locations for includes
+ (/usr/local/include and /usr/include on Linux and MacOS X) and then in places
+ specified by 'incdris' lines at the bottom on 'micros.dir' -- those lines are
+ iserted by Shift+Ins while at the very bottom of the file, and have protected
+ prefix and optional platform restriction, for example:
+
+  ʂincdirs»ʀ(unix)/usr/include/lua5.2 -- search in this directory on Linux only
+  ʂincdirs»ʀ(win32)../lua/include     -- search there only on Windows
+  ʂincdirs»ʀinclude,../include        -- search both folders on all platforms
+
+Special ʁFILESʀ (Linux and MacOS X only):
 
   filename:git:rev == filename::rev - file revision from given git commit
   filename:gitlog[options]          - list of revisions, from 'git log'
@@ -451,8 +462,9 @@ k_(TE_SRO, "Ctrl+Shift+Del", 0xca507) /* установить режим про�
 /*
 ʁREPETITION:ʀ Esc,N - enter repetition counter (or argument) for the next command
                               where N is either ddd decimal number like   126
-For example:                                   0ddd octal number such as 0176
-                                               xddd hexadecimal number    x7e
+                                               0ddd octal number such as 0176
+For example:                                   xddd hexadecimal number    x7e
+                                             or 'i' --> 2147483647 (infinity)
   Esc,3,Shift+Del - delete 3 lines
   Esc,5,*         - same as typing ***** (insert/replace depending on the mode)
   Esc,N,Alt+Ins      - insert character with given Unicode number
@@ -527,7 +539,7 @@ NOTE:
   Tx:DL(N) -- delete N lines at cursor (default = 1)
   Tx:gtl() -- get-text-left convenience method = gets first chunk of non-spaces
                                        from text to the left of cursor position
-[line 530] xref: new.lua
+[line 542] xref: new.lua
 
   re = Re("..regex..",true/false) -- regular expression (arg: case sensitivity,
   re = Re[[..regex..]]                                default = case-sensitive)
@@ -595,7 +607,7 @@ k_(TK_NONE,   NULL,     0xce000) /* None command */
 k_(TK_BREAK,  "Ctrl+A", 0xce441)
 k_(TK_CHARK,  "Ctrl+K", 0xce44b)
 k_(TK_LINFO,  "Ctrl+L", 0xce44c)
-k_(TM_SHELL,  "Ctrl+Y", 0xce459) /* ввести и выполнить команду shell         */
+k_(TM_SHELL,  "Ctrl+Y", 0xfe459) /* ввести и выполнить команду shell         */
 k_(TM_FEXEC,  NULL,     0xceef1) /* в том же окне:                    Return */
 k_(TM_F2EXEC, NULL,     0xceef2) /* в новом окне:               Shift+Return */
 /*

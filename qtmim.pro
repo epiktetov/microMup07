@@ -9,8 +9,8 @@ macx {
   QMAKE_INFO_PLIST = mim.Info.plist
   QMAKE_PKGINFO_TYPEINFO = "~epi"
 } else:unix {
-  INCLUDEPATH += /usr/include/lua5.1
-  LIBS += -llua5.1 # explicit version on Linux, locally built one everywhere
+  INCLUDEPATH += /usr/include/lua5.2
+  LIBS += -llua5.2 # explicit version on Linux, locally built one everywhere
   QtPLATF = unix
 } else:win32 {
   INCLUDEPATH += ../lua/include

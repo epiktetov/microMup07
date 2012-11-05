@@ -95,8 +95,8 @@ void lecdchar() { CSsave1(Lx,   1, false); leDC(); }  /* le "copy & delete"  */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static int CSsaveW()                                  /* Save word at cursor */
 {
-  int xl, xr; if (!leNword(&xl, NULL, &xr)) exc(E_NOOP);
-                  CSsave1(xl, xr-xl, true);   return xr;
+  int xr; if (! leNword(&Lx, NULL, &xr)) exc(E_NOOP);
+          CSsave1(Lx, xr-Lx, true);        return xr;
 }
 void lecword()  { Lx = CSsaveW();            }    /* le "copy word"          */
 void lecdword() {      CSsaveW(); ledword(); }    /* le "copy & delete word" */
@@ -171,6 +171,13 @@ static bool fromClipboard()                          /* Get data from system */
   cpempt = false; LCtxt->txstat |= TS_CHANGED; return true;
 }
 static void clearClipboard() { theClipboard->clear(); cb_new_data = 0; }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+void clipToCB()                       /* forced to/from clipboard operations */
+{
+  if (BlockMark) tecsblock(); // save the block only if one currently selected
+               toClipboard(); // but copy c/p buffer into clipboard regardless
+}
+void clipFromCB() { fromClipboard(); cpaste(); }
 /*---------------------------------------------------------------------------*/
 static void pasteFromLCtxt (bool in_Ttxt) /* paste into Ttxt or current line */
 {
@@ -196,6 +203,11 @@ static void pasteFromLCtxt (bool in_Ttxt) /* paste into Ttxt or current line */
     cclen = 0;                        Lchange = TRUE; // cleanup in leARGmode
 } }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+static void pasteFromClbuf()      /* called from cpaste through tallblockop, */
+{                                 /*   data already loaded into clbuf[cclen] */
+  leic20(ccbuf, cclen); Lx += cclen;
+}
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void cpaste()                              /* Paste: called either from te.c */
 {                                          /*                   or from le.c */
   if (!cpopen || cpempt) {                 /* so have to work in any LE mode */
@@ -208,9 +220,20 @@ void cpaste()                              /* Paste: called either from te.c */
   cpclose(); TxTop(LCtxt); if (qTxBottom(LCtxt)) return;
 //
 // In entering-argument mode, paste only the content of first line (disabling
-// full-line paste) and silently ignore the rest:
+// full-line paste) and silently ignore the rest; the same when block selected
+// (only when it is 1-character wide, "tall cursor" mode)
 //
-  if (leARGmode) pasteFromLCtxt(false);
+       if (leARGmode) pasteFromLCtxt(false);
+  else if (BlockMark) {
+    if (BlockTx != Tx) exc(E_BLOCKOUT);
+    else {
+      static comdesc cpPaste = { LE_PASTE, pasteFromClbuf, 0 };
+      int len = TxRead(LCtxt, clbuf);
+      if (len == 0) return;
+      if (clbuf[0] == CpSCH_NEW_LINE) cclen = aftotc(clbuf+1, len-1, ccbuf);
+      else                            cclen = aftotc(clbuf,   len,   ccbuf);
+      tallblockop(&cpPaste);
+  } }
   else {
     pasteFromLCtxt(true);     // First stored line may be pasted either as line
     while(!qTxBottom(LCtxt)){ // or as characters, exit LE mode for the rest of
@@ -229,8 +252,8 @@ static void make_blkXYsize()           // selection of words more usable)
   if (BlockTx < Tx)
        { blkXmin = BlockTx; blkXmax = (blkYmin == blkYmax) ? Tx-1 : Tx; }
   else { blkXmin = Tx;      blkXmax = BlockTx;                          }
-  blkXsize = blkXmax-blkXmin+1;
-  blkYsize = blkYmax-blkYmin+1;
+  blkXsize = blkXmax-blkXmin+1; //
+  blkYsize = blkYmax-blkYmin+1; // both blkXsize and blkYsize always > 0
 }
 int Block1size (int *x0, int *x1) /*- - - - - - - - - - - - - - - - - - - - -*/
 {                                                       // does not return any
@@ -238,6 +261,12 @@ int Block1size (int *x0, int *x1) /*- - - - - - - - - - - - - - - - - - - - -*/
     make_blkXYsize(); *x0 = blkXmin;                    // taller than one line
                       *x1 = blkXmax+1; return blkXsize;
   } else                               return        0;
+}
+int Block1move (tchar *buf, int maxLen)
+{
+  int x0,x1,len = Block1size(&x0,&x1); if (len > maxLen) len = maxLen;
+  TxSetY (Ttxt, Ty);
+  TxFRead(Ttxt, Lebuf); blktmov(Lebuf+x0, buf, len);       return len;
 }
 bool BlockXYsize (int *dx, int *dy) /*- - - - - - - - - - - - - - - - - - - -*/
 {
@@ -262,17 +291,14 @@ void tallblockop (comdesc *cp)             /* "tall cursor" block operations */
   if (cp->mi_ev == LE_CHAR) Tx++; // this trick because tleload resets the mark
   Ty = cTy;         BlockTx = Tx;
 }
-/*-----------------------------------------------------------------------------
- *   Запоминание блоков (и очистка):
- */
-#define C_NONE   0 /* Просто запомнить                                       */
-#define C_DELETE 1 /* Запомнить с удалением (схлопыванием)                   */
-#define C_CLEAR  2 /* Запомнить с очисткой                                   */
+/*---------------------------------------------------------------------------*/
+#define C_NONE   0 /* Запоминание блоков (и очистка): - просто запомнить     */
+#define C_DELETE 1 /* - запомнить с удалением (схлопыванием)                 */
+#define C_CLEAR  2 /* - запомнить с очисткой                                 */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static void gblockcut (int op)
 {
-  int y, trm = my_min(Ttxt->txrm, MAXTXRM);  make_blkXYsize();
-  if (blkXsize == 0) exc(E_NOOP);
+  int y, trm = my_min(Ttxt->txrm, MAXTXRM); make_blkXYsize();
   for (y = blkYmin; y <= blkYmax; y++) {
     TxSetY(Ttxt, y);
     Lleng = TxFRead(Ttxt, Lebuf);
@@ -290,19 +316,25 @@ static void gblockcut (int op)
 void tecsblock() { gblockcut(C_NONE);                          scblkoff(); }
 void tesdblock() { gblockcut(LeInsMode ? C_DELETE : C_CLEAR);  scblkoff(); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void teclrblock()
+void teclrblock()    /* clear the block (text not moved even in insert mode) */
 {
-  make_blkXYsize();     if (blkXsize == 0) exc(E_NOOP);
+  make_blkXYsize();
   for (int y = blkYmin; y <= blkYmax; y++) {
     TxSetY(Ttxt, y);
     Lleng = TxFRead(Ttxt, Lebuf); blktspac(Lebuf+blkXmin, blkXsize);
             TxFRep (Ttxt, Lebuf);
 } }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void clipToCB()                      /* forced to/from clipboard operation   */
+void tedelblock()  /* delete / collapse the block (even in replacement mode) */
 {
-  if (BlockMark) tecsblock(); // save the block only when 1 currently selected
-               toClipboard(); // but copy c/p buffer into clipboard regardless
-}
-void clipFromCB() { fromClipboard(); cpaste(); }
+  int y, trm = my_min(Ttxt->txrm, MAXTXRM); make_blkXYsize(); Tx = blkXmin;
+  for (y = blkYmin; y <= blkYmax; y++) {
+    TxSetY(Ttxt, y);
+    Lleng = TxFRead(Ttxt, Lebuf);
+    blktmov (Lebuf+blkXmax+1,  Lebuf+blkXmin, trm-blkXmax-1);
+    blktspac(Lebuf+(trm-blkXsize), blkXsize);
+    TxFRep(Ttxt, Lebuf);
+  }
+  scblkoff(); // unlike "clear" command this one always unmark the block (since
+}             // the text is collapsed, old selection does not make much sense)
 /*---------------------------------------------------------------------------*/

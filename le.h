@@ -30,17 +30,17 @@ bool leNword(int *cw_beg,   /* Найти (unless ptr=0): начало теку�
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void leIC(), ledword(),       /* некоторые команды (используются в clip.cpp) */
      leDC(), lepword();
-void leic2 (tchar lchar),
-     leLLCE(tchar lchar), ledeol();     /* low-level character insert/entry  */
+void leic2 (tchar lchar), leic20(tchar *buf, int len),     /* low-level char */
+     leLLCE(tchar lchar), ledeol();                        /* insert / entry */
 /*---------------------------------------------------------------------------*/
 void LenterARG(tchar *buf, int *bufLen, /* buffer for argument & its length  */
                            int promLen, /* len of prompt (in buffer already) */
           tchar **history, int *kbcode, /* place for history and return code */
           int do_on_CR,  int do_on_RCR, /* commands to execute on CR and RCR */
                          int opt_flag); /* allowed options (st/wc/re//ic/cs) */
-                                        /*                                   */
-#define LE_HISTORY_SIZE  8              /* assuming SDOWN == CR, SUP == RCR  */
-#define LeARG_STANDARD   1 /* Ctrl+6 ^                                       */
+                                        /* assuming SDOWN == CR, SUP == RCR  */
+#define LE_HISTORY_SIZE  8
+#define LeARG_STANDARD   1 /* Ctrl+6 ^ standard search mode (regular text)   */
 #define LeARG_REGEXP     2 /* Ctrl+7 & regular expressions, marked AT_SUBSCR */
 #define LeARG_WILDCARD   4 /* Ctrl+8 * wildcard search, marked with AT_LIGHT */
 #define LeARG_IGNORECASE 8 /* Ctrl+I i ignore case toggle (default is 'yes') */

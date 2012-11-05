@@ -150,7 +150,9 @@ void MkMimXEQ (int kcode, int modMask, QString text, wnd *vp)
   else {
     if (MkPrefix == "Esc" && !modMask) {
       QString info;
-           if (kcode == 'X') { KbRadix = 16; info = "(hex)";    KbCount = 0; }
+           if (kcode == 'I') { KbCount = 2147483647;
+                               KbRadix =  1; info = "(inf)";                 }
+      else if (kcode == 'X') { KbRadix = 16; info = "(hex)";    KbCount = 0; }
       else if (digit ==  0 ) { KbRadix =  8; info = "(oct)";    KbCount = 0; }
       else if (digit  >  0 ) { KbRadix = 10; info.setNum( KbCount = digit ); }
       if (KbRadix) {
