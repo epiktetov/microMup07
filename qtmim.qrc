@@ -7,5 +7,6 @@
   <file>auto.lua</file>
   <file>qtmim.png</file>
   <file>microMir.png</file>
+  <file alias="qt/etc/qt.conf">qt.conf</file>
 </qresource>
 </RCC>

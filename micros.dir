@@ -28,6 +28,7 @@ ViewPort (interface between wx/C++ and legacy C code) and some |vip.h
 ---------------------------------------------------------------|---------------
 Qt project file, adds microMir.icns micros.icns micons.psd etc |qtmim.pro
 Qt resource file adds micro.keys and other files to executable |qtmim.qrc
+Qt config file for MacOS (to ensure no foreign plugins loaded) |qt.conf
 Desktop file for Linux -- copy that to /usr/share/applications |qtmim.desktop
 Windows resource file, adds qtmim.ico                          |qtmim.rc
 Auto-loaded Lua scripts                                        |auto.lua
