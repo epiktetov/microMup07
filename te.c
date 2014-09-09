@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07    te = Text editor - Редактор текста     | (c) Epi MG, 2006-2012
+// МикроМир07    te = Text editor - Редактор текста     | (c) Epi MG, 2006-2014
 //------------------------------------------------------+--------------------*/
 #include "mic.h"          /* Old te.c (c) Attic 1989-96, (c) EpiMG 1998,2001 */
 #include "ccd.h"
@@ -410,8 +410,8 @@ comdesc tecmds[] =
   { TE_SUNUNDO, lesunundo, 0 }, /* "медленная" откатка откатки */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   { TE_SHBRAK,  SyntBrakToggle, CA_RPT }, /* toggle ShowBrak mode - synt.cpp */
-  { TE_BRAK0,   SyntLangOff,    CA_RPT }, /* выключить раскраску             */
-  { TE_BRAK9,   SyntLangOn,     CA_RPT }, /* включить (снова) раскраску      */
+  { TE_BRAKOFF, SyntLangOff,    CA_RPT }, /* выключить раскраску             */
+  { TE_BRAKON,  SyntLangOn,     CA_RPT }, /* включить (снова) раскраску      */
   { 0,0,0 }
 };
 comdesc *Tdecode (int kcode)  /*- - - - - - - - - - - - - - - - - - - - - - -*/

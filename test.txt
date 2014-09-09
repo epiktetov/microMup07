@@ -8,6 +8,8 @@ test,test,  test;test;  single[test]  double((test))
 Test ʁboldʀ test
 ʂepi/Dvlm/mim->ʀ sky ʈ>>>ʀ blue ʄredʀ normal
 
+AaàáâÄäБбBbвГгCcçDdДдEeèéêЁёFfЖжGgЗзHhIiíîïИиЙйJjKkкLlЛлMmмNnнÑñ
+OoóôÖöПпPpQqRrрSsßTtтUuùúûÜüVvWwXxYУyÿZzФфφЦцЧчШшЩщъЫыЬьЭэЮюЯяæœ
 ┌───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┐
 │~Ю`│!! │@@€│#ё‹│$$›│%%ﬁ│^^ﬂ│&&‡│**°│((·│))‚│_ъ │+Ь±│
 │`юè│11¡│22™│33£│44¢│55∞│66§│77¶│88•│99ª│00º│--–│=ь≠│

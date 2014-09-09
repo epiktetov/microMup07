@@ -1,4 +1,4 @@
-МикроМир07 © Attic 1989-91, © Epi MG, 1998-2012 -- keycodes -->|micro.keys
+МикроМир07 © Attic 1989-91, © Epi MG, 1998-2014 -- keycodes -->|micro.keys
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -|- - - - - - - -
 Самый главный header файл, to be included the first everywhere |mic.h
 Main Header + Scrollable Text Window (ScTwin) class / C++ only |mim.h
@@ -57,6 +57,7 @@ runtime (memory management and string manipulation functions)  |rt.c
 ---------------------------------------------------------------|---------------
 Keywords for various languages (Bash, C/C++, Perl, Python)     |keywords.txt
                                                                |test.txt
+abc (encoding tables), to be referenced as ":/abc" (read-only) |abc
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -|- - - - - - - -
 ʂincdirs»ʀ(macx)/Library/Frameworks/QtCore.framework/Versions/4/Headers
 ʂincdirs»ʀ(macx)/Library/Frameworks/QtGui.framework/Versions/4/Headers

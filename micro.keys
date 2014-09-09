@@ -3,7 +3,7 @@
  * ----------------------------------------------------------------------------
  * original "MicroMir" idea (c) А.Г.Кушниренко, Г.В.Лебедев (мехмат МГУ)   1981
  * "nanoMir" implementation (c) Attic (Д.В.Варсанофьев, А.Г.Дымченко) 1989-1991
- * "nanoMir" and МикроМир07 (c) EpiMG (М.Г.Эпиктетов)       1998-2001,2006-2012
+ * "nanoMir" and МикроМир07 (c) EpiMG (М.Г.Эпиктетов)       1998-2001,2006-2014
 -------------------------------------------------------------------------------
  Ins is "Help" key on MacPro keyboard, missing on A1243 (see KEY MAPPING below)
  Del is "Delete⌦" on Mac keyboard ("delete" key is Backspace)
@@ -11,7 +11,7 @@
  PgUp/PgDown on MacBook keyboard may be entered as Fn+Up/Fn+Down (modifiers Ok)
  Alt  == ⌥/option  key on Mac keyboard, Alt key elsewhere
  Meta == ⌘/command key on Mac keyboard, "WinKey" key on Windows-compatible one
-                             (in most cases, Meta+{x} has alias Ctrl+Numpad{x})
+                                (in all cases, Meta+{x} has alias without Meta)
 COMMAND LINE
      PARAMETERS:    mim filename    - start editing given file
                     mim filename:N: - start editing given file at line N
@@ -32,7 +32,7 @@ characters and cursor (current editing position) located on some character.
 
 ʁBASIC CURSORʀ    {arrows}    - move cursor one position in given direction
   ʁMOVEMENTʀ      Ctrl+Left   - move cursor to beginning of the line
-                Ctrl+Right  - move cursor to end of the line
+                Ctrl+Right  - move cursor to end of line (after last non-space)
        Alt+Up   / Alt+Down  - move cursor a few lines (1/6th of window) up/down
        Alt+Left / Alt+Right - move cursor word left/right
  ------------------------------------------------------------------------------
@@ -54,7 +54,7 @@ k_(LE_NWORD,  "Alt+Right",  0xd0814) /* -> следующее слово        
 Ctrl+PgUp/PgDown    - move cursor to very beginning / end of the document
 Ctrl+Up / Ctrl+Down - move continuously up/down (stop by any key)
 Ctrl+[  / Ctrl+]    - move cursor to left / right edge of the current window
-Meta+Ctrl+{arrows}  - scroll text in given direction (cursor moves over text,
+Ctrl+Shift+{arrows} - scroll text in given direction (cursor moves over text,
                       while remaining in the same position relative to window)
 */
 k_(TE_PPAGE,         "PgUp",       0xd0016) /* на страницу вверх         ..0 */
@@ -67,10 +67,10 @@ k_(LE_WLEFT,    "Ctrl+[",          0xd045b) /* в самую левую / пра
 k_(LE_WRIGHT,   "Ctrl+]",          0xd045d) /*                  позицию окна */
 k_(TW_SCROLUPN,     NULL,          0xd00fa) /* (mouse wheel                  */
 k_(TW_SCROLDNN,     NULL,          0xd00fd) /*        scrolling)             */
-k_(TW_SCROLLF,  "Meta+Ctrl+Left",  0xd1412)
-k_(TW_SCROLUP,  "Meta+Ctrl+Up",    0xd1413) /* NOTE: scoll up/down   */
-k_(TW_SCROLRG,  "Meta+Ctrl+Right", 0xd1414) /*  differs in 2nd LSB:  */
-k_(TW_SCROLDN,  "Meta+Ctrl+Down",  0xd1415) /*    ..1. up, ..0. down */
+k_(TW_SCROLLF,  "Ctrl+Shift+Left", 0xf1412)
+k_(TW_SCROLUP,  "Ctrl+Shift+Up",   0xf1413) /* NOTE: scoll up/down   */
+k_(TW_SCROLRG,  "Ctrl+Shift+Right",0xf1414) /*  differs in 2nd LSB:  */
+k_(TW_SCROLDN,  "Ctrl+Shift+Down", 0xf1415) /*    ..1. up, ..0. down */
 /*
 For window handling, MicroMir uses concept familiar to UNIX programmers: 'fork'
 (make a copy of the window) and 'replace file' (although this does not actually
@@ -81,29 +81,34 @@ replaces anything, it just pushes current text into stack like Esc <down> does)
   Meta+Del/F12      - ask for filename and enter that file (see FILES below)
 
   Meta+{arrow} - move cursor to closest window in given direction
-  Meta+Return  - SyncPos(tm) - open (in upper pane) file mentioned here
+  Meta+Return  - SyncPos(tm) - open file mentioned here in the upper pane
+  Meta+Shift+Return          - open file in the new window
+
+Note: for all commands in this section Meta is aliased to Ctrl+Alt
 */
-k_(TM_VFORK,   "Meta+=",   0xc103d) /* открыть новое окно с тем   */
-a_(TM_VFORK,   "Meta+F11", 0xc103d) /*        же самым содержимым */
-a_(TM_VFORK,   "Ctrl+[+]", 0xc103d) /*                            */
-k_(TM_HFORK,   "Meta+-",   0xc102d) /* поделить окно пополам      */
-a_(TM_HFORK,   "Ctrl+[-]", 0xc102d) /*                            */
-k_(TM_FENTR,   "Meta+Del", 0xf1007) /* ввести имя и войти         */
-a_(TM_FENTR,   "Meta+F12", 0xf1007) /*           в указанный файл */
-a_(TM_FENTR,   "Ctrl+[*]", 0xf1007) /*                            */
-k_(TM_F1ENTR,        NULL, 0xc10f1) /* в том же окне:      Return */
-k_(TM_F2ENTR,        NULL, 0xc10f2) /* в новом окне: Shift+Return */
+k_(TM_VFORK,   "Meta+=",       0xc103d) /* открыть новое окно с тем   */
+a_(TM_VFORK,   "Meta+F11",     0xc103d) /*        же самым содержимым */
+a_(TM_VFORK,   "Ctrl+Alt+=",   0xc103d) /*                            */
+a_(TM_VFORK,   "Ctrl+Alt+F11", 0xc103d) /*                            */
+k_(TM_HFORK,       "Meta+-",   0xc102d) /* поделить окно пополам      */
+a_(TM_HFORK,   "Ctrl+Alt+-",   0xc102d) /*                            */
+k_(TM_FENTR,   "Meta+Del",     0xf1007) /* ввести имя и войти         */
+a_(TM_FENTR,   "Meta+F12",     0xf1007) /*           в указанный файл */
+a_(TM_FENTR,   "Ctrl+Alt+Del", 0xf1007) /*                            */
+a_(TM_FENTR,   "Ctrl+Alt+F12", 0xf1007) /*                            */
+k_(TM_F1ENTR,            NULL, 0xc10f1) /* в том же окне:      Return */
+k_(TM_F2ENTR,            NULL, 0xc10f2) /* в новом окне: Shift+Return */
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-k_(TM_LWINDOW, "Meta+Left",   0xc1012) /* перейти к левому окну      */
-k_(TM_UWINDOW, "Meta+Up",     0xc1013) /* - к верхнему окну          */
-k_(TM_RWINDOW, "Meta+Right",  0xc1014) /* - к правому окну           */
-k_(TM_DWINDOW, "Meta+Down",   0xc1015) /* - к нижнему окну           */
-k_(TM_SYNCPOS, "Meta+Return", 0xc1004) /* Синхронизировать позицию:  */
-a_(TM_SYNCPOS, "Ctrl+Enter",  0xc1004) /*    открыть в соседнем окне */
-a_(TM_LWINDOW, "Ctrl+[4]",    0xc1012) /*    упомянутый здесь файл и */
-a_(TM_UWINDOW, "Ctrl+[8]",    0xc1013) /*    перейти в указанную тут */
-a_(TM_RWINDOW, "Ctrl+[6]",    0xc1014) /*    строку -- работает для: */
-a_(TM_DWINDOW, "Ctrl+[2]",    0xc1015) /* grep, (uni)diff, compilers */
+k_(TM_LWINDOW,     "Meta+Left",   0xc1012) /* перейти к левому окну      */
+k_(TM_UWINDOW,     "Meta+Up",     0xc1013) /* - к верхнему окну          */
+k_(TM_RWINDOW,     "Meta+Right",  0xc1014) /* - к правому окну           */
+k_(TM_DWINDOW,     "Meta+Down",   0xc1015) /* - к нижнему окну           */
+k_(TM_SYNCPOS,     "Meta+Return", 0xc1004) /* Синхронизировать позицию:  */
+a_(TM_SYNCPOS, "Ctrl+Alt+Return", 0xc1004) /*    открыть в соседнем окне */
+a_(TM_LWINDOW, "Ctrl+Alt+Left",   0xc1012) /*    упомянутый здесь файл и */
+a_(TM_UWINDOW, "Ctrl+Alt+Up",     0xc1013) /*    перейти в указанную тут */
+a_(TM_RWINDOW, "Ctrl+Alt+Right",  0xc1014) /*    строку -- работает для: */
+a_(TM_DWINDOW, "Ctrl+Alt+Down",   0xc1015) /* grep, (uni)diff, compilers */
 /*
 As a consequence of First Principle, Return & Tab keys do not insert any symbol
 into text, but instead work as cursor movement commands (there are commands for
@@ -209,25 +214,20 @@ both should be pressed and released before the next key (unlike Shift/Ctrl/…)
                                                        |like█  <-> |like█this
   Home,Ins - split the line vertically                 |this       |
   Home,Del - join back:  +---------     +----------
-                         |like█     <-> |like█that       (both join commands
-                         |     that     |                 discard text right
-  Meta+Shift+{arrow} or                                   of cursor position)
-  Ctrl+Shift+Numpad{arrows}
+                         |like█     <-> |like█that         (both join commands
+                         |     that     |                   discard text right
+  Alt+Shift+{arrows}                                        of cursor position)
     move selected text (or from cursor to end of the line)
     in given direction, overwriting whatever it moves over
 */
-k_(TE_BLIN,     "Home,Return",      0xc5804) /* разрезать строку в начало    */
-k_(TE_SLIN,     "Home,Ins",         0xc5806) /* разрезать строку вертикально */
-k_(TE_NBLIN,    "Home,Backspace",   0xc5803) /* склеить строки               */
-k_(TE_NSLIN,    "Home,Del",         0xc5807) /* склеить строки вертикально   */
-k_(LE_MOVLEFT,  "Meta+Shift+Left",  0xf5312)
-a_(LE_MOVLEFT,  "Ctrl+Shift+[4]",   0xf5312)
-k_(TE_MOVUP,    "Meta+Shift+Up",    0xf5313) /* перетаскивание  */
-a_(TE_MOVUP,    "Ctrl+Shift+[8]",   0xf5313) /*  текста вместе  */
-k_(LE_MOVRIGHT, "Meta+Shift+Right", 0xf5314) /*      с кусором  */
-a_(LE_MOVRIGHT, "Ctrl+Shift+[6]",   0xf5314)
-k_(TE_MOVDOWN,  "Meta+Shift+Down",  0xf5315)
-a_(TE_MOVDOWN,  "Ctrl+Shift+[2]",   0xf5315)
+k_(TE_BLIN,     "Home,Return",     0xc5804) /* разрезать строку в начало    */
+k_(TE_SLIN,     "Home,Ins",        0xc5806) /* разрезать строку вертикально */
+k_(TE_NBLIN,    "Home,Backspace",  0xc5803) /* склеить строки               */
+k_(TE_NSLIN,    "Home,Del",        0xc5807) /* склеить строки вертикально   */
+k_(LE_MOVLEFT,  "Alt+Shift+Left",  0xf5312)
+k_(TE_MOVUP,    "Alt+Shift+Up",    0xf5313) /* перетаскивание  */
+k_(LE_MOVRIGHT, "Alt+Shift+Right", 0xf5314) /*  текста вместе  */
+k_(TE_MOVDOWN,  "Alt+Shift+Down",  0xf5315) /*      с кусором  */
 /*
 Rudimental text formatting:
 
@@ -266,7 +266,7 @@ expression one (see http://qt-project.org/doc/qt-4.8/QRegExp.html); the mode is
 selected when entering search/replace pattern.
 
   Ctrl/Meta+F = Home End - edit search/replace pattern (start search by Return)
-  Meta[+Ctrl]+End        - edit search pattern for 'grep' (MacOS X/Linux only)
+  Ctrl+Alt+F  = Meta+End - edit search pattern for 'grep' (MacOS X/Linux only)
         Ctrl+. (>)       - insert light blue 'ʈ>ʀ' (marks start of replacement)
         Ctrl+/           - insert light blue 'ʈ/ʀ' (start of filelist for 'grep')
         Ctrl+6 (^) - standard (text mode) search          ‹st·--›
@@ -297,11 +297,11 @@ k_(TE_RUP,    "Ctrl+Shift+End", 0xc6611) /* замена/поиск вверх *
 k_(TE_RDOWN,  "Ctrl+End",       0xc6411) /* замена/поиск вниз  */
 a_(TE_RDOWN,  "Ctrl+B",         0xc6411)
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-k_(TE_GENTR,  "Meta+Ctrl+F",    0xf6511) /* глобальный поиск (grep, по всем  */
-a_(TE_GENTR,  "Meta+Ctrl+End",  0xf6511) /*                файлам из списка) */
-a_(TE_GENTR,  "Meta+End",       0xf6511) /* искать                           */
-k_(TM_GREP,              NULL,  0xf65f1) /*   в том же окне:          Return */
-k_(TM_GREP2,             NULL,  0xf65f2) /*   в новом окне:     Shift+Return */
+k_(TE_GENTR,  "Ctrl+Alt+F",     0xf6511) /* глобальный поиск (grep, по всем  */
+a_(TE_GENTR,  "Ctrl+Alt+End",   0xf6511) /*                файлам из списка) */
+a_(TE_GENTR,      "Meta+End",   0xf6511) /* искать                           */
+k_(TM_GREP,             NULL,   0xf65f1) /*   в том же окне:          Return */
+k_(TM_GREP2,            NULL,   0xf65f2) /*   в новом окне:     Shift+Return */
 /*
 ʁSecond MicroMir principle:ʀ text is moved around using copy / paste buffer, with
 basic operations being "add something to the buffer" and "paste the buffer into
@@ -349,24 +349,20 @@ mechanism of rectangular selections: Shift+{arrows} makes "temporary" selection
 (grey rectangle),  F5 followed by any regular cursor movement makes "permanent"
 selection (light blue rectangle). -- Typing DO NOT overwrites selected text --
 
-        Shift+{arrows} - start/extend  |       (any movement    - start/extend
-   Alt +Shift+{arrows}    "temporary"  |  F5 ..  except for   ..   "permanent"
-   Ctrl+Shift+Left/Right    selection  |       [Shift+]Return)       selection
-
-   Ctrl+W - select current word (or word left of cursor, if it's not on word)
+  Shift+{arrows} and Ctrl+Shift+'<'/'>'    - start/extend "temporary" selection
+  F5 ..(any movement except for Return)..  - start/extend "permanent" selection
+  Ctrl+W  - select current word (or word left of cursor, if cursor not on word)
 */
-a_(LE_LEFT,       "Shift+Left",  0xe0012) /* влево  |               */
-a_(TE_UP,         "Shift+Up",    0xe0013) /* вверх  | с отметкой    */
-a_(LE_RIGHT,      "Shift+Right", 0xe0014) /* вправо |     блоком    */
-a_(TE_DOWN,       "Shift+Down",  0xe0015) /* вниз   |               */
-a_(TW_UP,     "Alt+Shift+Up",    0xe0813) /* на несколько строк     */
-a_(TW_DOWN,   "Alt+Shift+Down",  0xe0815) /*  вверх/вниз с отметкой */
-a_(LE_NWORD,  "Alt+Shift+Right", 0xe0814) /* -> следующее слово     */
-a_(LE_PWORD,  "Alt+Shift+Left",  0xe0812) /* -> предыдущее слово    */
-k_(LE_MWORD,          "Ctrl+W",  0xc8057) /* выделить текущее слово */
-a_(LE_BEG,   "Ctrl+Shift+Left",  0xe0412) /* в начало строки        */
-a_(LE_END,   "Ctrl+Shift+Right", 0xe0414) /* в конец строки         */
-k_(TX_MCBLOCK,             "F5", 0xc8034) /* == "постоянный" блок   */
+a_(LE_LEFT,    "Shift+Left",   0xe0012) /* влево       |             */
+a_(TE_UP,      "Shift+Up",     0xe0013) /* вверх       | с отметкой  */
+a_(LE_RIGHT,   "Shift+Right",  0xe0014) /* вправо      |     блоком  */
+a_(TE_DOWN,    "Shift+Down",   0xe0015) /* вниз        |             */
+a_(LE_BEG,     "Ctrl+Shift+,", 0xe0412) /* в начало    |             */
+a_(LE_BEG,     "Ctrl+Shift+<", 0xe0412) /*      строки |             */
+a_(LE_END,     "Ctrl+Shift+.", 0xe0414) /* в конец, за |             */
+a_(LE_END,     "Ctrl+Shift+>", 0xe0414) /*   не-пробел |             */
+k_(LE_MWORD,   "Ctrl+W",       0xc8057) /* выделить текущее слово    */
+k_(TX_MCBLOCK,     "F5",       0xc8034) /* == "постоянный" блок      */
 /*
 When selection (of either type) is active, some commands operate with selected
 text instead of current character, namely:
@@ -386,17 +382,19 @@ all lines affected, for example:
 The following commands also can work with selections, but only with single-line
 ones (without selection, current character is converted and cursor moves right)
 
-  Meta+Alt+Up   - convert current character (or selected block) to uppercase
-  Meta+Alt+Down - convert current character (or selected block) to lowercase
-  Meta+Alt+B    - add / clear "bold" attribute
+  Ctrl+Shift+6(^) - convert current character (or selected block) to uppercase
+  Ctrl+Shift+-(_) - convert current character (or selected block) to lowercase
+  Ctrl+Shift+B    - add / clear "bold" attribute
 
 NOTE: "bold" attribute is marked by Unicode chars U+281 / U+280 (which are very
 unlikely to appear in regular text) and not compatible with anything.. not even
 with build-in MicroMir search engine. Use at your own risk, you've been warned!
 */
-k_(LE_CCUP,  "Meta+Alt+Up",   0xf8913) /* буква -> прописная */
-k_(LE_CCDWN, "Meta+Alt+Down", 0xf8915) /* буква -> строчная  */
-k_(LE_CBOLD, "Meta+Alt+B",    0xf8442) /* сделать жирным     */
+k_(LE_CCUP,  "Ctrl+Shift+6", 0xf8913) /* буква -> прописная           */
+k_(LE_CCDWN, "Ctrl+Shift+-", 0xf8915) /* буква -> строчная            */
+a_(LE_CCUP,  "Ctrl+Shift+^", 0xf8913) /*   (only works in 'C' locale) */
+a_(LE_CCDWN, "Ctrl+Shift+_", 0xf8915) /*                              */
+k_(LE_CBOLD, "Ctrl+Shift+B", 0xf8442) /* сделать жирным               */
 /*
 ʁThird MicroMir principle:ʀ instead of relying on sorting capabilites provided by
 file browser, one can keep files sorted his/her way (and also add any comments)
@@ -464,12 +462,12 @@ k_(TE_SRO, "Ctrl+Shift+Del", 0xca507) /* установить режим про�
                               where N is either ddd decimal number like   126
                                                0ddd octal number such as 0176
 For example:                                   xddd hexadecimal number    x7e
-                                             or 'i' --> 2147483647 (infinity)
+                                               or 'i' -> 2147483647 (infinity)
   Esc,3,Shift+Del - delete 3 lines
   Esc,5,*         - same as typing ***** (insert/replace depending on the mode)
   Esc,N,Alt+Ins      - insert character with given Unicode number
-  Esc,N,Meta+Alt+'<' - convert word/selection from radix-N (hex) to decimal
-  Esc,N,Meta+Alt+'>' - convert word/selection to radix-N (where N = 2..36)
+  Esc,N,Ctrl+Shift+9 - convert word/selection from radix-N (hex) to decimal
+  Esc,N,Ctrl+Shift+0 - convert word/selection to radix-N (where N = 2..36)
   Esc,N,Ctrl+Shift+] - set the width (of editable part) of the text
   Esc,N,Ctrl+E       - move cursor to Nth line in text
   Esc,N,Ctrl+H       - move cursor to Nth position in current line
@@ -484,9 +482,12 @@ k_(TK_PREFIX, "Home",         0xcc00a) /* Home (generic) префикс         
 k_(TK_ESC,    "Esc",          0xcc00e) /* Esc префикс (повторитель и пр.) */
 k_(TK_CtrJ,   "Ctrl+J",       0xcc010) /* ^J префикс (используется в Lua) */
 k_(LE_SPCHAR, "Alt+Ins",      0xfb606) /* ввести символ по Unicode коду   */
-k_(LE_CWDEC,  "Meta+Alt+,",   0xfb92c) /* ʁ<ʀ  перевести число в десятичное */
-k_(LE_CWHEX,  "Meta+Alt+.",   0xfb92e) /* ʁ>ʀ  - в 16-ричное / основание N  */
-k_(TE_SWIDTH, "Ctrl+Shift+}", 0xcb65d) /* ʁ]ʀ  установить ширину текста     */
+k_(LE_CWDEC,  "Ctrl+Shift+9", 0xfb92c) /* перевести число в десятичное    */
+k_(LE_CWHEX,  "Ctrl+Shift+0", 0xfb92e) /* - в 16-ричное / основание N     */
+a_(LE_CWDEC,  "Ctrl+Shift+(", 0xfb92c) /*     (на MacOS Х и Linux shift+N */
+a_(LE_CWHEX,  "Ctrl+Shift+)", 0xfb92e) /*              уже преобразовано) */
+k_(TE_SWIDTH, "Ctrl+Shift+]", 0xcb65d) /* установить ширину текста        */
+a_(TE_SWIDTH, "Ctrl+Shift+}", 0xcb65d) /*                                 */
 k_(TE_CENTR,  "Ctrl+E",       0xfb445) /* в середину окна по вертикали    */
 k_(LE_CENTR,  "Ctrl+H",       0xfb448) /*               - по горизонтали  */
 /*
@@ -539,7 +540,7 @@ NOTE:
   Tx:DL(N) -- delete N lines at cursor (default = 1)
   Tx:gtl() -- get-text-left convenience method = gets first chunk of non-spaces
                                        from text to the left of cursor position
-[line 542] xref: new.lua
+[line 539] xref: new.lua
 
   re = Re("..regex..",true/false) -- regular expression (arg: case sensitivity,
   re = Re[[..regex..]]                                default = case-sensitive)
@@ -579,19 +580,19 @@ used in the text (which is determined by file extension and/or #! in 1st line).
  Currently works more or less reliable for C/C++ formatted with "proper" style,
 so a couple of commands added to turn it on/off dynamically (on per-file basis)
 
-  Ctrl+Shift+0/)    - disable syntax check / coloring for given file
-  Ctrl+Shift+9/(    - (re-)enable syntax check
+  Ctrl+Shift+8/'*'  - disable syntax check / coloring for given file
+  Ctrl+Shift+7/'&'  - (re-)enable syntax check
   Ctrl+O (letter O) - toggle "show all brackets not closed in the line" mode
   (sequence Esc,0,Ctrl+O turns off bracket position check, reducing warnings)
 
 Note for Windows 7: keyboard shortcut Ctrl+Shift+0 does not work with default
    configuration. Refer to http://support.microsoft.com/kb/967893 for the fix.
 */
-k_(TE_BRAK0,  "Ctrl+Shift+0", 0xce630) /* выключить раскраску */
-a_(TE_BRAK0,  "Ctrl+Shift+)", 0xce630)
-k_(TE_BRAK9,  "Ctrl+Shift+9", 0xce639) /* включить раскраску  */
-a_(TE_BRAK9,  "Ctrl+Shift+(", 0xce639)
-k_(TE_SHBRAK, "Ctrl+O",       0xce44f) /* переключить режим   */
+k_(TE_BRAKON,  "Ctrl+Shift+7", 0xce639) /* включить раскраску  */
+a_(TE_BRAKON,  "Ctrl+Shift+&", 0xce639)
+k_(TE_BRAKOFF, "Ctrl+Shift+8", 0xce630) /* выключить раскраску */
+a_(TE_BRAKOFF, "Ctrl+Shift+*", 0xce630)
+k_(TE_SHBRAK,  "Ctrl+O",       0xce44f) /* переключить режим   */
 /*
 ʁMISCELLANEOUS.
 
@@ -651,7 +652,7 @@ Ins/Del keys (but have extra function or numpad keys), then you can use these:
 
 See "Lua SCRIPTING" for remapping MicroMir commands to different key sequences.
 -------------------------------------------------------------------------------
-Some useful Alt+CHARs (most already present on Mac, but a couple of them moved)
+Some useful Alt+CHARs (most present on Mac already, but a couple of them moved)
 */
 a_(0, "Alt+1", 0x00B9) /* ¹ */
 a_(0, "Alt+2", 0x00B2) /* ² */    a_(0, "Alt+Shift+@", 0x2122) /* ™ (moved) */

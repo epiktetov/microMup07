@@ -4,7 +4,8 @@ CONFIG += release
 macx {
   TARGET = µMup07
   ICON = microMir.icns
-  LIBS += -llua -framework Cocoa
+  INCLUDEPATH += /usr/local/include # for Lua
+  LIBS += -L/usr/local/lib -llua -framework Cocoa
   QtPLATF = macx
   QMAKE_INFO_PLIST = mim.Info.plist
   QMAKE_PKGINFO_TYPEINFO = "~epi"
