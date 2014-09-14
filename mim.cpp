@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07   Main Frame + Application Data + ScTwin  | (c) Epi MG, 2004-2012
+// МикроМир07   Main Frame + Application Data + ScTwin  | (c) Epi MG, 2004-2014
 //------------------------------------------------------+----------------------
 #include <QApplication>
 #include <QtGui>
@@ -10,6 +10,7 @@
 #include "vip.h"
 #include "clip.h"
 #include "synt.h"
+#include "unix.h"
 extern "C" { extern const char microVERSION[]; }
 static QString MimVersion()
 {
@@ -97,7 +98,7 @@ int main(int argc, char *argv[])
   QCoreApplication::setApplicationName("micro7"); mimReadPreferences();
 #ifdef Q_OS_MAC
   app.installEventFilter(new MacEvents);
-#elif defined(UNIX)
+#elif defined(Q_OS_LINUX)
   app.setWindowIcon(QIcon(":/qtmim.png"));
 #endif
   tmInitialize(); // init everything (and run 'auto.lua' and configured script)
@@ -269,7 +270,6 @@ void MiFrame::finishClose (int qtStandBtn) // finish closing either scwin (when
          if (scwin) scwin->vp->wtext->txstat &= ~TS_CHANGED;
     else if (main)   main->vp->wtext->txstat &= ~TS_CHANGED;
   }
-  QCloseEvent close();
   QCoreApplication::postEvent(this, new QCloseEvent);
 }
 //-----------------------------------------------------------------------------
@@ -956,6 +956,13 @@ MiConfigDlg::MiConfigDlg(QWidget *parent) : QDialog(parent)
   layoutH3->addWidget(tabSizeBox);
   layoutH3->addStretch(1); leftLayout->addLayout(layoutH3);
   //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  shellButton = new QPushButton(tr("Shell"));
+  shellLabel  = new QLabel();                    setShellLabelText();
+  connect(shellButton, SIGNAL(clicked()), this, SLOT(selectShell()));
+  layoutH3->addWidget(shellLabel, 0, Qt::AlignRight);
+  layoutH3->addWidget(shellButton);
+  //+ leftLayout->addWidget(shellLabel, 0, Qt::AlignRight);
+  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   QVBoxLayout *rightLayout = new QVBoxLayout;
   gradDescr = new QTextEdit(MiApp_gradDescr);
   gradDescr->setAcceptRichText(false);
@@ -989,6 +996,12 @@ void MiConfigDlg::setFontLabelText() // - - - - - - - - - - - - - - - - - - - -
 {
   fontLabel->setText(QString("%1, %2pt").arg(MiApp_defaultFont)
                                         .arg(MiApp_defFontSize));
+}
+void MiConfigDlg::setShellLabelText()
+{
+  if (MiApp_shell.isEmpty())
+       shellLabel->setText("<em>(using SHELL environment variable)</em>");
+  else shellLabel->setText(MiApp_shell);
 }
 //-----------------------------------------------------------------------------
 bool MiConfigDlg::Ask()
@@ -1024,11 +1037,18 @@ void MiConfigDlg::selectFont() // - - - - - - - - - - - - - - - - - - - - - - -
   if (ok) { MiApp_defaultFont = refont.family();
             MiApp_defFontSize = refont.pointSize(); setFontLabelText(); }
 }
+void MiConfigDlg::selectShell()
+{
+  QString sh = QFileDialog::getOpenFileName(this, "Select shell", MiApp_shell);
+  if (!sh.isEmpty()) { MiApp_shell = sh;
+                       setShellLabelText(); }
+}
 //-----------------------------------------------------------------------------
 void mimReadPreferences()
 {
   QSettings Qs;
   TABsize = Qs.value("TABsize", 4).toInt();
+  MiApp_shell = Qs.value("shell", "").toString();
   MiApp_autoLoadLua = Qs.value("autoLuaScript", "").toString();
   MiApp_gradDescr = Qs.value("bgndGrad", defWinGRADIENT).toString();
   MiApp_defHeight = Qs.value("frameHeight", defWinHEIGHT).toInt();
@@ -1057,6 +1077,7 @@ void MiFrame::Preferences()
     Qs.setValue("keyMaps",       MiApp_keyMaps);
     Qs.setValue("bgndGrad",      MiApp_gradDescr);
     Qs.setValue("autoLuaScript", MiApp_autoLoadLua);
+    Qs.setValue("shell",         MiApp_shell);
     if (main) main->SetGradient(MiApp_gradDescr);
     if (main)  {  main->UpdateMetrics();  main->vpResize(); }
     if (scwin) { scwin->UpdateMetrics(); scwin->vpResize(); } shrinkwrap();

@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07 Main Header + Scrollable/Gradient Window  | (c) Epi MG, 2004-2011
+// МикроМир07 Main Header + Scrollable/Gradient Window  | (c) Epi MG, 2004-2014
 //------------------------------------------------------+----------------------
 #ifndef MIM_H_INCLUDED
 #define MIM_H_INCLUDED
@@ -75,16 +75,15 @@ public:    MiInfoWin(MiScTwin *parent);
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 class MiConfigDlg : public QDialog
 {
-  Q_OBJECT QPushButton *fontButton;
-           QLabel      *fontLabel;  QTextEdit *gradDescr;
-           QLineEdit   *fontAdjust; QTextEdit *keymapEdit;
-           QSpinBox    *tabSizeBox; QTextEdit    *luaEdit;
+  Q_OBJECT QPushButton *fontButton, *shellButton;
+           QLabel      *fontLabel,  *shellLabel;  QTextEdit *gradDescr;
+           QLineEdit   *fontAdjust;               QTextEdit *keymapEdit;
+           QSpinBox    *tabSizeBox;               QTextEdit    *luaEdit;
 protected:
   void setFontLabelText();
-public slots:
-  void selectFont();
-public:
-  MiConfigDlg(QWidget *parent = 0); bool Ask();
+  void setShellLabelText();
+public slots: void selectFont();        void selectShell();
+public:       MiConfigDlg(QWidget *parent = 0); bool Ask();
 };
 //--------------------------------------//-------------------------------------
 class MiScTwin : public QWidget         //   MicroMir Scrollable Text Window

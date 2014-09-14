@@ -20,7 +20,7 @@ Embedded Lua scripting                                         |luas.h
                                                                |luas.cpp
 Mac-specific code (GCC's Objectvie-C++ extension)              |macs.h
                                                                |macs.mm
-UNIX-specific stuff and tmSyncPos                              |unix.h
+Shell commands and tmSyncPos (formerly UNIX-specific)          |unix.h
                                                                |unix.cpp
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -|- - - - - - - -
 ViewPort (interface between wx/C++ and legacy C code) and some |vip.h

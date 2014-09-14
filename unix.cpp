@@ -1,8 +1,9 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07     UNIX-specific stuff and tmSyncPos     | (c) Epi MG, 2007-2012
+// МикроМир07       Shell commands and tmSyncPos        | (c) Epi MG, 2007-2014
 //------------------------------------------------------+--------------------*/
 #include <QString>        /* Old tm.c (c) Attic 1989-91, (c) EpiMG 1997-2003 */
 #include <QRegExp>
+#include <QProcess>
 #if (QT_VERSION >= 0x040600)
 # include <QProcessEnvironment>
 # define GetENV(var,default) \
@@ -24,17 +25,13 @@ extern "C" {
 #include "te.h"
 #include "tx.h"
 }
-/*-----------------------**--------------------------------------------------*/
-# include <stdio.h>      /*                                                  */
-# include <errno.h>      /*               Execute Shell Command              */
-# include <fcntl.h>      /*                                                  */
-# include <signal.h>     /*--------------------------------------------------*/
-# include <stdlib.h>
-# include <unistd.h>     
-# include <sys/types.h>
-# include <sys/stat.h>
-# include <sys/wait.h>
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+#ifdef Q_OS_WIN
+# define MiDEFAULT_SHELL "C:\Windows\system32\cmd.exe"
+#else
+# define MiDEFAULT_SHELL "/bin/sh"
+#endif
+QString MiApp_shell;        /* set by mimReadPreferences(), see file mim.cpp */
+/*---------------------------------------------------------------------------*/
 static tchar tcmdbuffer[MAXLPAC];
 static int   tcmdbuflen = 0,
           tcmdpromptlen = 0;
@@ -89,79 +86,55 @@ static void appendCR(txt *Stxt, int& Sx, long& Sy)
 static void shellexec (txt *Stxt, int  &Sx,
                                   long &Sy, const char *cmd, wnd *Swnd = NULL)
 {
-  int fdsin[2], fdsout[2];
-  int pid;
-#define close_both(_fdx) close(_fdx[0]); close(_fdx[1]);
-
-  if (pipe(fdsin)    < 0)                                          return;
-  if (pipe(fdsout)   < 0) { close_both(fdsin);                     return; }
-  if ((pid = fork()) < 0) { close_both(fdsin); close_both(fdsout); return; }
-  else if (pid > 0) {
-    char line_buffer[MAXLPAC], *p, *pst;
-    int child_status, fds_in = fdsin[1],
-                      fds_out = fdsout[0], flags, break_count = 0;
-    close(fdsin[0]);
-    close(fdsout[1]);
-    flags = fcntl(fds_out, F_GETFL, 0); flags |= O_NONBLOCK;
-            fcntl(fds_out, F_SETFL, flags);
-
-    short oldTXED = Stxt->txredit;           // mark text as "read only"..
-                    Stxt->txredit = TXED_NO; // mostly to force red cursor
-    EnterOSmode();
-    do {
-      struct timeval timeout; int k;
-      int selres;
-      fd_set read_mask; FD_ZERO(&read_mask);         timeout.tv_sec  = 0;
-                        FD_SET(fds_out, &read_mask); timeout.tv_usec = 10000;
-// Wait for child:
+  QString shell = MiApp_shell;
+  if (shell.isEmpty()) shell = GetENV("SHELL", MiDEFAULT_SHELL);
+  if (shell.isEmpty()) { vipError("no shell");           return; }
+  QObject *parent = NULL;
+  QProcess *proc = new QProcess(parent);
+  QStringList args; args << "-c" << cmd;
+  proc->start(shell,args);
+  // - - - - - - - - - - - - - - - - -
+  char line_buffer[MAXLPAC], *p, *pst;
+  int k, break_count = 0;
+//       ^
+// terminate/close is *supposed* to kill the process, but that's not for sure;
+// also may need to read the rest of data from buffer after process terminated
 //
-      selres = select(fds_out+1, &read_mask, NULL, NULL, &timeout);
-      if (selres < 0 && errno != EINTR) break;
-      if (selres > 0) {
-        int max_len = MAXLPAC-Tx-1;
-        int len = read(fds_out, pst = line_buffer, max_len);
-        if (len <= 0) break;               TxSetY(Stxt, Sy);
-        for (p = pst; len--; p++) {
-          if (*p == '\r' || *p == '\n') { appendText(Stxt,Sx,     pst,   p);
-                                          appendCR  (Stxt,Sx,Sy); pst = p+1; }
-        }
-        if (p != pst) appendText(Stxt,Sx, pst, p);
+  short oldTXED = Stxt->txredit;           // mark text as "read only"..
+                  Stxt->txredit = TXED_NO; // mostly to force red cursor
+  EnterOSmode();
+  do {
+    if (proc->state() == QProcess::NotRunning) break_count++;
+    if (proc->bytesAvailable() > 0) {
+      int max_len = MAXLPAC-Tx-1;
+      int len = proc->read(pst = line_buffer, max_len);
+      if (len <= 0) break;            TxSetY(Stxt, Sy);
+      for (p = pst; len--; p++) {
+        if (*p == '\r' || *p == '\n') { appendText(Stxt,Sx,     pst,   p);
+                                        appendCR  (Stxt,Sx,Sy); pst = p+1; }
       }
-      while ((k = kbhin()) != 0) { // Process all user input from KBH queue
-        unsigned char ascii = k;   //  (but do not wait for anything here)
-        switch (k) {
-        case    3: kill(pid, SIGINT);          break_count++; break; /* ^C */
-        case    4: close(fds_in); fds_in = -1; break_count++; break; /* ^D */
-        default:                               // ^
-          if (fds_in < 0)  continue;           // kill/close is *supposed* to
-          if (k == '\n') appendCR(Stxt,Sx,Sy); // break the loop, but may not
-          else {
-            p = (char*)&ascii; appendText(Stxt,Sx, p, p+1);
-          }
-          write(fds_in, &ascii, 1);
-      } }
-      if (Swnd) vipOnFocus (Swnd); vipYield(); // <- QCoreApp::processEvents();
-      if (Swnd) vipFocusOff(Swnd); TxSetY(Stxt, Sy);
+      if (p != pst) appendText(Stxt,Sx, pst, p);
     }
-    while (break_count < 2);     if (fds_in != -1) close(fds_in);
-                                                  close(fds_out);
-    if (!waitpid(pid, &child_status, WNOHANG)) {
-      kill(pid, SIGKILL);  //
-      wait(&child_status); // if child does not want to die, try harder...
-    }
-    ExitOSmode(); Stxt->txstat |= TS_CHANGED;
-                  Stxt->txredit =    oldTXED;
+    while ((k = kbhin()) != 0) { // Process all user input from KBH queue
+      char ascii = k;            //  (but do not wait for anything here)
+      switch (k) {
+      case    3: proc->terminate(); break_count++; break; /* ^C */
+      case    4: proc->close();     break_count++; break; /* ^D */
+      default:
+        if (k == '\n') appendCR(Stxt,Sx,Sy);
+        else {
+          p = &ascii; appendText(Stxt,Sx, p, p+1);
+        }
+        proc->write(&ascii, 1);
+    } }
+    if (Swnd) vipOnFocus (Swnd); vipYield(); // <- QCoreApp::processEvents();
+    if (Swnd) vipFocusOff(Swnd); TxSetY(Stxt, Sy);
   }
-  else { /* ------------------------ child process ------------------------- */
-
-    QfsChDir(Stxt->file);  close(fdsin[1]);   dup2(fdsin[0],  0);  /* stdin  */
-                                              dup2(fdsout[1], 1);  /* stdout */
-                           close(fdsout[0]);  dup2(fdsout[1], 2);  /* stderr */
-
-    QString shell = GetENV("SHELL", "/bin/sh");
-    execl(shell.cStr(),
-          shell.cStr(), "-c", cmd, NULL); exit(1);
-} }
+  while (break_count < 2);     if (!proc->waitForFinished(300)) proc->kill();
+  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  ExitOSmode(); Stxt->txstat |= TS_CHANGED;
+                Stxt->txredit =    oldTXED;
+}
 /*---------------------------------------------------------------------------*/
 void tmshell (int kcode)
 {

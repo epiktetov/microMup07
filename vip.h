@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07 ViewPort (interface wx/C++ / legacy code) | (c) Epi MG, 2006-2012
+// МикроМир07 ViewPort (interface wx/C++ / legacy code) | (c) Epi MG, 2006-2014
 //------------------------------------------------------+--------------------*/
 #ifndef VIP_H_INCLUDED  /* Old "nm.h" (c) Attic 1989-90, (c) EpiMG 1998-2001 */
 #define VIP_H_INCLUDED  /* old "wd.h" (c) Attic 1989, then (c) EpiMG 1996,98 */
@@ -64,7 +64,7 @@ int   kbhin();         /* keyboard queue for hardware (vipOSmode only) input */
 void setkbhin(int kc); /* called on real keyboard events, resets kbhin timer */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 extern bool vipOSmode; /* working in OS mode: current Twnd is modal and keys */
-void EnterOSmode();    /* are converted back to raw Ascii, used only on UNIX */
+void EnterOSmode();    /*                    are converted back to raw Ascii */
 void ExitOSmode(), vipYield();
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void vipOnKeyCode(wnd *w, int ev);    /* handle TK_LINFO/CHARK & TW_CUP/DOWN */

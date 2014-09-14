@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07           Text & Window Manager           | (c) Epi MG, 2004-2012
+// МикроМир07           Text & Window Manager           | (c) Epi MG, 2004-2014
 //------------------------------------------------------+----------------------
 #include <QCoreApplication> // need QCoreApplication::arguments
 #include <QRegExp>
@@ -518,9 +518,7 @@ void tmFnewByTtxt (void)                 /* войти в новый файл (�
     else return;                   // and single-delimiter (64th pos only) fmts
   }
   else if (Ttxt->txstat & TS_DIRLST) { lm = DIRLST_FNPOS; rm = Lleng; }
-#ifdef UNIX
-  else if (Ttxt->txstat & TS_GITLOG) { tmSyncPos(); return; }
-#endif
+  else if (Ttxt->txstat & TS_GITLOG) { tmSyncPos();           return; }
   else if (Tx > Lleng) return;
   else {
                  for (lm = Tx; lm >= 0    && (uchar)Lebuf[lm]   != 0xAB;) lm--;
@@ -579,14 +577,12 @@ int TmCommand (int kcode)
   case TM_FENTR:  tmFentr  ();    break; /* ввести имя файла...              */
   case TM_F1ENTR: tmDoFentr ();   break; /* ...войти в этот файл (тут же)    */
   case TM_F2ENTR: tmDoFentr2();   break; /* ...войти в файл (в новом окне)   */
-#ifdef UNIX
-  case TM_SHELL: x2enter(); break;       /* ввести и выполнить команду shell */
+  case TM_SHELL:  x2enter();      break; /* ввести и выполнить команду shell */
   case TM_FEXEC:
   case TM_F2EXEC:
     tmSaveAll(); /* save current changes - just in case */
     tmshell(kcode);
     break;
-#endif
   case TM_INFILE: infilnam(); break; /* go to filename field in micros.dir   */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   case TM_HFORK:                     /* горизонтальный fork и к нижнему окну */
@@ -612,17 +608,15 @@ int TmCommand (int kcode)
   case TM_RELOAD: if (tmReLoad(Ttxt)) twRedraw(Ttxt); /* ^R = forced re-load */
                   else                return E_SFAIL;
     break;
-#ifdef UNIX
-  case TM_GREP:
-  case TM_GREP2:   return (tmGrep(kcode) < 0) ? E_SFAIL : E_OK;
-  case TM_SYNCPOS: return (tmSyncPos()   < 0) ? E_SFAIL : E_OK;
-#endif
   case TW_GRAD1: case TW_GRAD3:
   case TW_GRAD2: case TW_GRAD4: Twnd->sctw->SetGradFromPool(kcode - TW_GRAD1);
     break;
-  case TM_LUAF: return luasExec(Ttxt,false);
-  case TM_LUAS: return luasExec(Ttxt, true);
-  case TM_LUAN: twNewLuaText(); return E_OK;
+  case TM_GREP:
+  case TM_GREP2:   return (tmGrep(kcode) < 0) ? E_SFAIL : E_OK;
+  case TM_SYNCPOS: return (tmSyncPos()   < 0) ? E_SFAIL : E_OK;
+  case TM_LUAF:    return luasExec(Ttxt,false);
+  case TM_LUAS:    return luasExec(Ttxt, true);
+  case TM_LUAN:    twNewLuaText(); return E_OK;
   default:
     return E_NOCOM;
   } return E_OK;

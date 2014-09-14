@@ -28,12 +28,8 @@ HEADERS += micro.keys mic.h mim.h   ccd.h   qfs.h   twm.h   clip.h   synt.h
 SOURCES +=                  mim.cpp ccd.cpp qfs.cpp twm.cpp clip.cpp synt.cpp
 HEADERS += macs.h
 macx:OBJECTIVE_SOURCES += macs.mm
-!win32 {
-  HEADERS += unix.h
-  SOURCES += unix.cpp
-}
-HEADERS += luas.h   vip.h   te.h le.h tx.h dq.h ud.h
-SOURCES += luas.cpp vip.cpp te.c le.c tx.c dq.c ud.c rt.c
+HEADERS += unix.h   luas.h   vip.h   te.h le.h tx.h dq.h ud.h
+SOURCES += unix.cpp luas.cpp vip.cpp te.c le.c tx.c dq.c ud.c rt.c
 DEPENDPATH += .
 INCLUDEPATH += .
 OBJECTS_DIR = obj
