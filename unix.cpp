@@ -26,7 +26,7 @@ extern "C" {
 #include "tx.h"
 }
 #ifdef Q_OS_WIN
-# define MiDEFAULT_SHELL "C:\Windows\system32\cmd.exe"
+# define MiDEFAULT_SHELL "C:/Windows/system32/cmd.exe"
 #else
 # define MiDEFAULT_SHELL "/bin/sh"
 #endif

@@ -76,28 +76,23 @@ For window handling, MicroMir uses concept familiar to UNIX programmers: 'fork'
 (make a copy of the window) and 'replace file' (although this does not actually
 replaces anything, it just pushes current text into stack like Esc <down> does)
 
-  Meta+'+'('=')/F11 - open new window with the same contents as in current one
-  Meta+'-'          - split the window into two panes, forking the contents
-  Meta+Del/F12      - ask for filename and enter that file (see FILES below)
+  Meta+'+'('=') - open new window with the same contents as in current one
+  Meta+'-'      - split the window into two panes, forking the contents
+  Meta+'\'/Del  - ask for filename and enter that file (see FILES below)
+  Meta+{arrow}  - move cursor to closest window in given direction
+  Meta+Return   - SyncPos(tm) - open file mentioned here in the upper pane
 
-  Meta+{arrow} - move cursor to closest window in given direction
-  Meta+Return  - SyncPos(tm) - open file mentioned here in the upper pane
-  Meta+Shift+Return          - open file in the new window
-
-Note: for all commands in this section Meta is aliased to Ctrl+Alt
+NOTE: commands in this section have alias Ctrl+Alt+X (except for Ctrl+Alt+Del)
 */
-k_(TM_VFORK,   "Meta+=",       0xc103d) /* открыть новое окно с тем   */
-a_(TM_VFORK,   "Meta+F11",     0xc103d) /*        же самым содержимым */
-a_(TM_VFORK,   "Ctrl+Alt+=",   0xc103d) /*                            */
-a_(TM_VFORK,   "Ctrl+Alt+F11", 0xc103d) /*                            */
-k_(TM_HFORK,       "Meta+-",   0xc102d) /* поделить окно пополам      */
-a_(TM_HFORK,   "Ctrl+Alt+-",   0xc102d) /*                            */
-k_(TM_FENTR,   "Meta+Del",     0xf1007) /* ввести имя и войти         */
-a_(TM_FENTR,   "Meta+F12",     0xf1007) /*           в указанный файл */
-a_(TM_FENTR,   "Ctrl+Alt+Del", 0xf1007) /*                            */
-a_(TM_FENTR,   "Ctrl+Alt+F12", 0xf1007) /*                            */
-k_(TM_F1ENTR,            NULL, 0xc10f1) /* в том же окне:      Return */
-k_(TM_F2ENTR,            NULL, 0xc10f2) /* в новом окне: Shift+Return */
+k_(TM_VFORK,   "Meta+=",      0xc103d) /* открыть новое окно с тем   */
+a_(TM_VFORK,   "Ctrl+Alt+=",  0xc103d) /*        же самым содержимым */
+k_(TM_HFORK,       "Meta+-",  0xc102d) /* поделить окно пополам      */
+a_(TM_HFORK,   "Ctrl+Alt+-",  0xc102d) /*                            */
+k_(TM_FENTR,   "Meta+Del",    0xf1007) /* ввести имя и войти         */
+a_(TM_FENTR,   "Meta+\\",     0xf1007) /*           в указанный файл */
+a_(TM_FENTR,   "Ctrl+Alt+\\", 0xf1007) /*                            */
+k_(TM_F1ENTR,           NULL, 0xc10f1) /* в том же окне:      Return */
+k_(TM_F2ENTR,           NULL, 0xc10f2) /* в новом окне: Shift+Return */
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 k_(TM_LWINDOW,     "Meta+Left",   0xc1012) /* перейти к левому окну      */
 k_(TM_UWINDOW,     "Meta+Up",     0xc1013) /* - к верхнему окну          */
@@ -266,7 +261,7 @@ expression one (see http://qt-project.org/doc/qt-4.8/QRegExp.html); the mode is
 selected when entering search/replace pattern.
 
   Ctrl/Meta+F = Home End - edit search/replace pattern (start search by Return)
-  Ctrl+Alt+F  = Meta+End - edit search pattern for 'grep' (MacOS X/Linux only)
+  Ctrl+Alt+F  = Meta+End - edit search pattern for 'grep' (searh though files)
         Ctrl+. (>)       - insert light blue 'ʈ>ʀ' (marks start of replacement)
         Ctrl+/           - insert light blue 'ʈ/ʀ' (start of filelist for 'grep')
         Ctrl+6 (^) - standard (text mode) search          ‹st·--›
@@ -436,7 +431,7 @@ commas or quotes - if is't not, you'll need to use block selection to mark it)
   ʂincdirs»ʀ(win32)../lua/include     -- search there only on Windows
   ʂincdirs»ʀinclude,../include        -- search both folders on all platforms
 
-Special ʁFILESʀ (Linux and MacOS X only):
+Special ʁFILESʀ (content obtained by running some command, discarded afterward):
 
   filename:git:rev == filename::rev - file revision from given git commit
   filename:gitlog[options]          - list of revisions, from 'git log'
@@ -472,11 +467,14 @@ For example:                                   xddd hexadecimal number    x7e
   Esc,N,Ctrl+E       - move cursor to Nth line in text
   Esc,N,Ctrl+H       - move cursor to Nth position in current line
 
-Note: without repetition prefix, the last two commands work differently, which
+NOTE: without repetition prefix, the last two commands work differently, which
      is a special convenience feature to allow easy centering specific position
 
   Ctrl+E - centers current line in the windows (vertically only)
   Ctrl+H - centers curret position in the windows (horizontally)
+
+Note for Windows 7: keyboard shortcut Ctrl+Shift+0 does not work with default
+   configuration. Refer to http://support.microsoft.com/kb/967893 for the fix.
 */
 k_(TK_PREFIX, "Home",         0xcc00a) /* Home (generic) префикс          */
 k_(TK_ESC,    "Esc",          0xcc00e) /* Esc префикс (повторитель и пр.) */
@@ -540,7 +538,7 @@ NOTE:
   Tx:DL(N) -- delete N lines at cursor (default = 1)
   Tx:gtl() -- get-text-left convenience method = gets first chunk of non-spaces
                                        from text to the left of cursor position
-[line 539] xref: new.lua
+[line 541] xref: new.lua
 
   re = Re("..regex..",true/false) -- regular expression (arg: case sensitivity,
   re = Re[[..regex..]]                                default = case-sensitive)
@@ -584,9 +582,6 @@ so a couple of commands added to turn it on/off dynamically (on per-file basis)
   Ctrl+Shift+7/'&'  - (re-)enable syntax check
   Ctrl+O (letter O) - toggle "show all brackets not closed in the line" mode
   (sequence Esc,0,Ctrl+O turns off bracket position check, reducing warnings)
-
-Note for Windows 7: keyboard shortcut Ctrl+Shift+0 does not work with default
-   configuration. Refer to http://support.microsoft.com/kb/967893 for the fix.
 */
 k_(TE_BRAKON,  "Ctrl+Shift+7", 0xce639) /* включить раскраску  */
 a_(TE_BRAKON,  "Ctrl+Shift+&", 0xce639)
@@ -599,7 +594,7 @@ k_(TE_SHBRAK,  "Ctrl+O",       0xce44f) /* переключить режим   *
   Ctrl+A - abandon (cancel) current command (e.g. stop entering search pattern)
   Ctrl+K - display unicode value of the current character in the info window
   Ctrl+L - display line number in the info window (default)
-  Ctrl+Y - (sYstem) = ask for shell command and execute it (MacOS X/Linux only)
+  Ctrl+Y - (sYstem) = ask for shell command and execute it
    in shell command:
         light blue 'ʈ•ʀ' (Ctrl+'<') is replaced with the name of current file,
         light blue 'ʈ/ʀ' (Ctrl+'/') replaced with full path to current file

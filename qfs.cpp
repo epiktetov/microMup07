@@ -1,14 +1,14 @@
 //------------------------------------------------------+----------------------
-// МикроМир07           Qt-based File System            | (c) Epi MG, 2007,2011
+// МикроМир07           Qt-based File System            | (c) Epi MG, 2007,2014
 //------------------------------------------------------+----------------------
-#include <QRegExp>
+#include <QString>
 #include "mic.h"
 #include "qfs.h"
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 qfile *QfsNew (QString filename, qfile *referer)
 {
-  QfsFtype new_ft = QftNIL;
-  qfile *file;
+  QfsFtype new_ft = QftNIL; qfile *file;
+  QString extra;
   if (filename == QfsELLIPSIS || filename == QfsEMPTY_NAME) new_ft = QftNOFILE;
   else if (filename.startsWith(QfsXEQ_PREFIX)) {            new_ft = QftPSEUDO;
     if (!filename.endsWith(QString::fromUtf8("»")))
@@ -22,17 +22,17 @@ qfile *QfsNew (QString filename, qfile *referer)
     file->writable = true;
     file->full_name = pseudo_path+"/"+file->name; return file;
   }
-  if (filename.startsWith('~') ) filename.replace(0,1, QDir::homePath());
-  if (filename.indexOf('/') < 0) filename.push_front("./");
-  QString extra;
-  QRegExp ptn("([^*?]*)/([^/]*(?:\\*|\\?)[^/]*)");
-  if (ptn.exactMatch(filename)) {
-    filename = ptn.cap(1) + QString::fromUtf8("/…");
-    extra    = ptn.cap(2);
+  if (filename.startsWith('~')) filename.replace(0,1, QDir::homePath());
+  if (filename.contains("*") ||
+      filename.contains("?")) {
+    int Ndir = filename.lastIndexOf("/");  extra = filename.mid(Ndir+1);
+    if (Ndir < 0)
+         filename =                       QString::fromUtf8("./…");
+    else filename = filename.left(Ndir) + QString::fromUtf8( "/…");
   }
   QFileInfo Qi(filename);
 //
-// Convert path to aboslute, using referer directory if available (otherwise
+// Convert path to absolute, using referer directory if available (otherwise
 // working directory will be used, which is, most likely, the last one where
 // some shell command was executed):
 //

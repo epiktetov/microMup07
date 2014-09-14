@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07  Command Codes Definition / transcoding   | (c) Epi MG, 1998-2012
+// МикроМир07  Command Codes Definition / transcoding   | (c) Epi MG, 1998-2014
 //------------------------------------------------------+----------------------
 //include <qnamespace.h>
 #include <QKeyEvent>
@@ -59,8 +59,9 @@ int MkConvertKeyMods (QKeyEvent *event, int &modMask)
     case Qt::Key_Down: case Qt::Key_Right: return key;
     }
 #else
-# ifdef Q_OS_WIN                       // completely ignore Alt+Numpad keys,
-    if (modMask == mod_ALT) return -1; // let Windows handle them by itself
+# ifdef Q_OS_WIN                          // completely ignore Alt+Numpad keys,
+    if (modMask  ==  mod_ALT) return  -1; // let Windows handle them by itself
+    if (key == Qt::Key_Enter) return key;
 # endif
     switch (key) {
     case Qt::Key_Delete:   key = '.'; break; // for consistency, ALWAYS convert
