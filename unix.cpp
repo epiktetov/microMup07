@@ -92,10 +92,10 @@ static void shellexec (txt *Stxt, int  &Sx,
   QObject *parent = NULL;
   QProcess *proc = new QProcess(parent);
   QStringList args; args << "-c" << cmd;
-  proc->start(shell,args);
-  //- - - - - - - - - - - - - - - - - - - - -
-  char *p, *pst; int len, k, break_count = 0;
-//                           ^
+  QfsChDir(Stxt->file); proc->start(shell,args);
+  // - - - - - - - - - - - - - - - - - - - - - -
+  char *p, *pst;    int len, k, break_count = 0;
+//                              ^
 // terminate/close is *supposed* to kill the process, but that's not for sure;
 // also may need to read the rest of data from buffer after process terminated
 //
