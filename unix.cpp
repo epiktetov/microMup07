@@ -93,10 +93,9 @@ static void shellexec (txt *Stxt, int  &Sx,
   QProcess *proc = new QProcess(parent);
   QStringList args; args << "-c" << cmd;
   proc->start(shell,args);
-  // - - - - - - - - - - - - - - - - -
-  char line_buffer[MAXLPAC], *p, *pst;
-  int k, break_count = 0;
-//       ^
+  //- - - - - - - - - - - - - - - - - - - - -
+  char *p, *pst; int len, k, break_count = 0;
+//                           ^
 // terminate/close is *supposed* to kill the process, but that's not for sure;
 // also may need to read the rest of data from buffer after process terminated
 //
@@ -105,15 +104,13 @@ static void shellexec (txt *Stxt, int  &Sx,
   EnterOSmode();
   do {
     if (proc->state() == QProcess::NotRunning) break_count++;
-    if (proc->bytesAvailable() > 0) {
-      int max_len = MAXLPAC-Tx-1;
-      int len = proc->read(pst = line_buffer, max_len);
-      if (len <= 0) break;            TxSetY(Stxt, Sy);
-      for (p = pst; len--; p++) {
+    QByteArray                       bytes = proc->readAllStandardError();
+    if ((len = bytes.length()) <= 0) bytes = proc->readAllStandardOutput();
+    if ((len = bytes.length())  > 0) {                    TxSetY(Stxt, Sy);
+      for (p = pst = bytes.data(); len--; p++) {
         if (*p == '\r' || *p == '\n') { appendText(Stxt,Sx,     pst,   p);
                                         appendCR  (Stxt,Sx,Sy); pst = p+1; }
-      }
-      if (p != pst) appendText(Stxt,Sx, pst, p);
+      } if (p != pst)                   appendText(Stxt,Sx,     pst,   p);
     }
     while ((k = kbhin()) != 0) { // Process all user input from KBH queue
       char ascii = k;            //  (but do not wait for anything here)
