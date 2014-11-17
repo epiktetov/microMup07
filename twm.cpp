@@ -179,7 +179,8 @@ cmdmap vcs_commands[] =
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 txt *tmDesc (QString filename, bool needUndo, txt *referer)
 {
-  QRegExp ptn("([^:]+):(git:|:|gitlog|blame|hg:|hglog|annotate)(.*)");
+  QRegExp ptn1("([^:]+):(git:|:|gitlog|blame|hg:|hglog|annotate)(.*)");
+  QRegExp ptn2("([^:]+):(.+)");                        QString ld_filt;
   short force_txstat = 0;
   short force_clang  = 0;
   if (filename.compare(QfsELLIPSIS) == 0) { // PSEUDO text used by Unix & Lua
@@ -199,21 +200,27 @@ txt *tmDesc (QString filename, bool needUndo, txt *referer)
     QfsClear(Ctxt->file);
     Ctxt->file = new_file; return Ctxt;
   }
-  else if (ptn.exactMatch(filename)) {
+  else if (ptn1.exactMatch(filename)) {
     for (cmdmap *p = vcs_commands; p->key; p++)
-      if (ptn.cap(2) == p->key) {
-        filename = Utf8(p->cmd).arg(ptn.cap(1)).arg(ptn.cap(3));
+      if (ptn1.cap(2) == p->key) {
+        filename = Utf8(p->cmd).arg(ptn1.cap(1)).arg(ptn1.cap(3));
         force_txstat = p->txstat;
-        force_clang  = SyntKnownLang(ptn.cap(1)); break;
+        force_clang  = SyntKnownLang(ptn1.cap(1)); break;
   }   }
+  else if (ptn2.exactMatch(filename)) { ld_filt  = ptn2.cap(2);
+                                        filename = ptn2.cap(1); }
+  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   qfile *fd = QfsNew(filename, referer ? referer->file : NULL);
   filename = fd->full_name;
        if (fd->ft == QftDIR) force_txstat |= TS_DIRLST;
-  else if (fd->ft == QftTEXT) force_clang  = SyntKnownLang(fd->name);
+  else if (fd->ft == QftTEXT) {
+    if (ld_filt.isEmpty()) force_clang = SyntKnownLang(fd->name);
+    else fd->lf = ld_filt; // ^
+  }                        // syntax checker is not compatible with load filter
   txt *t;
   for (t = texts; t; t = t->txnext) {
-    if ((t->txstat & TS_BUSY) && t->file &&
-        filename.compare(t->file->full_name, QfsIGNORE_CASE) == 0) {
+    if ((t->txstat & TS_BUSY) && t->file
+                              && QfsSameAs(filename, ld_filt, t->file)) {
       QfsClear(fd);
       checkfile(t); return t; // found existing text
   } }
@@ -288,21 +295,24 @@ void tmDumpList() /* dumps the list of all text objects (for debug purposes) */
 } }
 bool tmDoLoad (txt *t)  /*- - - - - - - - - - - - - - - - - - - - - - - - - -*/
 {
+  int oc;
   switch (t->file->ft) {       // NOFILE file always considered "loaded" (since
   case QftNOFILE:              // there is no place to reload them from anyway)
   case QftNIL:    return true; //-
   case QftPSEUDO: tmLoadXeq(t); break; // - load by executing command: unix.cpp
   case QftDIR:    tmDirLST( t); break; // - load directory listing (see above)
   case QftTEXT:
+    if (t->file->lf.isEmpty() || (oc = luLF_read(t)) < 0)
     {
-      int oc = QfsOpen(t->file, FO_READ); // oc = -1:fail,0:empty,1:trunc,2:ok
-      if (oc < 0) return false;           //
+      oc = QfsOpen(t->file, FO_READ); // oc = -1:fail,0:empty,1:truncated,2:ok
+      if (oc < 0) return false;       //
       if (oc > 0) oc = DqLoad(t->txdstk, t->file, t->file->size);
       QfsClose(t->file);
-      if (oc <  0) return false; // zero result (empty file) is acceptable,
-      if (oc == 1)               // truncated file too (make 'em read-only,
-         t->txstat |= TS_RDONLY; // as won't be possible to save correctly)
-  } }
+    }
+    if (oc <  0) return false; // zero result (empty file) is acceptable,
+    if (oc == 1)               // truncated file too (make 'em read-only,
+       t->txstat |= TS_RDONLY; // as won't be possible to save correctly)
+  }
   bool editable = t->file->writable && !(t->txstat & TS_RDONLY);
   t->txredit = editable ? TXED_YES : TXED_NO;
   t->txstat &= ~TS_CHANGED;     check_MCD(t);  // double-check file type

@@ -8,7 +8,7 @@
 qfile *QfsNew (QString filename, qfile *referer)
 {
   QfsFtype new_ft = QftNIL; qfile *file;
-  QString extra;
+  QString wildcards;
   if (filename == QfsELLIPSIS || filename == QfsEMPTY_NAME) new_ft = QftNOFILE;
   else if (filename.startsWith(QfsXEQ_PREFIX)) {            new_ft = QftPSEUDO;
     if (!filename.endsWith(QString::fromUtf8("»")))
@@ -25,7 +25,7 @@ qfile *QfsNew (QString filename, qfile *referer)
   if (filename.startsWith('~')) filename.replace(0,1, QDir::homePath());
   if (filename.contains("*") ||
       filename.contains("?")) {
-    int Ndir = filename.lastIndexOf("/");  extra = filename.mid(Ndir+1);
+    int Ndir = filename.lastIndexOf("/"); wildcards = filename.mid(Ndir+1);
     if (Ndir < 0)
          filename =                       QString::fromUtf8("./…");
     else filename = filename.left(Ndir) + QString::fromUtf8( "/…");
@@ -46,54 +46,47 @@ qfile *QfsNew (QString filename, qfile *referer)
 // Some intelligence here: if filename refer to directory with micros.dir file,
 // use that file, otherwise assume user want to see dirlist:
 //
-  if (Qi.isDir() && extra.isEmpty()) {
+  if (Qi.isDir() && wildcards.isEmpty()) {
     QFileInfo Qmicros(filename+"/" QfsROOTFILE);
     if (Qmicros.exists()) filename = Qmicros.canonicalFilePath();
     else {
-      extra = QString::fromAscii("*");
+      wildcards = QString::fromAscii("*");
       filename.push_back(QString::fromUtf8("/…"));
   } }
-  Qi.setFile(filename);
-//
-// Filename fully processed, create qinfo structure of correct subtype now:
-//
-  if (extra.isEmpty() && !Qi.isDir()) {
+  Qi.setFile(filename); // - - - - - - - - - filename processed, creating qfile
+  if (wildcards.isEmpty() && !Qi.isDir()) {
     qtxtfile *tfile = new qtxtfile;
     tfile->ft = QftTEXT;
-    tfile->name = Qi.fileName();
-    tfile->Qf.setFileName(filename); file = tfile;
+    tfile->name = Qi.fileName(); tfile->Qf.setFileName(filename); file = tfile;
   }
   else {
     qdirfile *dfile = new qdirfile;
     dfile->ft = QftDIR;
-    dfile->name = extra;
-    dfile->QD.setPath(Qi.path()); file = dfile;
+    dfile->name = wildcards; dfile->QD.setPath(Qi.path()); file = dfile;
   }
-  file->updated  = Qi.lastModified();
-  file->writable = QfsIsWritable(Qi);
-  file->size = Qi.size();
-  file->path = Qi.path();
-  file->full_name = Qi.path()+"/"+file->name; return file;
+  file->updated  = Qi.lastModified(); file->size =  Qi.size();
+  file->writable = QfsIsWritable(Qi); file->path =  Qi.path();
+  file->full_name = Qi.path() + "/" + file->name; return file;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 qfile *QfsDup (qfile *base)
 {
-  qdirfile *dfile; qfile *file;
+  qdirfile *dfile; qfile *qf;
   qtxtfile *tfile;
   switch (base->ft) {
   case QftNOFILE:
   case QftPSEUDO:
-  default:  file = new qfile_tag; break;
+  default:  qf = new qfile_tag; break;
   case QftTEXT:
-    file = tfile = new qtxtfile; tfile->Qf.setFileName(base->full_name);
+    qf = tfile = new qtxtfile; tfile->Qf.setFileName(base->full_name);
     break;
   case QftDIR:
-    file = dfile = new qdirfile; dfile->QD.setPath(base->path);
+    qf = dfile = new qdirfile; dfile->QD.setPath(base->path);
     break;
-  }                        file->ft        = base->ft;
-  file->name = base->name; file->full_name = base->full_name;
-  file->path = base->path; file->updated   = base->updated;
-  file->size = base->size; file->writable  = base->writable; return file;
+  }
+  qf->name = base->name; qf->full_name = base->full_name; qf->ft = base->ft;
+  qf->path = base->path; qf->updated   = base->updated;   qf->lf = base->lf;
+  qf->size = base->size; qf->writable  = base->writable;          return qf;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 QDir *QfsDir (qfile *file)
@@ -170,6 +163,10 @@ void QfsUpdateInfo(qfile *file) /*- - - - - - - - - - - - - - - - - - - - - -*/
   QFileInfo Qi(file->full_name); file->size = Qi.size();
                                  file->updated = Qi.lastModified();
                                  file->writable = QfsIsWritable(Qi);
+}
+bool QfsSameAs(QString name, QString filt, qfile *qf)
+{
+  return (name.compare(qf->full_name, QfsIGNORE_CASE) == 0 && filt == qf->lf);
 }
 void QfsChDir (qfile  *file) { QDir::setCurrent(file->path);           }
 bool QfsExists(QString name) { QFileInfo Qi(name); return Qi.exists(); }

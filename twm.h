@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07           Text & Window Manager           | (c) Epi MG, 2004-2011
+// МикроМир07           Text & Window Manager           | (c) Epi MG, 2004-2014
 //------------------------------------------------------+----------------------
 #ifndef TWM_H_INCLUDED  /* Old "nm.h" (c) Attic 1989-90, (c) EpiMG 1998-2001 */
 #define TWM_H_INCLUDED  /* old "wd.h" (c) Attic 1989, then (c) EpiMG 1996,98 */
@@ -42,7 +42,7 @@ struct txt_tag
 #define TS_PERM     0x40    /* - файл постоянно резидентен в памяти    |dq.c */
 #define TS_SAVERR   0x80    /* - в процессе сохранения возникла ошибка |     */
 #define TS_PSEUDO  0x100    /* - corresponding file is not real file         */
-#define TS_RDONLY  0x200    /* - force read-only (for ':help', dirlist etc)  */
+#define TS_RDONLY  0x200    /* - force read-only (for help, dirlist etc)     */
 #define TS_NEW     0x400    /* - новый файл - записывать по FO_NEW           */
 #define TS_MCD     0x800    /* - this file == micros.dir                     */
 #define TS_GITLOG 0x1000    /* - this file == git/Hg log (or blame/annotate) */

@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07           Qt-based File System            | (c) Epi MG, 2007,2011
+// МикроМир07           Qt-based File System            | (c) Epi MG, 2007-2014
 //------------------------------------------------------+--------------------*/
 #ifndef QFS_H_INCLUDED
 #define QFS_H_INCLUDED
@@ -29,8 +29,9 @@ struct qfile_tag        /* mic.h defines 'typedef struct qfile_tag == qfile' */
   qint64        size;       /*   Размер файла в байтах                       */
   QDateTime  updated;       /*   Время последней модификации                 */
   bool      writable;
-#endif
-};
+  QString         lf; /* Load Filter, index in MkLF[] = Lua method to filter */
+#endif                /* the content of the file on load; empty => no filter */
+};                    /* (set by tmDesc / used by tmDoLoad, not used in Qfs) */
 #ifdef __cplusplus
 qfile *QfsDup (qfile *file);
 QDir  *QfsDir (qfile *file);
@@ -49,6 +50,7 @@ bool QfsRename(qfile *file, QString new_name);
 #define FO_WRITE 1 /* Write only         */
 #define FO_NEW   2 /* New file for write */
 
+bool QfsSameAs(QString fullName, QString loadFilt, qfile *file);
 bool QfsExists(QString fullName);
 bool QfsIsUpToDate (qfile *file);   
 void QfsUpdateInfo (qfile *file);

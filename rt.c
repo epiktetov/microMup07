@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07   runtime (memory and string operations)  | (c) Epi MG, 2007,2011
+// МикроМир07   runtime (memory and string operations)  | (c) Epi MG, 2007-2014
 //------------------------------------------------------+--------------------*/
 #include "mic.h" /* Old me.c - Память (c) Attic 1989-90, (c) EpiMG 1998-2003 */
 #include <stdio.h>
@@ -16,7 +16,7 @@ char *GetMain (long n)
   return p;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-#define BIG_MEM_CHUNK 20*1024*1024
+#define BIG_MEM_CHUNK 60*1024*1024
 /*
  * Инициализация "большого" сегмента памяти -- platform-specific manipulations
  * with VirtualAlloc() etc are removed, now it just malloc()'s a bug chunk and

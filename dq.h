@@ -1,10 +1,11 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07       Деки (deques) для Tx и Undo         | (c) Epi MG, 2007,2011
+// МикроМир07       Деки (deques) для Tx и Undo         | (c) Epi MG, 2007-2014
 //------------------------------------------------------+--------------------*/
 #ifndef DQ_H_INCLUDED                           /* Old "dq.h" (c) Attic 1989 */
 #define DQ_H_INCLUDED
 
 void DqInit(char *membuf, long bufsize);
+long DqFree();                               /* <- total free memory in deqs */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 struct deq_tag
 {

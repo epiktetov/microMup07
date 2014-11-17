@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07       Деки                                | (c) Epi MG, 2007-2012
+// МикроМир07       Деки                                | (c) Epi MG, 2007-2014
 //------------------------------------------------------+----------------------
 * Original "dq.c" (c) Attic 1989-91
 *                 (c) EpiMG 1997-2001
@@ -67,7 +67,7 @@ bool DqDel (deq *d)
     d->dnext = freedeqs;  freedeqs = d; return TRUE;
 } }
 /*---------------------------------------------------------------------------*/
-static long DqFree()                  /* calculate total free memory in deqs */
+long DqFree()                         /* calculate total free memory in deqs */
 {                                     /*   if DqReserveExt => don't consider */
   deq *d = &deq0;                     /*   memory under extents to be "free" */
   long f = 0;
@@ -335,8 +335,8 @@ long tmswap (long required)
       if (op & S_EDESC) TxDel(tm);
       if ((available = DqFree()) >= required) return available;
   } }
-/* Не удалось. В памяти остались текущий файл, файл сохранения,
-                                 откатка текущего файла, урезанная до лимита */
+/* Не удалось. В памяти остались: текущий файл, файл сохранения,
+                         откатка текущего файла, урезанная до лимита */
   return DqFree();
 }
 /*---------------------------------------------------------------------------*/

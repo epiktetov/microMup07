@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07          Embedded Lua scripting           | (c) Epi MG, 2011
+// МикроМир07          Embedded Lua scripting           | (c) Epi MG, 2011,2014
 //------------------------------------------------------+--------------------*/
 #ifndef LUAS_H_INCLUDED
 #define LUAS_H_INCLUDED
@@ -8,6 +8,7 @@ void luasInit(void);       /* initialization (also load/executes "auto.lua") */
 void luasNtxt(txt*newTxt); /*  new-text hook (called from tmDoLoad, twm.cpp) */
 int  luasExec(txt*, bool); /*  load/execute given text (current line) as Lua */
 int  luasFunc(void); /* execute (and pop) Lua function from top of Lua stack */
+int luLF_read(txt*); /* read txt->file using load filter named txt->file->lf */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #ifdef lua_h         /* the problem with Lua function names is that it's not */
 extern lua_State *L; /* very clear how do they operate with the stack, fixin */
@@ -52,8 +53,9 @@ inline void luaQ_setfield(int ix, const char *fn) { lua_setfield (L,ix,fn); }
 inline void luaQ_setglobal(const char *name)      { lua_setglobal(L, name); }
 inline int luaQ_setmetatable(int ix)       { return lua_setmetatable(L,ix); }
 inline void luaQQ_settable  (int ix)              { lua_settable    (L,ix); }
+inline void luaP_pushcfunction(lua_CFunction F)   { lua_pushcfunction(L,F); }
 //
-// Additional convenience methods:
+// Additional convenience methods (adding to luaL_optinteger/number/lstring):
 //
 inline bool luaX_optboolean(int ix, bool defaultValue)
 {

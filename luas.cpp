@@ -391,6 +391,8 @@ void luasInit(void)                            // Lua SCRIPTING initialization
       luaL_openlibs(L); MkInitCCD(); // defines "Mk" table (for Lua and itself)
                         luaReInit(); // defines "Re" function (obj constructor)
                         luTxtInit(); // defines "Txt" table
+  luaP_newtable();
+  luaQ_setglobal("MkLF"); // table "MkLF" initially empty, user may add filters
   //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   txt *autoLua = tmDesc(":/auto.lua", false);   // do not need UNDO (read-only)
   if (autoLua) { tmLoad  (autoLua);
@@ -453,5 +455,41 @@ int luasFunc (void)       // executing Lua function (from the top of Lua stack)
     if (!lua_isstring(L,-1)) return E_KBREAK;
     vipError(QString("LuaERROR: %1").arg(lua_tostring(L,-1)));
     luaQn_pop(1);                              return E_SFAIL;
+} }
+//------------------------------------------------------//---------------------
+static txt *tLF = NULL;                                 // --- Load Filters ---
+static int luLF_addText(lua_State*)                     //---------------------
+{                                     size_t len;
+  const char *text = luaL_checklstring(L,1,&len);
+  size_t gap = cpdiff(tLF->txdstk->dbeg, tLF->txustk->dend);
+  if (len+MAXTXRM > gap)      luaL_error(L,"out-of-memory");
+  DqAddE(tLF->txustk, (char*)text, len);
+  tLF->txy++;                  return 0;
+}
+// MkLF["filter"] = function(filename,addText) -- this function will be called
+//   for str in io.lines(filename) do          -- for filenames specified with
+//     -- filter                               -- ":filter" suffix, shall read
+//     addText(str)                            -- everything by itself and add
+//   end                                       -- the content line by line via
+// end                                         -- addText function provided
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+int luLF_read (txt *t) // function returns: -1:fail, 0:empty, 1:truncated, 2:ok
+{
+  luaP_getglobal("MkLF");
+  luaX_getfield_top(t->file->lf.uStr()); // call MkLF["name"] with (file,addFn)
+  if (lua_isfunction(L,-1)) {            //
+    luaP_pushstring(t->file->full_name.uStr());                   tLF = t;
+    luaP_pushcfunction(luLF_addText); extgap(t->txustk, DqFree(), false );
+    int rc = luaQX_pcall(2,0);            bool empty = qDqEmpt(t->txustk);
+    if (rc == 0) return empty ? 0 : 2;
+    else {
+      QString err = Utf8("«..%1..»").arg(lua_tostring(L,-1));
+      luaQn_pop(1);
+      if (empty)                                 return -1; // error
+      DqAddE(t->txustk, err.cStr(), err.size()); return  1; // truncated
+  } }
+  else {
+    fprintf(stderr, "MkLF[%s] not found\n", t->file->lf.uStr());
+    luaQn_pop(1);                                     return -1;
 } }
 //-----------------------------------------------------------------------------
