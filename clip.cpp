@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07  Clipboard (using wxClipboard) & CS/LS op | (c) Epi MG, 2007-2012
+// МикроМир07  Clipboard (using wxClipboard) & CS/LS op | (c) Epi MG, 2007-2014
 //------------------------------------------------------+----------------------
 #include <QApplication>   /* Old le.c (c) Attic 1989,    (c) EpiMG 1996-2003 */
 #include <QClipboard>     /* old te.c (c) Attic 1989-96, (c) EpiMG 1998,2001 */
@@ -62,7 +62,7 @@ static char clbuf[MAXLUP];
 static void cptinit (bool needContent)
 {
   if (LCtxt == NULL) {
-    if ((LCtxt = tmDesc(SAVFILNAM, false)) == NULL) exc(E_CPFER);
+    if ((LCtxt = tmDesc(CLIPFILNAM, false)) == NULL) exc(E_CPFER);
     if (needContent) tmLoad(LCtxt);
     else   LCtxt->txstat |= TS_NEW;
            LCtxt->txstat |= (TS_FILE|TS_PERM);

@@ -458,6 +458,8 @@ void twShowFile(QString name)
   wnd *wind = vipSplitWindow(Twnd, TM_VFORK);
   if  (wind)  twEdit(wind, name, NULL, true);
 }
+void twOpenALEStx() { twShowFile (ALESFILNAM); }
+void twOpenBLAHtx() { twShowFile (BLAHFILNAM); }
 void twNewLuaText() { twShowFile(":/new.lua");   // open file, then unlink it
      tmUnlink(Ttxt);  vipUpdateWinTitle(Twnd); } // (and update window title)
 /*---------------------------------------------------------------------------*/
@@ -617,6 +619,8 @@ int TmCommand (int kcode)
   case TM_LUAF:    return luasExec(Ttxt,false);
   case TM_LUAS:    return luasExec(Ttxt, true);
   case TM_LUAN:    twNewLuaText(); return E_OK;
+  case TM_LUAA:    twOpenALEStx(); return E_OK;
+  case TM_GOBLAH:  twOpenBLAHtx(); return E_OK;
   default:
     return E_NOCOM;
   } return E_OK;

@@ -22,7 +22,7 @@ function Txt.openXref(Tx)        Tx.refs = { }       -- open new (throw-away)
   end; return newTx                           --     if ... end
 end                                           --       Rx:IL(smth); Tx:Xref(N)  end
 Mk["Ctrl+X"] = function(Tx)                   --     end
-  local Rx = Tx.refTx and Txt[Tx.refTx]       --   end  --  use Ctrl+Y to jump
+  local Rx = Tx.refTx and Txt[Tx.refTx]       --   end  --  use Ctrl+X to jump
   if not Rx then return end                   -- end    -- between these texts
   for i=Tx.Y,1,-1 do
     if Tx.refs[i] then Rx:focus(); Rx.Y = Tx.refs[i]; return end

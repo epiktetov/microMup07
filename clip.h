@@ -1,11 +1,10 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07  Clipboard (using wxClipboard) & CS/LS op | (c) Epi MG, 2007-2012
+// МикроМир07  Clipboard (using wxClipboard) & CS/LS op | (c) Epi MG, 2007-2014
 //------------------------------------------------------+--------------------*/
 #ifndef CLIP_H_INCLUDED
 #define CLIP_H_INCLUDED
 #include "mic.h"
 #include "ccd.h"
-#define SAVFILNAM "~/.micro7.clip"
 
 void clipStart();
 void clipFocusOff();  /* loosing focus - save unpasted data to Clipboard...  */

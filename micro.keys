@@ -3,7 +3,7 @@
  * ----------------------------------------------------------------------------
  * original "MicroMir" idea (c) А.Г.Кушниренко, Г.В.Лебедев (мехмат МГУ)   1981
  * "nanoMir" implementation (c) Attic (Д.В.Варсанофьев, А.Г.Дымченко) 1989-1991
- * "nanoMir" and МикроМир07 (c) EpiMG (М.Г.Эпиктетов)       1998-2001,2006-2014
+ * "nanoMir" and МикроМир07 (c) EpiMG (М.Г.Эпиктетов)   1998-2001 and 2006-2014
 -------------------------------------------------------------------------------
  Ins is "Help" key on MacPro keyboard, missing on A1243 (see KEY MAPPING below)
  Del is "Delete⌦" on Mac keyboard ("delete" key is Backspace)
@@ -28,7 +28,7 @@ k_BEGIN
 /*
 ʁFirst MicroMir principle:ʀ text is not a sequence of bytes (as it is represented
 in the operating system) but rather a 2-dimensional matrix of lines filled with
-characters and cursor (current editing position) located on some character.
+characters, and has cursor (current editing position) located on some character
 
 ʁBASIC CURSORʀ    {arrows}    - move cursor one position in given direction
   ʁMOVEMENTʀ      Ctrl+Left   - move cursor to beginning of the line
@@ -79,6 +79,7 @@ replaces anything, it just pushes current text into stack like Esc <down> does)
   Meta+'+'('=') - open new window with the same contents as in current one
   Meta+'-'      - split the window into two panes, forking the contents
   Meta+'\'/Del  - ask for filename and enter that file (see FILES below)
+  Meta+']'      - open persistent scratch pad (~/.micro7.blah file)
   Meta+{arrow}  - move cursor to closest window in given direction
   Meta+Return   - SyncPos(tm) - open file mentioned here in the upper pane
 
@@ -91,8 +92,10 @@ a_(TM_HFORK,   "Ctrl+Alt+-",  0xc102d) /*                            */
 k_(TM_FENTR,   "Meta+Del",    0xf1007) /* ввести имя и войти         */
 a_(TM_FENTR,   "Meta+\\",     0xf1007) /*           в указанный файл */
 a_(TM_FENTR,   "Ctrl+Alt+\\", 0xf1007) /*                            */
-k_(TM_F1ENTR,           NULL, 0xc10f1) /* в том же окне:      Return */
-k_(TM_F2ENTR,           NULL, 0xc10f2) /* в новом окне: Shift+Return */
+k_(TM_GOBLAH,  "Ctrl+Alt+]",  0xf1008)
+a_(TM_GOBLAH,  "Meta+]",      0xf1008)
+k_(TM_F1ENTR,      NULL,      0xc10f1) /* в том же окне:      Return */
+k_(TM_F2ENTR,      NULL,      0xc10f2) /* в новом окне: Shift+Return */
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 k_(TM_LWINDOW,     "Meta+Left",   0xc1012) /* перейти к левому окну      */
 k_(TM_UWINDOW,     "Meta+Up",     0xc1013) /* - к верхнему окну          */
@@ -202,7 +205,7 @@ k_(TE_CLREND, "Esc,Ctrl+D",      0xc4c44) /* - до курсора      (мно�
 /*
 For those who are used to Return splitting text line - it can work that way,
 if you press Home before Return (MicroMir uses Home & Esc keyes as prefixes,
-both should be pressed and released before the next key (unlike Shift/Ctrl/…)
+both should be pressed and released before the next key, unlike Shift/Ctrl/…)
 
   Home,Return    - split the line, moving right part to beginning of new line
   Home,Backspace - join lines back, moving text as:    +------     +----------
@@ -212,8 +215,8 @@ both should be pressed and released before the next key (unlike Shift/Ctrl/…)
                          |like█     <-> |like█that         (both join commands
                          |     that     |                   discard text right
   Alt+Shift+{arrows}                                        of cursor position)
-    move selected text (or from cursor to end of the line)
-    in given direction, overwriting whatever it moves over
+    move selected text (from cursor to end of the line,
+    if nothing selected) in given direction, overwriting whatever it moves over
 */
 k_(TE_BLIN,     "Home,Return",     0xc5804) /* разрезать строку в начало    */
 k_(TE_SLIN,     "Home,Ins",        0xc5806) /* разрезать строку вертикально */
@@ -231,7 +234,7 @@ Rudimental text formatting:
 
    * Split Very Long Lines (VLL): if the text in current line does not fit into
      window, then unfold it to several lines (splitting on word boundary unless
-     that makes gap too big), adding continuation mark (sky blu '»') at the end
+     that makes gap too big) adding continuation mark (sky blue '»') at the end
 
    * However, if current line already ends with continuation mark, do just the
      opposite - fold all consequent lines with that mark into single one; that
@@ -417,7 +420,7 @@ k_(TM_UPDATE, "Meta+S",     0xc9453) /* сохранить изменения   
 a_(TM_UPDATE, "Ctrl+S",     0xc9453)
 /*
   This "down into file" command works not only in 'micros.dir', but also in any
-text that have name of other file included: just move cursor to that name, then
+text that has name of other file included - just move cursor to that name, then
 press Esc <down> (the name should be separated from surrounding text by spaces,
 commas or quotes - if is't not, you'll need to use block selection to mark it)
 
@@ -495,11 +498,13 @@ these commands (plus ":/auto.lua" automatically loaded/executed at startup):
 
     Ctrl+J,Ctrl+J - load and executes the entire current text as Lua script
     Ctrl+Shift+J  - load/execute current line as (single-line) Lua script
+    Ctrl+J,A      - enter local auto-load executable script (~/.micro7.ales)
     Ctrl+J,N      - create new unnamed/throw-away text for new Lua script
 */
 k_(TM_LUAF,    "^J,Ctrl+J", 0xfc000) /* загрузить и выполнить программу на   */
 k_(TM_LUAS, "Ctrl+Shift+J", 0xfcc00) /*  языке Lua из текущего текста/строки */
-k_(TM_LUAN, "^J,N",         0xfc00e)
+k_(TM_LUAA, "^J,A",         0xfc00a)
+k_(TM_LUAN, "^J,N",         0xfc00e) /* ? likely to be removed in the future */
 /*
 MicroMir-specific Lua objects and operations
 
@@ -572,7 +577,7 @@ k_(TK_EM1, "F7",       0xfd036) /*   Shift+F7/F8/F9 - start recording macro */
 k_(TK_EM2, "F8",       0xfd037) /*         F7/F8/F9 - finish recording, or  */
 k_(TK_EM3, "F9",       0xfd038) /*       execute previously recorded macro  */
 /*
-ʁSYNTAX CHECKER:ʀ Automatically does minimal syntax check (mostly bracket balance
+ʁSYNTAX CHECKER:ʀ  MicroMir performs minimal syntax check (mostly bracket balance
 and proper quoting) and highlights keywords and comments, depending on language
 used in the text (which is determined by file extension and/or #! in 1st line).
  Currently works more or less reliable for C/C++ formatted with "proper" style,

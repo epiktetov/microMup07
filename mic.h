@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07         Самый главный header файл         | (c) Epi MG, 2006-2012
+// МикроМир07         Самый главный header файл         | (c) Epi MG, 2006-2014
 //------------------------------------------------------+--------------------*/
 #ifndef MIC_H_INCLUDED  /* Old "nm.h" (c) Attic 1989-90, (c) EpiMG 1998-2001 */
 #define MIC_H_INCLUDED
@@ -11,6 +11,9 @@ extern "C" {
 # define TRUE  ((bool)1)
 # define FALSE ((bool)0)
 #endif
+#define ALESFILNAM "~/.micro7.ales" /* auto-load executable script */
+#define BLAHFILNAM "~/.micro7.blah" /* persistent scratch pad      */
+#define CLIPFILNAM "~/.micro7.clip" /* clipboard content, clip.cpp */
 #define CR      '\015'
 #define LF      '\012'
 #define clipEOL '\012'

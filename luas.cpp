@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07          Embedded Lua scripting           | (c) Epi MG, 2011,2012
+// МикроМир07          Embedded Lua scripting           | (c) Epi MG, 2011-2014
 //------------------------------------------------------+--------------------*/
 #include <QRegExp>
 #include "mim.h"
@@ -394,12 +394,20 @@ void luasInit(void)                            // Lua SCRIPTING initialization
   //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   txt *autoLua = tmDesc(":/auto.lua", false);   // do not need UNDO (read-only)
   if (autoLua) { tmLoad  (autoLua);
-                 luasExec(autoLua,false); }
-//
+                 luasExec(autoLua, false); }
+  // Order:
+  // - built-in auto.lua (most static of them all, and should be overridable)
+  // - configurable script from MicroMir preferences
+  // - local host auto-load executable script (supposed to be most volatile)
+  //
   if (!MiApp_autoLoadLua.isEmpty()) {
     int rc = luaL_dostring(L, MiApp_autoLoadLua.uStr());
     if (rc) fprintf(stderr, "LuaERROR: %s\n", lua_tostring(L,-1));
-} }
+  }
+  txt *alesLua = tmDesc(ALESFILNAM, true); // with UNDO
+  if (alesLua) { tmLoad  (alesLua);
+                 luasExec(alesLua, false); }
+}
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 int luasExec (txt *Tx, bool just1line) // load/execute given text …(tx, false),
 {                                      // or current line in Ttxt …(Ttxt,true);
