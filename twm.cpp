@@ -180,7 +180,7 @@ cmdmap vcs_commands[] =
 txt *tmDesc (QString filename, bool needUndo, txt *referer)
 {
   QRegExp ptn1("([^:]+):(git:|:|gitlog|blame|hg:|hglog|annotate)(.*)");
-  QRegExp ptn2("([^:]+):(.+)");                        QString ld_filt;
+  QRegExp ptn2("([^:]+):([0-9+A-Z_a-z-]+)");           QString ld_filt;
   short force_txstat = 0;
   short force_clang  = 0;
   if (filename.compare(QfsELLIPSIS) == 0) { // PSEUDO text used by Unix & Lua
