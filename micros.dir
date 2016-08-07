@@ -1,4 +1,4 @@
-МикроМир07 © Attic 1989-91, © Epi MG, 1998-2014 -- keycodes -->|micro.keys
+МикроМир07 © Attic 1989-91, © Epi MG, 1998-2016 -- keycodes -->|micro.keys
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -|- - - - - - - -
 Самый главный header файл, to be included the first everywhere |mic.h
 Main Header + Scrollable Text Window (ScTwin) class / C++ only |mim.h
@@ -37,8 +37,6 @@ template for new script (loaded by ^J,N command, twNewLuaText) |new.lua
                                                (auto-generated)|Makefile
 zlib-style license                                             |LICENSE
 MacOS info.plist                                               |mim.Info.plist
-shell script to make µMup07.Qt.app  -- newer Qt (version 4.5+) |Qt.bundle.sh
-        (with Qt framework bundled) -- legacy Qt version 4.3.3 |make.bundle.sh
 ---------------------------------------------------------------|---------------
 --------------- Legacy code (not converted to C++) ------------|---------------
 Text Editor                                                    |te.h

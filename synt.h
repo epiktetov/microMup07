@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07      Syntax checker / text colorizer      | (c) Epi MG, 2011
+// МикроМир07      Syntax checker / text colorizer      | (c) Epi MG, 2011-2016
 //------------------------------------------------------+--------------------*/
 #ifndef SYNT_H_INCLUDED
 #define SYNT_H_INCLUDED
@@ -23,7 +23,9 @@ enum SyntSupportedLangs {
 // and may add something past the end of the supplied text, updating len param:
 //
 void SyntColorize (txt *t, tchar *tcp, int& len);
-
+//
+// int this/prev/lastSynts[] format: word[0] = AT_COMMENT? + N
+//                        for i=1..N word[i] = (open_pos << 8) + brak_char
 extern "C" {
 #endif
 /*  Parse the (packed) line, calculating Synts array and return its length   */

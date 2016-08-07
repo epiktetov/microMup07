@@ -41,33 +41,34 @@ version.commands = @echo \"const char microVERSION[]=\\\"\"\"`git describe --tag
 QMAKE_EXTRA_TARGETS += version
 PRE_TARGETDEPS += version.h
 macx {
-  MimEXECUTABLE = µMup07.app/Contents/MacOS/µMup07
-  MimRESOURCES = µMup07.app/Contents/Resources
-  icns.target = $$MimRESOURCES/micros.icns
-  icns.depends = micros.icns
-  icns.commands = @mkdir -p $$MimRESOURCES; cp $$icns.depends $$icns.target
-  symlink.target = mim
-  symlink.commands = ln -sf $$MimEXECUTABLE $$symlink.target
-  QMAKE_EXTRA_TARGETS += icns symlink
-  POST_TARGETDEPS += $$icns.target $$symlink.target
-#
-# For some reason, QtCreator cannot handle qt_menu.nib by itself, when building
-# with debug library (which are not available in framework format), assisting..
-#
-  qt_menu.target = $$MimRESOURCES/qt_menu.nib
-  qt_menu.depends = ../installs/Qt-sources-git/src/gui/mac/qt_menu.nib
-  qt_menu.commands = cp -R $$qt_menu.depends $$MimRESOURCES
-  qt_menu_ext.target = qt_menu
-  qt_menu_ext.depends = $$qt_menu.target
-  QMAKE_EXTRA_TARGETS += qt_menu qt_menu_ext
+  MimEXE = µMup07.app/Contents/MacOS/µMup07
+  MimFWK = µMup07.app/Contents/Frameworks
+  MimRES = µMup07.app/Contents/Resources
+  QtCORE4 = QtCore.framework/Versions/4
+  QtGUI4  = QtGui.framework/Versions/4
+  QtCOREname = @executable_path/../Frameworks/$$QtCORE4/QtCore
+  QtGUIname  = @executable_path/../Frameworks/$$QtGUI4/QtGui
+  qt_nib.target = $$MimRES/qt_menu.nib
+  qt_gui.target = $$MimFWK/$$QtGUI4/QtGui
+  qtcore.target = $$MimFWK/$$QtCORE4/QtCore
+  qt_nib.depends = $$QMAKE_LIBDIR_QT/$$QtGUI4/Resources/qt_menu.nib
+  qt_gui.depends = $$QMAKE_LIBDIR_QT/$$QtGUI4/QtGui
+  qtcore.depends = $$QMAKE_LIBDIR_QT/$$QtCORE4/QtCore
+  qt_nib.commands = cp -R $$qt_nib.depends $$MimRES/
+  qt_gui.commands = mkdir -p $$MimFWK/$$QtGUI4;\
+                    cp $$qt_gui.depends $$qt_gui.target;\
+    install_name_tool -id $$QtGUIname   $$qt_gui.target;\
+    install_name_tool -change $$QtCORE4/QtCore $$QtCOREname $$qt_gui.target
+
+  qtcore.commands = mkdir -p $$MimFWK/$$QtCORE4;\
+                    cp $$qtcore.depends $$qtcore.target;\
+    install_name_tool -id $$QtCOREname  $$qtcore.target
+
+  qtbundle.target = bundle
+  qtbundle.depends = all $$qtcore.target $$qt_gui.target $$qt_nib.target
+  qtbundle.commands = \
+     install_name_tool -change $$QtCORE4/QtCore $$QtCOREname $$MimEXE;\
+     install_name_tool -change $$QtGUI4/QtGui   $$QtGUIname  $$MimEXE
+
+  QMAKE_EXTRA_TARGETS += qtcore qt_gui qt_nib qtbundle
 }
-MimFILES  = LICENSE    micros.dir microMir.icns micros.icns mim.Info.plist
-MimFILES += micro.keys micons.psd microMir.png
-MimFILES +=              qtmim.pro qtmim.desktop qtmim.rc abc
-MimFILES += Qt.bundle.sh qtmim.ico qtmim.png keywords.txt test.txt
-zip.target  = zip
-zip.depends = Qtmim.zip
-zipfile.target = Qtmim.zip
-zipfile.depends = $$MimFILES $$HEADERS $$SOURCES $$RESOURCES
-zipfile.commands = rm -f $$zipfile.target; zip $$zipfile.target $$zipfile.depends
-QMAKE_EXTRA_TARGETS += zip zipfile

@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07      Syntax checker / text colorizer      | (c) Epi MG, 2011,2012
+// МикроМир07      Syntax checker / text colorizer      | (c) Epi MG, 2011-2016
 //------------------------------------------------------+----------------------
 #include <QString>
 #include "mic.h"
@@ -651,8 +651,8 @@ end_of_loop:
       wndop(TW_DWN, text);            TxBottom(text); // below, make sure final
 } } }                                                 // Synts are updated too
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-int SyntParse(txt *text, char *str, int len, int *out) // NOTE: 'out' may point
-{                                                      //   to text->precSynts
+int SyntParse(txt *text, char *str, int len, int *out) // NOTE: 'out' points to
+{                                                      //  text->this/prevSynts
   if (text->clang > CLangMAX) { *out = 0xD1; return 1; }
   SyntLang_t *L = &SyntLangs[text->clang];
   //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

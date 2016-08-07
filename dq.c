@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07       Деки                                | (c) Epi MG, 2007-2014
+// МикроМир07       Деки                                | (c) Epi MG, 2007-2016
 //------------------------------------------------------+----------------------
 * Original "dq.c" (c) Attic 1989-91
 *                 (c) EpiMG 1997-2001
@@ -260,7 +260,6 @@ int DqLoad (deq *d, qfile *f, long size)
   if (actual_size < 0) return -2;
   else {
     char *p = d->dbeg + actual_size;
-    if (p[-1] == EOFchar)  p--;
     if (p[-1] != LF) *p++ = LF; 
     if (rc == 1) p = scpy("«...»\n",p); d->dend = p; return rc;
 } }

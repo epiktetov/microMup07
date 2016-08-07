@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07 ViewPort (interface wx/C++ / legacy code) | (c) Epi MG, 2006-2014
+// МикроМир07 ViewPort (interface Qt/C++ • legacy code) | (c) Epi MG, 2006-2016
 //------------------------------------------------------+--------------------*/
 #ifndef VIP_H_INCLUDED  /* Old "nm.h" (c) Attic 1989-90, (c) EpiMG 1998-2001 */
 #define VIP_H_INCLUDED  /* old "wd.h" (c) Attic 1989, then (c) EpiMG 1996,98 */

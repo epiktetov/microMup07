@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07           Text & Window Manager           | (c) Epi MG, 2004-2014
+// МикроМир07           Text & Window Manager           | (c) Epi MG, 2004-2016
 //------------------------------------------------------+----------------------
 #include <QCoreApplication> // need QCoreApplication::arguments
 #include <QRegExp>

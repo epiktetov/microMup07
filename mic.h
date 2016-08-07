@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07         Самый главный header файл         | (c) Epi MG, 2006-2014
+// МикроМир07         Самый главный header файл         | (c) Epi MG, 2006-2016
 //------------------------------------------------------+--------------------*/
 #ifndef MIC_H_INCLUDED  /* Old "nm.h" (c) Attic 1989-90, (c) EpiMG 1998-2001 */
 #define MIC_H_INCLUDED
@@ -18,7 +18,6 @@ extern "C" {
 #define LF      '\012'
 #define clipEOL '\012'
 #define TAB     '\011'
-#define EOFchar '\032' /* 'EOF' is reserved somewhere */
 #define ACPR    '\xCA'
 #define ACPR2   '\x80'
 #define ctotc(c) ((tchar)(unsigned char)(c))   /* <- без расширения знака    */
