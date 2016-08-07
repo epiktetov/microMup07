@@ -166,14 +166,14 @@ void tmCheckFiles (void) // - - - - - - - - - - - - - - - - - - - - - - - - - -
 struct cmdmap { const char *key, *cmd; int txstat; };
 cmdmap vcs_commands[] =
 {
-  { "git:",     "«git show %2:%1»",                           TS_RDONLY },
-  { ":",        "«git show %2:%1»",                           TS_RDONLY },
-  { "gitlog",   "«git log --pretty='%h (%aN %ad) %s' %2 %1»", TS_GITLOG },
-  { "blame",    "«git blame --date short %2 %1»",             TS_GITLOG },
-  { "hg:",      "«hg cat -r %2 %1»",                          TS_RDONLY },
-  { "annotate", "«hg annotate -n -dq %2 %1»",                 TS_GITLOG },
-  { "hglog",    "«hg log --template '{rev} ({author|user}"
-                " {date|date}) {desc|firstline}\\n' %2 %1»",  TS_GITLOG },
+  { "git:",     "«git show %2:./%1»",                      TS_RDONLY },
+  { ":",        "«git show %2:./%1»",                      TS_RDONLY },
+  { "gitlog",   "«git log --pretty='%h (%ad) %s' %2 %1»",  TS_GITLOG },
+  { "blame",    "«git blame --date short %2 %1»",          TS_GITLOG },
+  { "hg:",      "«hg cat -r %2 %1»",                       TS_RDONLY },
+  { "annotate", "«hg annotate -n -dq %2 %1»",              TS_GITLOG },
+  { "hglog",    "«hg log --template '{rev} ({date|date})"
+                           " {desc|firstline}\\n' %2 %1»", TS_GITLOG },
   { 0,0,0 }
 };
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
