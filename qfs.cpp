@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07           Qt-based File System            | (c) Epi MG, 2007,2014
+// МикроМир07           Qt-based File System            | (c) Epi MG, 2007-2016
 //------------------------------------------------------+----------------------
 #include <QString>
 #include "mic.h"
@@ -189,12 +189,10 @@ QString QfsShortDirName (qfile *file) { return QfsShorten(file->path);      }
 QString QfsModDateText (QFileInfo Qi)
 {
   QDateTime dt = Qi.lastModified();
-  QString text;
+  if (!dt.isValid()) return QString("Jan 06, 1965");
   if (dt.daysTo(QDateTime::currentDateTime()) > 300)
-       text = dt.toString("MMM dd, yyyy");
-  else text = dt.toString("MMM dd hh:mm");
-  text.push_front(" ");
-  text.push_front(QDate::shortDayName(dt.date().dayOfWeek())); return text;
+       return dt.toString("MMM dd, yyyy");
+  else return dt.toString("MMM dd hh:mm");
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void QfsClear     (qfile *pfile)       { if (pfile) delete pfile;          }

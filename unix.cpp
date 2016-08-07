@@ -328,16 +328,14 @@ diff_sync_to_other_wnd:
   }
   else return -1; /* unknown format */
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-// Filename found, open that file in the other window (if not opened already)
-//
-  if ((other_wnd = Twnd->wsibling) != NULL) {
-    vipActivate(other_wnd);
-    vipFocus   (other_wnd);
-    if (filename != other_wnd->wtext->file->name) twDirPush(filename, Ttxt);
-  }
-  else if ((other_wnd = vipSplitWindow(Twnd, TM_VFORK)) != NULL) {
-    vipFocusOff(Twnd);
-    if (!twEdit(other_wnd, filename, NULL, true)) return -1;
+// Filename found, open that file in the other window, if not opened already in
+//                                              the sibling window (upper pane)
+  if ((other_wnd = Twnd->wsibling) != NULL &&
+       filename == other_wnd->wtext->file->name) { vipActivate(other_wnd);
+                                                   vipFocus   (other_wnd); }
+  else {
+    other_wnd = vipSplitWindow(Twnd, TM_VFORK);   if (!other_wnd) return -1;
+    vipFocusOff(Twnd); if (!twEdit(other_wnd,filename,NULL,true)) return -1;
   }
   tesetxy(line_pos, file_pos-1); return 0;
 }

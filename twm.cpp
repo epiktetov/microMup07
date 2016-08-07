@@ -242,6 +242,8 @@ txt *tmDesc (QString filename, bool needUndo, txt *referer)
 bool teferr (txt *t) { QString msg = QStingFERROR.arg(t->file->full_name);
                        vipError(msg);                        return false; }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+#define DIRLST_FNPOS 36      /* position of a filename in the TS_DIRLST text */
+//
 static void tmDirLST (txt *t)
 {
   QDir *dir = QfsDir(t->file);
@@ -355,9 +357,9 @@ bool tmReLoad (txt *t)   // Forced reload -- check the status of real file (and
   case QftPSEUDO: TxDiscard(Ttxt); tmLoad  (Ttxt); return  true;
   case QftDIR:    TxDiscard(Ttxt); tmDoLoad(Ttxt); return  true;
 } }
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void tmUnlink (txt *t)       /* unlink text from the file (change to PSEUDO) */
-{
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void tmUnlink (txt *t)          // unlink text from the file (change to PSEUDO)
+{                               //                  (used only by twNewLuaText)
   qfile *pseudo = QfsNew(QfsELLIPSIS, t->file);
   QfsClear(t->file);          t->file = pseudo;
   t->txstat |=  TS_PSEUDO;

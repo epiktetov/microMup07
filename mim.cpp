@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07   Main Frame + Application Data + ScTwin  | (c) Epi MG, 2004-2014
+// МикроМир07   Main Frame + Application Data + ScTwin  | (c) Epi MG, 2004-2016
 //------------------------------------------------------+----------------------
 #include <QApplication>
 #include <QtGui>
@@ -642,10 +642,9 @@ void MiScTwin::Erase (QPainter& dc, int tx, int ty, int len)
 // AT_PROMPT       ʂdark blueʀ text - used for prompts, indicates wildcard search
 // AT_REGEX        ʄdark redʀ chars - marks regex search
 // AT_SUPER        ʈsky blueʀ chars - special characters -- forces Insert mode
-// AT_UNDERL       reserved for underline
 //
-// AT_MARKFLG (alone) marker flag 2 (DarkWheat gradient)
-// AT_MARKFLG+BG_CLR: flags 1,3,4 (solid red/blue/green gradient)
+// AT_MARKFLG (alone) marker flag 0 (DarkWheat gradient)
+// AT_MARKFLG+BG_CLR: flags 1,2,3 (solid red/blue/green gradient)
 // AT_BG_CLR:         background color (by itself, used for selection blocks):
 //   AT_BG_RED        - red, temporary block / "can't edit" cursor / error mark
 //   AT_BG_GRN        - green, "can edit, text unchanged" cursor / matched mark
