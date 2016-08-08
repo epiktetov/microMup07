@@ -7,8 +7,7 @@
 #define LDS_MCD '|'
 #define MCD_LEFT     63     /* первый (основной) разделитель в micros.dir    */
 #define MCD_RIGHT    68     /* второй разделитель в micros.dir (optional)    */
-#define TXT_MARKS     5     /* макс.количество запомненных маркеров в тексте */
-#define TXT_TempMARK  4     /* - индекс "временного" маркера (последний)     */
+#define TXT_MARKS    20     /* макс.количество запомненных маркеров в тексте */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 struct txt_tag 
 {
@@ -28,6 +27,7 @@ struct txt_tag
   short txlm,     txrm;     /* Left margin / правая граница текста           */
   short txmarkx[TXT_MARKS]; /* Маркеры (установлены в ноль если не занято),  */
   long  txmarky[TXT_MARKS]; /* см. te(c|s)mark в файле te.c и TxMarks0(tx.c) */
+  char *txmarks[TXT_MARKS]; /* optional mark string (malloc'ed)              */
   wnd  *txwndptr;           /* Список окон, наложенных на текст              */
   short txlructr;           /* Счетчик для алгоритма выталкивания            */
   short txstat;             /* Биты слова-состояния текста:                  */

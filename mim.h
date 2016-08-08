@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07 Main Header + Scrollable/Gradient Window  | (c) Epi MG, 2004-2014
+// МикроМир07 Main Header + Scrollable/Gradient Window  | (c) Epi MG, 2004-2016
 //------------------------------------------------------+----------------------
 #ifndef MIM_H_INCLUDED
 #define MIM_H_INCLUDED
@@ -64,13 +64,23 @@ enum MiInfoType { MitUSE_CURRENT = 0, MitLINE_BLOCK = 1, MitCHARK = 2 };
 class MiInfoWin : public QWidget
 {
   MiInfoType infoType; QString displayText;
-  MiScTwin *sctw;
+  MiScTwin      *sctw;
 public:    MiInfoWin(MiScTwin *parent);
   virtual ~MiInfoWin() { }
   void SetPalette(QColor bgnd, QColor text); void vpResize();
   void paintEvent(QPaintEvent *ev);
   void updateInfo(MiInfoType mit = MitUSE_CURRENT);
   void display (QString text) { displayText = text; }
+};
+class MiMarksWin : public QWidget
+{
+  QString displayText;
+  MiScTwin      *sctw;
+public:    MiMarksWin(MiScTwin *parent);
+  virtual ~MiMarksWin() { }
+  void paintEvent(QPaintEvent *ev);
+  void vpResize();
+  void update(QString text) { displayText = text; repaint(); }
 };
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 class MiConfigDlg : public QDialog
@@ -100,9 +110,10 @@ private:
 public:
   wnd     *vp; // ViewPort (interface between Qt/C++ and legacy C code)
   MiFrame *mf;
-  MiInfoWin info; int gradInPool, fontBaseline, fontHeight, fontWidth;
+  MiInfoWin   info;
+  MiMarksWin marks; int gradInPool, fontBaseline, fontHeight, fontWidth;
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  void SetGradient(const QString grad); void SetGradFromPool(int N);
+  void SetGradient(const QString grad);     void SetGradFromPool(int N);
   void UpdateGradientPixmap();
   void UpdatePrimeColors();
   void UpdateMetrics();

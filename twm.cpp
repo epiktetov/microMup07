@@ -330,14 +330,10 @@ bool tmLoad (txt *t)  /*- - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 //  fprintf(stderr, "tmLoad(%s)\n", t->file ? t->file->name.cStr() : "Null");
 //  tmDumpList();
 //+
-  bool ok;
-  if (t->txstat & TS_FILE) ok = true;
-  else              ok = tmDoLoad(t);
-  if (ok) {                                  t->txlructr = 0;
-    for (t = texts; t != NIL; t = t->txnext) t->txlructr++;
-    return true;
-  }
-  return teferr(t);
+  bool ok = ((t->txstat & TS_FILE) != 0);
+  if (!ok) ok = tmDoLoad(t);
+  if (!ok) return teferr(t);               t->txlructr  = 0;
+  for (t = texts; t != NIL; t = t->txnext) t->txlructr += 1; return true;
 }
 #ifdef Q_OS_MAC /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tmLoadIn (txt *t, QString  filename) /* only for MacEvents::eventFilter */
@@ -353,7 +349,8 @@ bool tmReLoad (txt *t)   // Forced reload -- check the status of real file (and
   switch (t->file->ft) { // re-create directory listings and PSEUDO files anew:
   case QftNOFILE:        //
   default:                                         return false;
-  case QftTEXT:   checkfile(Ttxt); tmLoad  (Ttxt); return  true;
+  case QftTEXT:   checkfile(Ttxt);
+                  TxMarks0 (Ttxt); tmLoad  (Ttxt); return  true;
   case QftPSEUDO: TxDiscard(Ttxt); tmLoad  (Ttxt); return  true;
   case QftDIR:    TxDiscard(Ttxt); tmDoLoad(Ttxt); return  true;
 } }
@@ -613,11 +610,9 @@ int TmCommand (int kcode)
   case TM_UWINDOW: case TM_LWINDOW: case TM_RWINDOW:
   case TM_DWINDOW:
     wind = vipFindWindow(Twnd, KbCode);
-    if (wind) {
-      vipActivate(wind);
-      vipFocus   (wind); return E_OK;
-    }
-    else return E_SFAIL;
+    if (wind)      { vipActivate(wind);
+                     vipFocus   (wind); return E_OK; }
+    else                                return E_SFAIL;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   case TM_RELOAD: if (tmReLoad(Ttxt)) twRedraw(Ttxt); /* ^R = forced re-load */
                   else                return E_SFAIL;

@@ -539,11 +539,13 @@ NOTE:
 
   Tx:IC("text") -- insert text into current line | moves cursor past
   Tx:IL("line") -- insert given line at cursor   |     inserted text
-  Tx:DC(N) -- delete N characters at cursor
+
+  Tx:mark(k,x,y,"text") -- add/update mark k (0…19) at given position (use x=0
+  Tx:DC(N) -- delete N characters at cursor                     to remove mark)
   Tx:DL(N) -- delete N lines at cursor (default = 1)
   Tx:gtl() -- get-text-left convenience method = gets first chunk of non-spaces
                                        from text to the left of cursor position
-[line 541] xref: new.lua
+[line 548] xref: new.lua
 
   re = Re("..regex..",true/false) -- regular expression (arg: case sensitivity,
   re = Re[[..regex..]]                                default = case-sensitive)

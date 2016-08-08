@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07    te = Text editor - Редактор текста     | (c) Epi MG, 2006-2014
+// МикроМир07    te = Text editor - Редактор текста     | (c) Epi MG, 2006-2016
 //------------------------------------------------------+--------------------*/
 #include "mic.h"          /* Old te.c (c) Attic 1989-96, (c) EpiMG 1998,2001 */
 #include "ccd.h"
@@ -17,32 +17,27 @@ txt  *Ttxt;                           /* Редактируемый текст  
 int   Tx;                             /* X курсора в тексте                  */
 long  Ty;                             /* Y курсора в тексте                  */
 /*---------------------------------------------------------------------------*/
+bool tesetxy (int x, long y) { bool ok = TxSetY(Ttxt, y);
+                               Tx = x;
+                               Ty = Ttxt->txy; return ok; }
 void qsety (long y)
 {
-  bool q = TxSetY(Ttxt, y); Ty = Ttxt->txy;
-  if (!q) exc(E_SETY);
-}
-bool tesetxy (int x, long y)
-{
-  bool q = TxSetY(Ttxt,y); Tx = x;
-                           Ty = Ttxt->txy; return q;
+  bool ok = TxSetY(Ttxt, y);   Ty = Ttxt->txy;   if (!ok) exc(E_SETY);
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void tesmark()   /* "temporary" marker -- "временный" маркера (ставится сам) */
-{
-  int N; for (N = 0; N < TXT_MARKS; N++) if (Ty == Ttxt->txmarky[N]) return;
-  Ttxt->txmarkx[TXT_TempMARK] = Tx;
-  Ttxt->txmarky[TXT_TempMARK] = Ty;
+void tesmark()           /* "temp" marker: "временный" маркера, ставится сам */
+{                        /*  в tleunload() при изменении текста, а также при */
+  Ttxt->txmarkx[0] = Tx; /*  переходах на маркер или в начало / конец текста */
+  Ttxt->txmarky[0] = Ty;
 }
 void tecmark() /* вернуться туда, где были (и запомнить место откуда пришли) */
 {
   if (BlockMark) { long tmp = BlockTx; BlockTx = Tx; Tx = tmp;
                         tmp = BlockTy; BlockTy = Ty; Ty = tmp; }
   else {
-    short Mx = Ttxt->txmarkx[TXT_TempMARK];
-    long  My = Ttxt->txmarky[TXT_TempMARK]; if (My < 0) exc(E_MOVUP);
-    tesmark();
-    qsety(My); Tx = Mx;
+    short Mx = Ttxt->txmarkx[0];
+    long  My = Ttxt->txmarky[0];
+    if   (My < 0)  exc(E_MOVUP); tesmark(); tesetxy(Mx, My);
 } }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tesmarkN()                       /* Set/clear mark N | NOTE: codes must */
@@ -50,7 +45,7 @@ void tesmarkN()                       /* Set/clear mark N | NOTE: codes must */
   int N = KbCode - TE_SMARK0;
   if (Ttxt->txmarky[N] != Ty) { Ttxt->txmarkx[N] = Tx;
                                 Ttxt->txmarky[N] = Ty; wndop(TW_ALL, Ttxt); }
-  else { Ttxt->txmarkx[N] = -1;
+  else { Ttxt->txmarkx[N] =  0;
          Ttxt->txmarky[N] = -1; wndop(TW_RP, Ttxt); }
 }
 void tecmarkN()
@@ -269,17 +264,14 @@ void tegentr (void)
 static tchar *tesFindDelim (tchar *ptn, 
                             tchar *ptnend, tchar pstart, int *found_len)
 { tchar *p;
-  if (pstart) {
-    while (ptn < ptnend && *ptn != pstart) ptn++;
-    if (ptn < ptnend) ptn++;
-    else {
-      *found_len = 0; return NIL; /* start of subpattern not found */
-  } }
-  *found_len = ptnend - ptn;
-  for (p = ptn; 
-       p < ptnend; p++) if (*p & AT_SUPER) { *found_len = p - ptn; break; }
-
-  return ptn;
+  if (pstart) { while (ptn < ptnend && *ptn != pstart) ptn++;
+                if    (ptn < ptnend)                   ptn++;
+                else { *found_len = 0; return NIL; }
+  }
+  for (p = ptn;  p < ptnend; p++)
+    if (*p == LeSCH_REPL_BEG ||
+        *p == LeSCH_REPL_END) { *found_len = p      - ptn; return ptn; }
+                                *found_len = ptnend - ptn; return ptn;
 }
 void tesParse() /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 {
@@ -360,8 +352,7 @@ comdesc tecmds[] =
   { TE_TBEG,   tetbeg,   CA_RPT         }, /* в начало текста                */
   { TE_TEND,   tetend,   CA_RPT         }, /* в конец текста                 */
   { TE_CENTR,  tecentr,  CA_RPT         }, /* текущую строку в середину окна */
-  { TE_CMARK,  tecmark,  CA_RPT },
-  { TE_CMARK0, tecmarkN, CA_RPT }, { TE_SMARK0, tesmarkN, CA_RPT },
+  { TE_CMARK0, tecmark,  CA_RPT },
   { TE_CMARK1, tecmarkN, CA_RPT }, { TE_SMARK1, tesmarkN, CA_RPT },
   { TE_CMARK2, tecmarkN, CA_RPT }, { TE_SMARK2, tesmarkN, CA_RPT },
   { TE_CMARK3, tecmarkN, CA_RPT }, { TE_SMARK3, tesmarkN, CA_RPT },

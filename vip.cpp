@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07 ViewPort (interface Qt/C++ • legacy code) | (c) Epi MG, 2006-2012
+// МикроМир07 ViewPort (interface Qt/C++ • legacy code) | (c) Epi MG, 2006-2016
 //------------------------------------------------------+----------------------
 #include <QApplication>
 #include <QPainter>
@@ -176,14 +176,15 @@ void vipRedrawLine  (wnd *vp, int ty) { vp->sctw->Repaint(0, ty, vp->wsw, 1); }
 /*---------------------------------------------------------------------------*/
 void wpos (wnd *vp, int x, int y)        /* repaint cursor at given position */
 {
-  if (vp->wtext) {
-    if (vp->wtext->txredit == TXED_YES) {
-      if (vp->wtext->txstat & TS_CHANGED) vp->ctc = AT_INVERT | AT_BG_BLU;
-      else                                vp->ctc = AT_INVERT | AT_BG_GRN;
-    } else                                vp->ctc = AT_INVERT | AT_BG_RED;
-    if (LeInsMode) vp->ctc |= AT_SUPER;
+  txt *t = vp->wtext;
+  if (t) { if (t->txredit == TXED_YES) {
+             if (t->txstat & TS_CHANGED) vp->ctc = AT_INVERT | AT_BG_BLU;
+             else                        vp->ctc = AT_INVERT | AT_BG_GRN;
+           } else                        vp->ctc = AT_INVERT | AT_BG_RED;
+           if (LeInsMode)                vp->ctc             |= AT_SUPER;
   }
-  vp->sctw->Repaint(vp->cx = x, vp->cy = y, 1,1);
+  vp->cx = x;
+  vp->cy = y;                     vp->sctw->Repaint(x,y, 1,1);
   if (vp->sctw->info.isVisible()) vp->sctw->info.updateInfo();
 }
 void wpos_off (wnd *vp) //- - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -274,30 +275,41 @@ void wadjust (wnd *vp, int x, int y) // "Натянуть" окно на точ�
 void vipReady() 
 {                 
        if (Lwnd) { wadjust(Lwnd,Lx,Ly); wpos(Lwnd,Lx-Lwnd->wtx,Ly-Lwnd->wty); }
-  else if (Twnd) { wadjust(Twnd,Tx,Ty); wpos(Twnd,Tx-Twnd->wtx,Ty-Twnd->wty); }
-}
+  else if (Twnd) { wadjust(Twnd,Tx,Ty); wpos(Twnd,Tx-Twnd->wtx,Ty-Twnd->wty);
+//
+//
+//
+//
+    if (Ttxt == NIL || Twnd->sctw == NIL) return;
+    for (int i = 1; i < TXT_MARKS; i++) {
+      if (Ttxt->txmarky[i] == Ty && Ttxt->txmarks[i]) {
+        Twnd->sctw->marks.update   (Ttxt->txmarks[i]);
+        Twnd->sctw->marks.show();              return;
+    } } Twnd->sctw->marks.hide(); //
+} }                               // hide mark window if line does not match
 /*---------------------------------------------------------------------------*/
 void vipOnFocus (wnd *vp) /* if possible, goto window (cursor is not Ok yet) */
 { 
   if (vp != Twnd && Ttxt && vp->wtext) vipActivate(vp); vipReady();
 }
-void vipFocusOff (wnd *vp)
-{
-  if (Lwnd) ExitLEmode();
-  if (vp == Twnd) { Twnd->ctx = Tx;   // save current text position when
-                    Twnd->cty = Ty; } // un-focusing active editor window
+void vipFocusOff (wnd *vp) // save current text position (and sync with Ttxt)
+{                          // before un-focusing active editor window
+  if (Lwnd) ExitLEmode();  //
+  if (vp == Twnd) { Twnd->ctx = Tx;
+                    Twnd->cty = Ty; if (Ttxt) wupdate(Ttxt, Twnd); }
   scblkoff();
-  wpos_off(vp);
+  wpos_off(vp); vp->sctw->marks.hide();
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void vipActivate (wnd *vp)
-{
+void vipActivate (wnd *vp)    // save current cursor position and sync active
+{                             //  Ttxt and Twnd before activating new window
+  if (Twnd) { Twnd->ctx = Tx; //
+              Twnd->cty = Ty; if (Ttxt) wupdate(Ttxt, Twnd);
+  }
   if (tmLoad(vp->wtext)) {
-    Ttxt = vp->wtext; if (Twnd != NIL) { Twnd->ctx = Tx;
-                                         Twnd->cty = Ty; }
-                     Tx = vp->ctx;
-    if (TxSetY(Ttxt, Ty = vp->cty) == FALSE) Ty = Ttxt->txy;
-    clipRefocus(); 
+    Ttxt = vp->wtext; Tx = vp->ctx;
+    if (TxSetY (Ttxt, Ty = vp->cty) == FALSE) Ty = Ttxt->txy;
+    clipRefocus();
     Twnd = vp; // no vipFocus(Twnd) here!
 } }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

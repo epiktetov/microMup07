@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07   runtime (memory and string operations)  | (c) Epi MG, 2007-2014
+// МикроМир07   runtime (memory and string operations)  | (c) Epi MG, 2007-2016
 //------------------------------------------------------+--------------------*/
 #include "mic.h" /* Old me.c - Память (c) Attic 1989-90, (c) EpiMG 1998-2003 */
 #include <stdio.h>
@@ -7,14 +7,13 @@
 #include <string.h>
 #include "version.h"
 
-char *GetMain (long n)
+void xfree (void *mem) { free(mem); }
+char *xmalloc (long n)
 {
-  char *p;          /*  some systems do not like to give zero length blocks  */
-  if (n == 0) n++;  /* if we don't need anything, we'll be happy with 1 byte */
-
-  if ((p = (char*)malloc(n)) == NULL) { printf("OutOfMemory"); abort(); }
-  return p;
-}
+  char *p = (char*)malloc(n?n:n+1);
+  if   (p) return p; //   ^
+  else exc(E_NOMEM); //   some systems do not like to give zero length blocks
+}                    // if we don't need anything, we'll be happy with 1 byte
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #define BIG_MEM_CHUNK 60*1024*1024
 /*
@@ -24,7 +23,7 @@ char *GetMain (long n)
  */
 char *MemInit (long *allocated_size)
 {
-  return GetMain(*allocated_size = BIG_MEM_CHUNK);
+  return xmalloc(*allocated_size = BIG_MEM_CHUNK);
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  * Переслать блок из <len> байт начиная с адреса <from> по адресу <to>.
@@ -42,6 +41,13 @@ void *blkmov(void *from, void *to, long len) // to be used with non-char types
 tchar *blktmov(tchar *from, tchar *to, long len)
 {
   return (tchar*)memmove(to, from, len*sizeof(tchar)) + len;
+}
+char *xstrndup (const char *orig, int limit)
+{
+  const char *p = orig; int N = 0;
+  while     (*p++ && limit--) N++;
+  char *dup = xmalloc(N);
+  lblkmov (orig, dup, N); return dup;
 }
 /*---------------------------------------------------------------------------*/
 /* nanoMir 2000 $Id: rt.c,v 1.4 2003/04/04 00:57:00 epi Exp $
@@ -89,15 +95,10 @@ char *dtol (char *p, long *dest)
 char *dtos(char *p, short *dest) { long l; p = dtol(p, &l);
                                           *dest = (short)l; return p; }
 /*---------------------------------------------------------------------------*/
-jmp_buf *excptr = 0;
-
-void otkaz (char *p)
-{
-  fprintf(stderr, "Otkaz - %s\n", p); abort();
-}
 void exc (int code) 
 {
-  if (excptr == NIL) otkaz("EXC");
-  longjmp(*excptr, code);
+  if (excptr)                 longjmp(*excptr, code);
+  fprintf(stderr, "Unhandled excepition %d\n", code); abort();
 }
+jmp_buf *excptr = 0;
 /*---------------------------------------------------------------------------*/

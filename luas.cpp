@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07          Embedded Lua scripting           | (c) Epi MG, 2011-2014
+// МикроМир07          Embedded Lua scripting           | (c) Epi MG, 2011-2016
 //------------------------------------------------------+--------------------*/
 #include <QRegExp>
 #include "mim.h"
@@ -126,6 +126,9 @@ void luasNtxt (txt *newTxt)  // "new text" hook (called from tmDoLoad, twm.cpp)
   luaP_getmetatable("txt");            //
   luaQ_setmetatable(-2);               // NOTE: metatable for Tx obj must be
   luaQQ_rawset   (iTxt); luaQn_pop(1); // set after Tx.id (to avoid recursion)
+//+
+//  fprintf(stderr, "luasNtxt(%s):%d\n", newTxt->file->full_name.cStr(),
+//                                       newTxt->luaTxid);
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 static txt *luasN_gettext (int ix)  // returns txt from Lua reference on given
@@ -287,6 +290,8 @@ static int luTxGo (lua_State *L) // Tx:go([dx,]dy) == Tx.go(Tx,[dx,]dy)
 //   Tx:IL("line") = insert given line at cursor   | inserted text
 //   Tx:DC(N) = delete N characters at cursor
 //   Tx:DL(N) = delete N lines at cursor (default = 1)
+//   Tx:gtl() = get-text-left   (gets first chunk of non-spaces left of cursor)
+//   Tx:mark(k,x,y,"text") = add/update mark k (0…19) at x,y (y<0 to remove it)
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 static int luTxIC (lua_State *L) // Tx:IC("text") = insert given text at cursor
 {
@@ -350,9 +355,27 @@ int luGetTextLeft (lua_State*) // Tx:gtl() = get first chunk of non-spaces from
   else         { luaP_pushnil();             return 0; }
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+int luTxMark (lua_State*) // Tx:mark(k,x,y,"text") =  add/update mark k (0…19)
+{                         //   at given position, or remove the mark when x=y=0
+  txt *t = luasN_gettext(1);
+  int  k = luaL_checkinteger(L,2); if (k < 0 || k >= TXT_MARKS) return 0;
+  int  x = luaL_checkinteger(L,3); if (x > MAXLPAC-3)      x = MAXLPAC-3;
+  int  y = luaL_optinteger(L,4,0); if (y >  t->maxTy)      y =  t->maxTy;
+//
+  if (t->txmarks[k]) xfree(t->txmarks[k]); // clean up the old text in any case
+  t->txmarkx[k] = x ? x-1  : 0;            // (it will either remain 0, or gets
+  t->txmarky[k] =     y-1;                 //          replaced with new value)
+  t->txmarks[k] = 0;
+  if (x > 0 && y > 0) {                    size_t len;
+    const char *text = luaL_optlstring(L,5,NULL,&len);
+    if (text)     t->txmarks[k] = xstrndup(text, len);
+  }
+  wndop(TW_ALL, t); return 0; // always redraw the text (inefficient, but we're
+}                             //  not going to check if mark is visible or not)
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 luaL_Reg luTxFuncs[] =
-{                         { "go", luTxGo }, { "gtl", luGetTextLeft },
-  { "open",  luTxOpen  }, { "IL", luTxIL },
+{                         { "go", luTxGo }, { "gtl",  luGetTextLeft },
+  { "open",  luTxOpen  }, { "IL", luTxIL }, { "mark", luTxMark      },
   { "focus", luTxFocus }, { "IC", luTxIC },
   { "line",  luTxLine  }, { "DL", luTxDL },
   { "lines", luTxLines }, { "DC", luTxDC }, { NULL, NULL   }
@@ -456,6 +479,16 @@ int luasFunc (void)       // executing Lua function (from the top of Lua stack)
     vipError(QString("LuaERROR: %1").arg(lua_tostring(L,-1)));
     luaQn_pop(1);                              return E_SFAIL;
 } }
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void luas2txtProc (const char *proc_name, txt *Ref, txt *Txt)
+{
+  luaP_getglobal(proc_name);
+  luaP_getglobal("Txt"); luaX_rawgeti_top(Ref->luaTxid);
+  luaP_getglobal("Txt"); luaX_rawgeti_top(Txt->luaTxid);
+  int rc = luaQX_pcall(2,0);
+  if (rc)
+    vipError(QString("LuaERROR: %1").arg(lua_tostring(L,-1)));
+}
 //------------------------------------------------------//---------------------
 static txt *tLF = NULL;                                 // --- Load Filters ---
 static int luLF_addText(lua_State*)                     //---------------------

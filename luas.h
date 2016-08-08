@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07          Embedded Lua scripting           | (c) Epi MG, 2011,2014
+// МикроМир07          Embedded Lua scripting           | (c) Epi MG, 2011,2016
 //------------------------------------------------------+--------------------*/
 #ifndef LUAS_H_INCLUDED
 #define LUAS_H_INCLUDED
@@ -9,6 +9,11 @@ void luasNtxt(txt*newTxt); /*  new-text hook (called from tmDoLoad, twm.cpp) */
 int  luasExec(txt*, bool); /*  load/execute given text (current line) as Lua */
 int  luasFunc(void); /* execute (and pop) Lua function from top of Lua stack */
 int luLF_read(txt*); /* read txt->file using load filter named txt->file->lf */
+//
+// Method to call Txt Processor in Lua (currently used only for MkSyncMarks,
+//        that is called from tmSyncPos to sync marks in Txt from Ref text):
+//
+void luas2txtProc(const char *proc_name, txt *Ref, txt *Txt);
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #ifdef lua_h         /* the problem with Lua function names is that it's not */
 extern lua_State *L; /* very clear how do they operate with the stack, fixin */

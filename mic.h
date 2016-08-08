@@ -120,7 +120,8 @@ typedef struct txt_tag txt;     /* twm.h */
         struct wnd_tag;
 typedef struct wnd_tag wnd;     /* twm.h */
 /*---------------------------------------------------------------------------*/
-extern char *GetMain(long n); /* =malloc() but always returns non-NULL, rt.c */
+extern char *xmalloc(long n); /* =malloc() but always returns non-NULL, rt.c */
+extern void xfree(void *mem); /* =free(), only to avoid including <stdlib.h> */
 /*
  * Инициализация "большого" сегмента памяти -- platform-specific manipulations
  * with VirtualAlloc() etc are removed, now it just malloc()'s a bug chunk and
@@ -134,10 +135,11 @@ extern char
   *sncpy(const char *from, char *to, int how_many), /* copy functions return */
   *scpy (const char *from, char *to),               /* pointer to the end of */
   *scpyx(const char *from, char *to, int limit),    /* destination string    */
+  *ltod(char *buffer, long  l),
+  *stod(char *buffer, short s), /* return pointer to end-of-num */
   *dtol(char *pn, long  *dest),
   *dtos(char *pn, short *dest),
-  *ltod(char *buffer, long  l), /* return pointer to end-of-num   */
-  *stod(char *buffer, short s);
+  *xstrndup(const char *, int); /* same as strndup(3) but with our xmalloc() */
 
 char *lblkmov(char *From, char *To, long len); /* returns ptr after the dest */
 void * blkmov(void *From, void *To, long len); /*        block (i.e. To+len) */

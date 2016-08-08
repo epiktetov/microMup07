@@ -398,6 +398,7 @@ void MiFrame::resizeEvent (QResizeEvent*)
 MiScTwin::MiScTwin (MiFrame *frame, const QString bgndGrad, int pool, wnd *win)
   : gotFocus(0), vp(win), mf(frame),
     info (this),
+    marks(this),
     gradInPool(pool), gradPixSize(0), gradPixHeight(0),
                       gradPixmap(NULL),  cmd2repeat(0), timerID(0)
 {
@@ -425,6 +426,8 @@ void MiScTwin::resizeEvent(QResizeEvent*) // using fontWidth as vertical offset
 {                                         //                       for symmetry
   info.move(width()  - info.width()  - fontWidth,
             height() - info.height() - fontWidth); UpdateGradientPixmap();
+  //
+  marks.move(width() - marks.width() - fontWidth, fontWidth);
 }                    
 //-----------------------------------------------------------------------------
 void mimSetNamedColor (QColor& color, const QString descr)
@@ -532,8 +535,8 @@ void MiScTwin::UpdateMetrics()          // NOTE: assuming fixed-width font with
   fontBaseline = fm.ascent();
   fontHeight = fm.height()-1; // Qt height always equal to ascent()+descent()+1
   fontWidth  = fm.width("X");
-  fontHeight += MiApp_fontAdjOver; fontBaseline += MiApp_fontAdjOver;
-  fontHeight += MiApp_fontAdjUnder;                  info.vpResize();
+  fontHeight += MiApp_fontAdjOver;  fontBaseline += MiApp_fontAdjOver;
+  fontHeight += MiApp_fontAdjUnder; info.vpResize(); marks.vpResize();
 }
 //-----------------------------------------------------------------------------
 void MiScTwin::Repaint (int x, int y, int width, int height, bool NOW)
@@ -604,13 +607,13 @@ void MiScTwin::repaintPosBar (QPainter& dc)
   static QColor *colors[] = { &colorDarkWheat,  &colorSolidRed,
                               &colorSolidGreen, &colorSolidBlue };
   int N;
-  for (int i = 0; i < TXT_TempMARK; i++) {
+  for (int i = 1; i < TXT_MARKS; i++) {
     if (tx->txmarky[i] < 0) continue;
     if (tx->txmarky[i] < vp->wty) N = int(wH*double(tx->txmarky[i])/total+0.5);
     else if (tx->txmarky[i] >= vp->wty + vp->wsh)
         N = Th2qtH(vp->wsh)-int(wH*double(tx->maxTy-tx->txmarky[i])/total+0.5);
     else continue;
-    brush.setColor(*colors[i]); pen.setBrush(brush);
+    brush.setColor(*colors[i<4?i:1]); pen.setBrush(brush);
     dc.setBrush(brush);
     dc.setPen(pen);
     dc.drawRect(vppBar.left()-1, N + mimBORDER, mimVpPOSBAR+1, mimVpPOSBAR+1);
@@ -643,7 +646,7 @@ void MiScTwin::Erase (QPainter& dc, int tx, int ty, int len)
 // AT_REGEX        ʄdark redʀ chars - marks regex search
 // AT_SUPER        ʈsky blueʀ chars - special characters -- forces Insert mode
 //
-// AT_MARKFLG (alone) marker flag 0 (DarkWheat gradient)
+// AT_MARKFLG (alone) marker flag 0 (DarkWheat gradient), currently not used
 // AT_MARKFLG+BG_CLR: flags 1,2,3 (solid red/blue/green gradient)
 // AT_BG_CLR:         background color (by itself, used for selection blocks):
 //   AT_BG_RED        - red, temporary block / "can't edit" cursor / error mark
@@ -662,7 +665,7 @@ void MiScTwin::Erase (QPainter& dc, int tx, int ty, int len)
 //
 void MiScTwin::Text (QPainter& dc, int x, int y, int attr, QString text)
 {
-  const QColor *bg_color = &colorWhite, *fg_color;
+  const QColor *bg_color = &colorWhite, *fg_color; bool solid_brush = true;
   int len = text.length();  QPen noPen(Qt::NoPen);
   if (attr & AT_BOLD)
        { dc.setFont(mf->getBoldFont()); fg_color = &keyColor;   }
@@ -675,13 +678,20 @@ void MiScTwin::Text (QPainter& dc, int x, int y, int attr, QString text)
       else if ((attr & AT_BG_CLR) == AT_BG_BLU) bg_color = &colorDarkBlue;
       else                                      bg_color = &colorBlack;
       fg_color = &colorWhite;
-    }
+      if (attr & AT_SUPER) {
+        QLinearGradient grad(Tx2qtX(x),0, Tx2qtX(x)+1.5*Tw2qtW(len),0);
+        grad.setColorAt(0, *bg_color);             solid_brush = false;
+        grad.setColorAt(1, gradColor); dc.setBrush(QBrush(grad));
+    } }
     else if (attr & AT_MARKFLG) {
            if ((attr & AT_BG_CLR) == AT_BG_RED) bg_color = &colorSolidRed;
       else if ((attr & AT_BG_CLR) == AT_BG_GRN) bg_color = &colorSolidGreen;
       else if ((attr & AT_BG_CLR) == AT_BG_BLU) bg_color = &colorSolidBlue;
       else                                      bg_color = &colorDarkWheat;
-      fg_color = &colorWhite; attr |= AT_SUPER;
+      fg_color = &colorWhite;
+      QLinearGradient grad(0,Ty2qtY(y), 0,Ty2qtY(y)+2.7*Tw2qtW(1));
+      grad.setColorAt(0, *bg_color);           solid_brush = false;
+      grad.setColorAt(1, gradColor); dc.setBrush(QBrush(grad));
     }
     else if (attr & AT_BRIGHT) {
            if (attr & AT_BG_RED) bg_color = &colorLightRed;
@@ -691,14 +701,8 @@ void MiScTwin::Text (QPainter& dc, int x, int y, int attr, QString text)
     else if ((attr & AT_BG_CLR) == AT_BG_GRN) bg_color = &colorDarkWheat;
     else if ((attr & AT_BG_CLR) == AT_BG_BLU) bg_color = &colorLightCyan;
 
-    if (attr & AT_SUPER) { // special insert-mode gradient cursor (or marker)
-      QLinearGradient grad(Tx2qtX(x), 0, Tx2qtX(x)+1.5*Tw2qtW(len), 0);
-      grad.setColorAt(0, *bg_color);
-      grad.setColorAt(1, gradColor); dc.setBrush(QBrush(grad));
-    }
-    else dc.setBrush(*bg_color); // regular (solid color) brush for rectangle
-    dc.setPen(noPen);
-    dc.drawRect(Tx2qtX(x), Ty2qtY(y), Tw2qtW(len), Th2qtH(1));
+    if  (solid_brush) dc.setBrush(*bg_color);
+    dc.setPen(noPen); dc.drawRect(Tx2qtX(x),Ty2qtY(y),Tw2qtW(len),Th2qtH(1));
     dc.setPen(*fg_color);
   }
   else { if (attr & AT_TAB)     dc.setPen(tabColor);
@@ -892,6 +896,23 @@ void MiInfoWin::paintEvent (QPaintEvent *)
 }
 void MiInfoWin::updateInfo (MiInfoType mit) { if (mit) infoType = mit;
                                                             repaint(); }
+//-----------------------------------------------------------------------------
+MiMarksWin::MiMarksWin (MiScTwin *parent) : QWidget(parent),sctw(parent)
+{
+  QPalette palette(colorLightRed);
+  palette.setColor(QPalette::WindowText, colorBlack); setPalette(palette);
+  setFocusPolicy(Qt::NoFocus);
+  setAutoFillBackground(true); setFont(parent->mf->getTextFont());
+}
+void MiMarksWin::vpResize() { resize(2 * mimBORDER + sctw->Tw2qtW(77),
+                                     2 * mimBORDER + sctw->Th2qtH(1)); }
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void MiMarksWin::paintEvent (QPaintEvent *ev)
+{
+  int X = sctw->Tx2qtX(0);
+  int Y = sctw->Ty2qtY(0) + sctw->fontBaseline;
+  QPainter dc(this); dc.drawText(X,Y,displayText);
+}
 //-----------------------------------------------------------------------------
 static void myParseKeyMap() // parse QString MiApp_keyMaps -> QMap MiApp_keyMap
 {

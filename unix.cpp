@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07       Shell commands and tmSyncPos        | (c) Epi MG, 2007-2014
+// МикроМир07       Shell commands and tmSyncPos        | (c) Epi MG, 2007-2016
 //------------------------------------------------------+--------------------*/
 #include <QString>        /* Old tm.c (c) Attic 1989-91, (c) EpiMG 1997-2003 */
 #include <QRegExp>
@@ -17,6 +17,7 @@
 #include "twm.h"
 #include "vip.h"
 #include "clip.h"
+#include "luas.h"
 #include "synt.h"
 #include "unix.h"
 extern "C" {
@@ -156,7 +157,7 @@ void tmshell (int kcode)
     Ctxt = Twnd->wsibling->wtext; TxEmpt(Ctxt);
   }
   else {
-    Ctxt = tmDesc(QfsELLIPSIS, false, Ttxt);
+    Ctxt = tmDesc(QfsELLIPSIS, false, Ttxt);               luasNtxt(Ctxt);
     wind = vipSplitWindow(Twnd, kcode == TM_F2EXEC ? TM_VFORK : TM_HFORK);
     if (wind) wattach(Ctxt, wind);
     else    { vipBell();   return; }
@@ -186,7 +187,7 @@ int tmGrep (int kcode)
   else if (leOptMode & LeARG_REGEXP) grep_command.append("-E");
   else                               grep_command.append("-F");
   if  (leOptMode & LeARG_IGNORECASE) grep_command.append("i");
-                                     grep_command.append("n '");
+                                     grep_command.append("nH '");
   tesParse();
   if (spl <= 0) return -1;
   tchar *tcmd = tcmdbuffer + tcmdpromptlen;
@@ -330,6 +331,7 @@ diff_sync_to_other_wnd:
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // Filename found, open that file in the other window, if not opened already in
 //                                              the sibling window (upper pane)
+  txt  *prev_txt = Ttxt;
   if ((other_wnd = Twnd->wsibling) != NULL &&
        filename == other_wnd->wtext->file->name) { vipActivate(other_wnd);
                                                    vipFocus   (other_wnd); }
@@ -337,6 +339,7 @@ diff_sync_to_other_wnd:
     other_wnd = vipSplitWindow(Twnd, TM_VFORK);   if (!other_wnd) return -1;
     vipFocusOff(Twnd); if (!twEdit(other_wnd,filename,NULL,true)) return -1;
   }
-  tesetxy(line_pos, file_pos-1); return 0;
+  luas2txtProc("MkSyncMarks", prev_txt, Ttxt);
+  tesetxy(line_pos, file_pos-1);     return 0;
 }
 /*---------------------------------------------------------------------------*/

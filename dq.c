@@ -49,7 +49,7 @@ void DqInit(char *membuf, long bufsize)     /* create "anti-deq" that covers */
 deq *DqNew (short typ, short bext, short eext)
 {
   deq *d; if (freedeqs) { d = freedeqs; freedeqs = d->dnext; }
-          else            d = (deq*)GetMain(sizeof(deq));
+          else            d = (deq*)xmalloc(sizeof(deq));
   deq *dn = deq0.dprev;
   d->dprev = dn;
   dn->dnext = d;                    d->dtyp  = typ;

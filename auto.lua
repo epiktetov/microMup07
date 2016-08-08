@@ -79,6 +79,24 @@ do local function breakable(c) return (c == ' ' or c == ',' or c == ';') end
                        while Tx.reX do BlockFormat(Tx) end end
   end
 end
+function MkSyncMarks(Rx,Tx)
+  local ref = Re[[([+./0-9A-z-]+):(\d+):((\d+):)?(.*)]]
+  local Y,N = Rx.Y,4;     local Tname
+  if ref:ifind(Rx:line(Y)) then Tname = ref:cap(1) else return end
+  -- print("MkSyncMarks(Tname="..Tname..",Y="..Y..",maxY="..Rx.maxY..")")
+  repeat
+    -- print("["..Y.."] "..Rx:line(Y))
+    if ref:ifind(Rx:line(Y)) then
+      local name,y,_,x,text = ref:caps()
+      -- print("name="..name..",x="..x..",y="..y..",text="..text)
+      if name == Tname then
+        x = tonumber(x) or 2
+        y = tonumber(y) or 0; Tx:mark(N,x,y,text)
+        N = N+1;       if N == 20 then return end
+      end
+    end Y = Y+1
+  until(Y > Rx.maxY)
+end
 function Mk2html(Tx)        -- convert MicroMir text (with ʁboldʀ etc) to HTML
   local Hx = Txt.open(true) --
   Hx:IL("auto-generated from `"..Tx.name.."` at "..os.date())
