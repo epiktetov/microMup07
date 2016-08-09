@@ -50,7 +50,7 @@ qfile *QfsNew (QString filename, qfile *referer)
     QFileInfo Qmicros(filename+"/" QfsROOTFILE);
     if (Qmicros.exists()) filename = Qmicros.canonicalFilePath();
     else {
-      wildcards = QString::fromAscii("*");
+      wildcards =        QString::fromUtf8("*");
       filename.push_back(QString::fromUtf8("/…"));
   } }
   Qi.setFile(filename); // - - - - - - - - - filename processed, creating qfile

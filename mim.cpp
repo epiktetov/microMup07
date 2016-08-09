@@ -2,6 +2,19 @@
 // МикроМир07   Main Frame + Application Data + ScTwin  | (c) Epi MG, 2004-2016
 //------------------------------------------------------+----------------------
 #include <QApplication>
+#include <QAction>
+#include <QSplitter>
+#include <QHBoxLayout>
+#include <QMessageBox>
+#include <QMenuBar>
+#include <QLabel>
+#include <QSpinBox>
+#include <QLineEdit>
+#include <QTextEdit>
+#include <QPushButton>
+#include <QDialogButtonBox>
+#include <QFileDialog>
+#include <QFontDialog>
 #include <QtGui>
 #include "mim.h"
 #include "ccd.h"
@@ -83,7 +96,7 @@ QColor colorSolidBlue (  0, 85,215); // - blue  |          gradient background)
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 int main(int argc, char *argv[])
 {
-#if defined(Q_OS_MAC) && QT_VERSION >= 0x040500
+#if defined(Q_OS_MAC) && 0x040500 <= QT_VERSION && QT_VERSION <= 0x040999
   QApplication::setGraphicsSystem("raster");
 #endif  //                         ^
 // when using "native" graphics, scroll() posts update requests for all widgets
@@ -158,7 +171,10 @@ MiFrame::MiFrame (MiFrame *base) : tSize(0,0), wrapped(false),
   QString short_version = QString("ver.%1").arg(microVERSION);
   QMenu *dummy_version_menu = menuBar()->addMenu(short_version);
          dummy_version_menu->setDisabled(true);
-
+#if defined(Q_OS_MAC) && QT_VERSION > 0x040999               // Qt5/mac removes
+  QString qt_version = QString("Qt %1").arg(QT_VERSION_STR); // empty menu item
+  dummy_version_menu->addAction(qt_version);                 // => add somethig
+#endif
   QMenu *help_menu = menuBar()->addMenu("Help");
   act =  help_menu->addAction("License");
   connect(act, SIGNAL(triggered()), this, SLOT(ShowLicense()));
@@ -531,7 +547,7 @@ void MiScTwin::UpdatePrimeColors()          // Calculate "tab" color  (used for
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiScTwin::UpdateMetrics()          // NOTE: assuming fixed-width font with
 {                                       // adjustments: MiApp_fontAdjOver/Under
-  QFontMetrics fm =  mf->getTextFont();
+  QFontMetrics fm(mf->getTextFont());
   fontBaseline = fm.ascent();
   fontHeight = fm.height()-1; // Qt height always equal to ascent()+descent()+1
   fontWidth  = fm.width("X");
@@ -765,7 +781,7 @@ void MiScTwin::keyPressEvent (QKeyEvent *event)
     case Qt::Key_Backspace: setkbhin('\b'); return;
     }
     if ((modMask & mod_CTRL) && 0x40 <= key && key < 0x60) setkbhin(key-0x40);
-    else   for (int i=0; i<text.length(); i++) setkbhin(text.at(i).toAscii());
+    else for (int i=0; i<text.length(); i++) setkbhin(text[i].unicode()&0x7F);
     return;
   }                                     // replace the key by user-configured
   int mapped = MiApp_keyMap.value(key); // mapping table (but leave modifiers
@@ -802,7 +818,9 @@ void MiScTwin::timerEvent(QTimerEvent *)
          (repeatCount -= KbCount) <= 0) { stopTimer(); vipReady(); }
   else {
     info.updateInfo(MitLINE_BLOCK);
-    QApplication::syncX();  // only for X11 (does nothing on other platforms)
+#ifdef Q_OS_LINUX
+    QApplication::syncX();  // only for X11
+#endif
 } }
 //-----------------------------------------------------------------------------
 void MiScTwin::focusInEvent(QFocusEvent *) 
@@ -907,7 +925,7 @@ MiMarksWin::MiMarksWin (MiScTwin *parent) : QWidget(parent),sctw(parent)
 void MiMarksWin::vpResize() { resize(2 * mimBORDER + sctw->Tw2qtW(77),
                                      2 * mimBORDER + sctw->Th2qtH(1)); }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-void MiMarksWin::paintEvent (QPaintEvent *ev)
+void MiMarksWin::paintEvent (QPaintEvent *)
 {
   int X = sctw->Tx2qtX(0);
   int Y = sctw->Ty2qtY(0) + sctw->fontBaseline;
@@ -936,8 +954,7 @@ inline QString myPackAdj2string (int X, int Y)
 }
 inline int myUnpackAdj2int (QString adj, int ix) // - - - - - - - - - - - - - -
 {
-  const char c = adj[ix].toAscii();
-  return (c == '+') ? +1 : (c == '-') ? -1 : 0;
+  return (adj[ix] == '+') ? +1 : (adj[ix] == '-') ? -1 : 0;
 }
 //-----------------------------------------------------------------------------
 MiConfigDlg::MiConfigDlg(QWidget *parent) : QDialog(parent)

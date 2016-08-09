@@ -1,29 +1,36 @@
-#!qmake -- Qt project file for µMup07
+#!qmake -- Qt4/Qt5 project file for µMup07 app (for MacOS Х / Linux / Windows)
 TEMPLATE = app
 CONFIG += release
+# -----------------------------------------------------------------------------
+#                                platform-dependent location of the Lua library
 macx {
-  TARGET = µMup07
-  ICON = microMir.icns
   INCLUDEPATH += /usr/local/include # for Lua
   LIBS += -L/usr/local/lib -llua -framework Cocoa
-  QtPLATF = macx
-  QMAKE_INFO_PLIST = mim.Info.plist
-  QMAKE_PKGINFO_TYPEINFO = "~epi"
 } else:unix {
   INCLUDEPATH += /usr/include/lua5.2
-  LIBS += -llua5.2 # explicit version on Linux, locally built one everywhere
-  QtPLATF = unix
+  LIBS += -llua5.2
 } else:win32 {
   INCLUDEPATH += ../lua/include
   LIBS += -L../lua/lib -llua
+}
+# -----------------------------------------------------------------------------
+!macx:TARGET = mim
+macx {
+  TARGET = µMup07
+  QtPLATF = macx
+  ICON = microMir.icns
+  QMAKE_INFO_PLIST = mim.Info.plist
+  QMAKE_PKGINFO_TYPEINFO = "~epi"
+} else:unix {
+  QtPLATF = unix
+} else:win32 {
   QtPLATF = win32
   RC_FILE = qtmim.rc
 }
-!macx:TARGET = mim
 !win32:DEFINES += UNIX
 QMAKE_CFLAGS   += -std=c99
 QMAKE_CXXFLAGS += -DQtPLATF=\'\"$$QtPLATF\"\'
-
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 HEADERS += micro.keys mic.h mim.h   ccd.h   qfs.h   twm.h   clip.h   synt.h
 SOURCES +=                  mim.cpp ccd.cpp qfs.cpp twm.cpp clip.cpp synt.cpp
 HEADERS += macs.h
@@ -34,16 +41,26 @@ DEPENDPATH += .
 INCLUDEPATH += .
 OBJECTS_DIR = obj
 RESOURCES = qtmim.qrc
-
+# - - - - - - - - - - - - - - - -
+greaterThan(QT_MAJOR_VERSION,4) {
+  QT += widgets
+}
 version.target = version.h
 version.depends = .git $$HEADERS $$SOURCES
 version.commands = @echo \"const char microVERSION[]=\\\"\"\"`git describe --tags --dirty`\"\"\\\";\" >version.h;git status
 QMAKE_EXTRA_TARGETS += version
 PRE_TARGETDEPS += version.h
-macx {
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+macx:equals(QT_MAJOR_VERSION,4) {
   MimEXE = µMup07.app/Contents/MacOS/µMup07
   MimFWK = µMup07.app/Contents/Frameworks
   MimRES = µMup07.app/Contents/Resources
+  qtconf.target = $$MimRES/qt.conf
+  qtconf.depends = qt4.conf
+  qtconf.commands = cp $$qtconf.depends $$qtconf.target
+  QMAKE_EXTRA_TARGETS += qtconf
+  PRE_TARGETDEPS += $$qtconf.target
+
   QtCORE4 = QtCore.framework/Versions/4
   QtGUI4  = QtGui.framework/Versions/4
   QtCOREname = @executable_path/../Frameworks/$$QtCORE4/QtCore
@@ -72,3 +89,4 @@ macx {
 
   QMAKE_EXTRA_TARGETS += qtcore qt_gui qt_nib qtbundle
 }
+# -----------------------------------------------------------------------------

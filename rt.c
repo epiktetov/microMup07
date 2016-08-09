@@ -9,11 +9,10 @@
 
 void xfree (void *mem) { free(mem); }
 char *xmalloc (long n)
-{
-  char *p = (char*)malloc(n?n:n+1);
-  if   (p) return p; //   ^
-  else exc(E_NOMEM); //   some systems do not like to give zero length blocks
-}                    // if we don't need anything, we'll be happy with 1 byte
+{                                   // some systems don't like to provide zero
+  char *p = (char*)malloc(n?n:n+1); // length blocks => ask for 1 byte instead
+  if  (!p) exc(E_NOMEM);  return p; // (if caller does not need anything, they
+}                                   // will be happy with that byte anyway)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #define BIG_MEM_CHUNK 60*1024*1024
 /*
@@ -47,7 +46,7 @@ char *xstrndup (const char *orig, int limit)
   const char *p = orig; int N = 0;
   while     (*p++ && limit--) N++;
   char *dup = xmalloc(N);
-  lblkmov (orig, dup, N); return dup;
+  lblkmov((char*)orig, dup, N); return dup;
 }
 /*---------------------------------------------------------------------------*/
 /* nanoMir 2000 $Id: rt.c,v 1.4 2003/04/04 00:57:00 epi Exp $
