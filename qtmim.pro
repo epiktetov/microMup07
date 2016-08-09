@@ -17,19 +17,12 @@ macx {
 !macx:TARGET = mim
 macx {
   TARGET = µMup07
-  QtPLATF = macx
   ICON = microMir.icns
   QMAKE_INFO_PLIST = mim.Info.plist
   QMAKE_PKGINFO_TYPEINFO = "~epi"
-} else:unix {
-  QtPLATF = unix
-} else:win32 {
-  QtPLATF = win32
-  RC_FILE = qtmim.rc
 }
-!win32:DEFINES += UNIX
 QMAKE_CFLAGS   += -std=c99
-QMAKE_CXXFLAGS += -DQtPLATF=\'\"$$QtPLATF\"\'
+!win32:DEFINES += UNIX
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 HEADERS += micro.keys mic.h mim.h   ccd.h   qfs.h   twm.h   clip.h   synt.h
 SOURCES +=                  mim.cpp ccd.cpp qfs.cpp twm.cpp clip.cpp synt.cpp
@@ -41,6 +34,7 @@ DEPENDPATH += .
 INCLUDEPATH += .
 OBJECTS_DIR = obj
 RESOURCES = qtmim.qrc
+win32:RC_FILE = qtmim.rc
 # - - - - - - - - - - - - - - - -
 greaterThan(QT_MAJOR_VERSION,4) {
   QT += widgets

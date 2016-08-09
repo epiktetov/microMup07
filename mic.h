@@ -64,6 +64,13 @@ typedef long tchar;                           /* Unicode символ с атр�
 extern int TABsize; /* Настраиваемые параметры - табуляция, 4 или 8 символов */
 extern int debugDQ; /* - debug DQ memory allocation, -dq command line option */
 extern bool dosEOL; /* - DOS/Windows style for end-of-line (CR/LF вместо LF) */
+#if defined(Q_OS_MAC)
+#define QtPLATF "macx"
+#elif defined(Q_OS_LINUX)
+#define QtPLATF "unix"       /* Qt platform name, currently used for indirs» */
+#elif defined(Q_OS_WIN)      /* conditions and title of config / empty text, */
+#define QtPLATF "win32"      /* see twm.cpp, line 484                        */
+#endif                       /* and mim.cpp, line 30                         */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #define MAXPATH    400                     /* Некоторые магические константы */
 #define MAXDIRSTK   12
