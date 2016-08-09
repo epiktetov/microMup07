@@ -304,8 +304,8 @@ void vipFocusOff (wnd *vp) // save current text position (and sync with Ttxt)
 void vipActivate (wnd *vp)    // save current cursor position and sync active
 {                             //  Ttxt and Twnd before activating new window
   if (Twnd) { Twnd->ctx = Tx; //
-              Twnd->cty = Ty; if (Ttxt) wupdate(Ttxt, Twnd);
-  }
+              Twnd->cty = Ty; if (Ttxt && Ttxt == Twnd->wtext)
+                                  wupdate(Ttxt,   Twnd);     }
   if (tmLoad(vp->wtext)) {
     Ttxt = vp->wtext; Tx = vp->ctx;
     if (TxSetY (Ttxt, Ty = vp->cty) == FALSE) Ty = Ttxt->txy;
