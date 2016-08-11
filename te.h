@@ -15,5 +15,6 @@ void tesmark();  /* set "temp" marker at edited text, or before "long" jumps */
 extern tchar *spa, *rpa, *soptfiles; /* current search and replaces patterns */
 extern int    spl,  rpl,  soptfilen; /* and their length, all calculated by: */
 void tesParse();                     /* search/etc patterns parsing function */
+extern tchar txMarkT[TXT_MARKS];
 /*---------------------------------------------------------------------------*/
 #endif                                                      /* TE_H_INCLUDED */

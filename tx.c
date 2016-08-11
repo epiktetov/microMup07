@@ -66,6 +66,10 @@ void TxUnmark (int i, txt *t) {            t->txmarkx[i] =   0;
                                            t->txmarky[i] =  -1;
   if (t->txmarks[i]) xfree(t->txmarks[i]); t->txmarks[i] = NIL;
 }
+void TxUnmarkY (txt *t, long y)
+{
+  for (int i = 1; i < TXT_MARKS; i++) if (t->txmarky[i] == y) TxUnmark(i, t);
+}
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void TxDel (txt *t) /* Delete the contents (do not de-allocate 'txt' itself) */
 {
@@ -365,14 +369,9 @@ short tctoaf (tchar *orig, int len, char *dest_buf)
   return laf;
 }
 /*---------------------------------------------------------------------------*/
-tchar txFlags[TXT_MARKS] = { AT_MARKFLG             + 0xB0,   /* brown °     */
-                             AT_MARKFLG + AT_BG_RED + 0xB9,   /* red   ¹     */
-                             AT_MARKFLG + AT_BG_GRN + 0xB2,   /* green ²     */
-                             AT_MARKFLG + AT_BG_BLU + 0xB3 }; /* blue  ³     */
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 tchar *TxInfo (wnd *w, long y, int *pl)       /* used for repaint in vip.cpp */
 {                                             /* to get current char mim.cpp */
-  int len = 0, i, x, attr;                    /* (return buf may be changed) */
+  int len = 0, i, x;                          /* (return buf may be changed) */
   txt *t = w->wtext;
   if (t && TxSetY(t, y)) {
     if (w == Lwnd && y == Ly) blktmov(Lebuf, tcbuf, len = Lleng);
@@ -381,14 +380,15 @@ tchar *TxInfo (wnd *w, long y, int *pl)       /* used for repaint in vip.cpp */
     if (t->maxTy < y) t->maxTy = y;
     for (i = 1; i < TXT_MARKS; i++) { if (t->txmarky[i] != y) continue;
                                       x = t->txmarkx[i];
-      if (i < 4)
-      { tcbuf[x] = txFlags[i]; attr = tATTR(txFlags[i]); }
-      else  if (t->txmarks[i]) attr = tATTR(txFlags[1]);
-      else                     attr = tATTR(txFlags[0]);
-      //
-      tcbuf[x] = (tcbuf[x] & AT_CHAR) | attr; x++; if (x > MAXLPAC-3) break;
-      tcbuf[x] = (tcbuf[x] & AT_CHAR) | attr; x++;
-      tcbuf[x] = (tcbuf[x] & AT_CHAR) | attr; x++; if (len < x) len = x;
+    //
+    // Marker character temporarily replaces space in the text, but not shown
+    // if that position is non-blank (but attributes are copied in any case):
+    //
+       tchar attr = tATTR(t->txmarkt[i]);
+       if (tcharIsBlank(tcbuf[x])) tcbuf[x] = t->txmarkt[i];
+       else                        tcbuf[x] = (tcbuf[x] & AT_CHAR) | attr; x++;
+       if (x > MAXLPAC-2) break;   tcbuf[x] = (tcbuf[x] & AT_CHAR) | attr; x++;
+       if (len < x) len = x;
   } }
   *pl = tcbuflen = len; return tcbuf;
 }

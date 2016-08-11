@@ -12,6 +12,7 @@
 extern "C" {
 #include "dq.h"
 #include "le.h"
+#include "te.h"
 #include "tx.h"
 #include "ud.h" // UndoMark
 }
@@ -368,8 +369,16 @@ int luTxMark (lua_State*) // Tx:mark(k,x,y,"text") =  add/update mark k (0…19)
   t->txmarks[k] = 0;
   if (x > 0 && y > 0) {                    size_t len;
     const char *text = luaL_optlstring(L,5,NULL,&len);
-    if (text)     t->txmarks[k] = xstrndup(text, len);
-  }
+    if (text) {
+      switch (*text) {
+      case '!': text++; len--; t->txmarkt[k] = txMarkT[TXT_MARK_ERR];  break;
+      case '@': text++; len--; t->txmarkt[k] = txMarkT[TXT_MARK_INFO]; break;
+      case '#': text++; len--; t->txmarkt[k] = txMarkT[TXT_MARK_SMTH]; break;
+      case '$': text++; len--;
+      default: t->txmarkt[k] = txMarkT[TXT_MARK_WARN]; // (likely a warning)
+      }
+      if (len) t->txmarks[k] = xstrndup(text, len);
+  } }
   wndop(TW_ALL, t); return 0; // always redraw the text (inefficient, but we're
 }                             //  not going to check if mark is visible or not)
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

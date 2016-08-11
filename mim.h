@@ -72,15 +72,15 @@ public:    MiInfoWin(MiScTwin *parent);
   void updateInfo(MiInfoType mit = MitUSE_CURRENT);
   void display (QString text) { displayText = text; }
 };
-class MiMarksWin : public QWidget
+class MiDiagWin : public QWidget
 {
   QString displayText;
   MiScTwin      *sctw;
-public:    MiMarksWin(MiScTwin *parent);
-  virtual ~MiMarksWin() { }
-  void paintEvent(QPaintEvent *ev);
+public:    MiDiagWin(MiScTwin *parent);
+  virtual ~MiDiagWin() { }
   void vpResize();
-  void update(QString text) { displayText = text; repaint(); }
+  void update(QString text, int t);
+  void paintEvent(QPaintEvent *ev);
 };
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 class MiConfigDlg : public QDialog
@@ -110,8 +110,8 @@ private:
 public:
   wnd     *vp; // ViewPort (interface between Qt/C++ and legacy C code)
   MiFrame *mf;
-  MiInfoWin   info;
-  MiMarksWin marks; int gradInPool, fontBaseline, fontHeight, fontWidth;
+  MiInfoWin info;
+  MiDiagWin diag; int gradInPool, fontBaseline, fontHeight, fontWidth;
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   void SetGradient(const QString grad);     void SetGradFromPool(int N);
   void UpdateGradientPixmap();

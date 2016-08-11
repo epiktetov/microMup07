@@ -8,6 +8,10 @@
 #define MCD_LEFT     63     /* первый (основной) разделитель в micros.dir    */
 #define MCD_RIGHT    68     /* второй разделитель в micros.dir (optional)    */
 #define TXT_MARKS    20     /* макс.количество запомненных маркеров в тексте */
+#define TXT_MARK_ERR  4
+#define TXT_MARK_INFO 5
+#define TXT_MARK_SMTH 6
+#define TXT_MARK_WARN 7
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 struct txt_tag 
 {
@@ -27,6 +31,7 @@ struct txt_tag
   short txlm,     txrm;     /* Left margin / правая граница текста           */
   short txmarkx[TXT_MARKS]; /* Маркеры (установлены в ноль если не занято),  */
   long  txmarky[TXT_MARKS]; /* см. te(c|s)mark в файле te.c и TxMarks0(tx.c) */
+  tchar txmarkt[TXT_MARKS]; /* mark type, AT_MARKOK+AT_BG_RED/GRN/BLU+[char] */
   char *txmarks[TXT_MARKS]; /* optional mark string (malloc'ed)              */
   wnd  *txwndptr;           /* Список окон, наложенных на текст              */
   short txlructr;           /* Счетчик для алгоритма выталкивания            */
@@ -110,13 +115,13 @@ void tmFentr  (void),
 void tmLoadIn(txt *t, QString  filename); // replace (empty) text with the file
 bool tmSaveAs(txt *t, QString  filename); // rename to given name && force save
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-bool twSave     (txt *t, wnd *vp, bool saveBackup); /* either Save or SaveAs */
-bool twSafeClose(txt *t, wnd *vp);                  /* close if not changed  */
+bool twSave     (txt *t, wnd *vp); /* either Save or SaveAs */
+bool twSafeClose(txt *t, wnd *vp); /* close if not changed  */
 void twShowFile(QString filename);
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 extern "C" {
 #endif
-bool tmsave (txt *t, bool qback); /* сохранить файл на диске  (used in dq.c) */
+bool tmsave(txt *t);               /* сохранить файл на диске (used in dq.c) */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #ifdef __cplusplus
 }

@@ -90,6 +90,7 @@ QColor colorLightPink (200,200,172); // "temporary" block, not very pink really
 QColor colorLightCyan (172,200,255); // "permanent" block
 QColor colorLightGreen(204,255,155); // "good" mark (used for matched brackets)
 QColor colorLightRed  (255,155,155); // "bad" mark, indicates some error
+QColor colorLightBrown(234,195,125); // background for "default" mark text
 QColor colorSolidRed  (255,  0,  0); // solid red
 QColor colorSolidGreen(  0,166,  0); // - green | for numbered marks (used for
 QColor colorSolidBlue (  0, 85,215); // - blue  |          gradient background)
@@ -280,8 +281,8 @@ void MiFrame::finishClose (int qtStandBtn) // finish closing either scwin (when
   switch (qtStandBtn) {                    // to close the window again
   case QMessageBox::Cancel: return;
   case QMessageBox::Save:
-         if (scwin) twSave(scwin->vp->wtext, scwin->vp, false);
-    else if (main)  twSave( main->vp->wtext,  main->vp, false); break;
+         if (scwin) twSave(scwin->vp->wtext, scwin->vp);
+    else if (main)  twSave( main->vp->wtext,  main->vp); break;
   case QMessageBox::Discard:
          if (scwin) scwin->vp->wtext->txstat &= ~TS_CHANGED;
     else if (main)   main->vp->wtext->txstat &= ~TS_CHANGED;
@@ -414,7 +415,7 @@ void MiFrame::resizeEvent (QResizeEvent*)
 MiScTwin::MiScTwin (MiFrame *frame, const QString bgndGrad, int pool, wnd *win)
   : gotFocus(0), vp(win), mf(frame),
     info (this),
-    marks(this),
+    diag (this),
     gradInPool(pool), gradPixSize(0), gradPixHeight(0),
                       gradPixmap(NULL),  cmd2repeat(0), timerID(0)
 {
@@ -443,7 +444,7 @@ void MiScTwin::resizeEvent(QResizeEvent*) // using fontWidth as vertical offset
   info.move(width()  - info.width()  - fontWidth,
             height() - info.height() - fontWidth); UpdateGradientPixmap();
   //
-  marks.move(width() - marks.width() - fontWidth, fontWidth);
+  diag.move(width() - diag.width() - fontWidth, fontWidth);
 }                    
 //-----------------------------------------------------------------------------
 void mimSetNamedColor (QColor& color, const QString descr)
@@ -552,7 +553,7 @@ void MiScTwin::UpdateMetrics()          // NOTE: assuming fixed-width font with
   fontHeight = fm.height()-1; // Qt height always equal to ascent()+descent()+1
   fontWidth  = fm.width("X");
   fontHeight += MiApp_fontAdjOver;  fontBaseline += MiApp_fontAdjOver;
-  fontHeight += MiApp_fontAdjUnder; info.vpResize(); marks.vpResize();
+  fontHeight += MiApp_fontAdjUnder; info.vpResize();  diag.vpResize();
 }
 //-----------------------------------------------------------------------------
 void MiScTwin::Repaint (int x, int y, int width, int height, bool NOW)
@@ -618,10 +619,7 @@ void MiScTwin::repaintPosBar (QPainter& dc)
   dc.setPen(pen);
   QRect vppBar(mimTxtLEFT + Tw2qtW(vp->wsw) + mimBORDER,
                                       vppb0 + mimBORDER, mimVpPOSBAR-1, vppbh);
-  dc.drawRect(vppBar);
-  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  static QColor *colors[] = { &colorDarkWheat,  &colorSolidRed,
-                              &colorSolidGreen, &colorSolidBlue };
+  dc.drawRect(vppBar); // - - - - - - - - - - - - - - - - - - - - - - - - - - -
   int N;
   for (int i = 1; i < TXT_MARKS; i++) {
     if (tx->txmarky[i] < 0) continue;
@@ -629,8 +627,13 @@ void MiScTwin::repaintPosBar (QPainter& dc)
     else if (tx->txmarky[i] >= vp->wty + vp->wsh)
         N = Th2qtH(vp->wsh)-int(wH*double(tx->maxTy-tx->txmarky[i])/total+0.5);
     else continue;
-    brush.setColor(*colors[i<4?i:1]); pen.setBrush(brush);
-    dc.setBrush(brush);
+    switch (tx->txmarkt[i] & AT_BG_CLR) {
+    case AT_BG_RED: brush.setColor(colorSolidRed);   break;
+    case AT_BG_GRN: brush.setColor(colorSolidGreen); break;
+    case AT_BG_BLU: brush.setColor(colorSolidBlue);  break;
+    default:        brush.setColor(colorDarkWheat);
+    }
+    dc.setBrush(brush); pen.setBrush(brush);
     dc.setPen(pen);
     dc.drawRect(vppBar.left()-1, N + mimBORDER, mimVpPOSBAR+1, mimVpPOSBAR+1);
 } }
@@ -915,17 +918,27 @@ void MiInfoWin::paintEvent (QPaintEvent *)
 void MiInfoWin::updateInfo (MiInfoType mit) { if (mit) infoType = mit;
                                                             repaint(); }
 //-----------------------------------------------------------------------------
-MiMarksWin::MiMarksWin (MiScTwin *parent) : QWidget(parent),sctw(parent)
+MiDiagWin::MiDiagWin (MiScTwin *parent) : QWidget(parent),sctw(parent)
 {
-  QPalette palette(colorLightRed);
-  palette.setColor(QPalette::WindowText, colorBlack); setPalette(palette);
+  QPalette pal(colorLightRed);                             hide();
+  pal.setColor(QPalette::WindowText, colorBlack); setPalette(pal);
   setFocusPolicy(Qt::NoFocus);
   setAutoFillBackground(true); setFont(parent->mf->getTextFont());
 }
-void MiMarksWin::vpResize() { resize(2 * mimBORDER + sctw->Tw2qtW(77),
-                                     2 * mimBORDER + sctw->Th2qtH(1)); }
+void MiDiagWin::vpResize() { resize(2 * mimBORDER + sctw->Tw2qtW(77),
+                                    2 * mimBORDER + sctw->Th2qtH(1)); }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-void MiMarksWin::paintEvent (QPaintEvent *)
+void MiDiagWin::update (QString text, int t)
+{
+  QPalette pal(palette()); // change background, preserve other attributes
+  switch (t & AT_BG_CLR) { //
+  case AT_BG_RED: pal.setColor(QPalette::Background, colorLightRed);   break;
+  case         0: pal.setColor(QPalette::Background, colorLightBrown); break;
+  default:        pal.setColor(QPalette::Background, colorLightGreen); break;
+  }
+  setPalette(pal); displayText = text; repaint();
+}
+void MiDiagWin::paintEvent (QPaintEvent *)
 {
   int X = sctw->Tx2qtX(0);
   int Y = sctw->Ty2qtY(0) + sctw->fontBaseline;

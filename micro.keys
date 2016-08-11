@@ -81,7 +81,8 @@ replaces anything, it just pushes current text into stack like Esc <down> does)
   Meta+'\'/Del  - ask for filename and enter that file (see FILES below)
   Meta+']'      - open persistent scratch pad (~/.micro7.blah file)
   Meta+{arrow}  - move cursor to closest window in given direction
-  Meta+Return   - SyncPos(tm) - open file mentioned here in the upper pane
+  Ctrl+X        - SyncPos(tm) - open file mentioned here in the upper pane
+  Meta+Return   - SyncPos + call MkSyncMarks (see auto.lua) to sync markers
 
 NOTE: commands in this section have alias Ctrl+Alt+X (except for Ctrl+Alt+Del)
 */
@@ -97,46 +98,48 @@ a_(TM_GOBLAH,  "Meta+]",      0xf1008)
 k_(TM_F1ENTR,      NULL,      0xc10f1) /* в том же окне:      Return */
 k_(TM_F2ENTR,      NULL,      0xc10f2) /* в новом окне: Shift+Return */
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-k_(TM_LWINDOW,     "Meta+Left",   0xc1012) /* перейти к левому окну      */
-k_(TM_UWINDOW,     "Meta+Up",     0xc1013) /* - к верхнему окну          */
-k_(TM_RWINDOW,     "Meta+Right",  0xc1014) /* - к правому окну           */
-k_(TM_DWINDOW,     "Meta+Down",   0xc1015) /* - к нижнему окну           */
-k_(TM_SYNCPOS,     "Meta+Return", 0xc1004) /* Синхронизировать позицию:  */
-a_(TM_SYNCPOS, "Ctrl+Alt+Return", 0xc1004) /*    открыть в соседнем окне */
-a_(TM_LWINDOW, "Ctrl+Alt+Left",   0xc1012) /*    упомянутый здесь файл и */
-a_(TM_UWINDOW, "Ctrl+Alt+Up",     0xc1013) /*    перейти в указанную тут */
-a_(TM_RWINDOW, "Ctrl+Alt+Right",  0xc1014) /*    строку -- работает для: */
-a_(TM_DWINDOW, "Ctrl+Alt+Down",   0xc1015) /* grep, (uni)diff, compilers */
+k_(TM_LWINDOW,     "Meta+Left",   0xc1012) /* перейти к левому окну  */
+k_(TM_UWINDOW,     "Meta+Up",     0xc1013) /* - к верхнему окну      */
+k_(TM_RWINDOW,     "Meta+Right",  0xc1014) /* - к правому окну       */
+k_(TM_DWINDOW,     "Meta+Down",   0xc1015) /* - к нижнему окну       */
+k_(TM_SYNCPOX,     "Ctrl+X",      0xc1005)
+k_(TM_SYNCPOS,     "Meta+Return", 0xc1004) /* Синхронизировать позицию:      */
+a_(TM_SYNCPOS, "Ctrl+Alt+Return", 0xc1004) /*        открыть в соседнем окне */
+a_(TM_LWINDOW, "Ctrl+Alt+Left",   0xc1012) /*        упомянутый здесь файл и */
+a_(TM_UWINDOW, "Ctrl+Alt+Up",     0xc1013) /*        перейти в указанную тут */
+a_(TM_RWINDOW, "Ctrl+Alt+Right",  0xc1014) /*        строку -- работает для: */
+a_(TM_DWINDOW, "Ctrl+Alt+Down",   0xc1015) /*     grep, (uni)diff, compilers */
 /*
 As a consequence of First Principle, Return & Tab keys do not insert any symbol
 into text, but instead work as cursor movement commands (there are commands for
 inserting TAB into text and splitting lines at cursor, though).
 
   Tab / Shift+Tab  - move cursor to next / previous TAB position
-  Ctrl+Tab         - cursor to last saved position, saves curent one
-  Ctrl+Shift+Tab   - insert TAB character into text - mostly for legacy make ;)
-  Ctrl+Shift+'~'   - set marker 0 (brown)
-  Ctrl+Shift+1     - set marker 1 (red)   | all four mark are shown in the text
-  Ctrl+Shift+2     - set marker 2 (green) | as colored "flag" with number right
-  Ctrl+Shift+3     - set marker 3 (blue)  | after the end of text in line, and
-  Ctrl+'~'         - go to marker 0 |     | as colored dots in "position bar"
+  Ctrl+Shift+Tab   - insert TAB character into text
+  Ctrl+Shift+1     - set marker 1 (red)   |
+  Ctrl+Shift+2     - set marker 2 (green) | the markers are shown in the text
+  Ctrl+Shift+3     - set marker 3 (blue)  | as colored "flag" with number and
+  Ctrl+`(backtick) - go to auto marker    | as colored dots in "position bar"
   Ctrl+1           - go to marker 1 |
-  Ctrl+2           - go to marker 2 | all save cursor position for Ctrl+Tab
+  Ctrl+2           - go to marker 2 | or set marker, if it does not exist yet
   Ctrl+3           - go to marker 3 |
+  Ctrl+N           - go to next marker down in the text
+  Ctrl+Shift+N     - go to previous marker up in the text
   Return           - move cursor to beginning of next line
   Shift+Return     - move cursor to next line, aligned with text in current one
+
+Note: for convenience, "go to marker" command sets the marker if not set yet,
+and "set marker" works as toggle (and also clears all other marker from line)
 */
-k_(LE_TAB,          "Tab",          0xd2001) /* в следующую...        */
-k_(LE_LTAB,   "Shift+Tab",          0xd2202) /* в предыдущую...       */
-a_(LE_LTAB,   "Shift+Backtab",      0xd2202) /*     позицию табуляции */
-k_(LE_TABCHR, "Ctrl+Shift+Tab",     0xf2602) /* вставить символ TAB   */
-a_(LE_TABCHR, "Ctrl+Shift+Backtab", 0xf2602) /*  (BkTAB ≈ Shift+TAB)  */
-k_(TE_CMARK,  "Ctrl+Tab",           0xd2401) /* курсор --> где были   */
-#ifdef Q_OS_MAC                              /* синонимы для Mac KB:  */
-a_(LE_TABCHR, "Alt+Shift+Backtab",  0xf2602) /*   вставить символ TAB */
-a_(TE_CMARK,  "Alt+Tab",            0xd2401) /*   курсор --> где были */
+k_(LE_TAB,          "Tab",          0xd2001) /* в следующую |позицию       */
+k_(LE_LTAB,   "Shift+Tab",          0xd2202) /* в предыдущую|   табуляции  */
+a_(LE_LTAB,   "Shift+Backtab",      0xd2202) /*      (Backtab ≈ Shift+Tab) */
+k_(LE_TABCHR, "Ctrl+Shift+Tab",     0xf2602) /*                            */
+a_(LE_TABCHR, "Ctrl+Shift+Backtab", 0xf2602) /* вставить символ TAB ('\t') */
+#ifdef Q_OS_MAC                              /* (Ctrl+Tab reserved on Mac) */
+a_(LE_TABCHR, "Alt+Shift+Backtab",  0xf2602)
 #endif
-k_(TE_SMARK0, "Ctrl+Shift+`", 0xd2630) /* установить маркер 0, wheat */
+k_(TE_SMARK0, "Ctrl+Shift+`", 0xd2630) /* установить (или очистить)  */
 k_(TE_SMARK1, "Ctrl+Shift+1", 0xd2631) /*  маркер 1 = красный флажок */
 k_(TE_SMARK2, "Ctrl+Shift+2", 0xd2632) /*  маркер 2 = зеленый флажок */
 k_(TE_SMARK3, "Ctrl+Shift+3", 0xd2633) /*  маркер 3 = синий флажок   */
@@ -148,6 +151,8 @@ k_(TE_CMARK0, "Ctrl+`",       0xd2430) /* перейти к маркеру 0    
 k_(TE_CMARK1, "Ctrl+1",       0xd2431) /* -> 1                       */
 k_(TE_CMARK2, "Ctrl+2",       0xd2432) /* -> 2      NOTE: codes must */
 k_(TE_CMARK3, "Ctrl+3",       0xd2433) /* -> 3      be TE_S/CMARK0+N */
+k_(TE_CMARKN, "Ctrl+N",       0xd243E) /* -> next                    */
+k_(TE_CMARKP, "Ctrl+Shift+N", 0xd243F) /* -> previous                */
 k_(TE_CR,           "Return", 0xc2004) /* в начало следующей строки  */
 k_(TE_RCR,    "Shift+Return", 0xc2204) /* - - с выравниванием        */
 /*
@@ -165,16 +170,16 @@ Of course, any chages made to a text may be undone (and then re-applied) step-
 by-step - that feature was introduced in early micromirs way before it become
 common, so MicrMir07 still uses traditional key mapping (but also supports now
 standard Ctrl/Command+Z alias):
-                                             |
-  Ctrl+Backsp == Ctrl/Meta+Z - undo changes  |  Ctrl+Shift+Backsp - "slow" undo
-  Ctrl+Return                - redo changes  |  Ctrl+Shift+Return - "slow" redo
+                                            |
+  Ctrl+Backsp == Ctrl/Meta+Z - undo changes | Ctrl+Shift+Backsp - "small" undo
+  Ctrl+Return                - redo changes | Ctrl+Shift+Return - "small" redo
 */
-k_(TE_UNDO,    "Ctrl+Backspace",        0xc3403) /* откатка последней    */
-a_(TE_UNDO,    "Meta+Z",                0xc3403) /*  выполенной операции */
-a_(TE_UNDO,    "Ctrl+Z",                0xc3403)
-k_(TE_UNUNDO,  "Ctrl+Return",           0xc3404) /* "накатка" (работает  */
-k_(TE_SUNDO,   "Ctrl+Shift+Backspace",  0xc3603) /*       после откатки) */
-k_(TE_SUNUNDO, "Ctrl+Shift+Return",     0xc3604)
+k_(TE_UNDO,    "Ctrl+Backspace",       0xc3403) /* откатка последней         */
+a_(TE_UNDO,    "Ctrl+Z",               0xc3403) /*       выполенной операции */
+a_(TE_UNDO,    "Meta+Z",               0xc3403)
+k_(TE_UNUNDO,  "Ctrl+Return",          0xc3404) /* "накатка" (работает если  */
+k_(TE_SUNDO,   "Ctrl+Shift+Backspace", 0xc3603) /*      до этого откатились) */
+k_(TE_SUNUNDO, "Ctrl+Shift+Return",    0xc3604) /* +Shift == мелкими шагами  */
 /*
 Although one can insert spaces into text by tapping space bar (in insert mode),
 that's not how it is usually done in MicroMir, since there are special commands
@@ -404,7 +409,6 @@ it has '|' symbols in all lines in 64th position (and, optionally, in 69th one)
   Esc,Up      - up one level = normal exit (with changes automatically saved)
   Esc,PgUp    - up all levels (closing the window), with changes saved
   Esc,Ctrl+A  - abandon all changes and leave the file (up one level)
-  Esc,Ctrl+B  - exit the file, save both original and new versions
   Ctrl/Meta+R - reload the file (or directory contents) from disk
   Ctrl/Meta+S - save all changes without leaving the file
 */
@@ -413,7 +417,6 @@ k_(TM_FNEW,   "Esc,Down",   0xf9415) /* войти в новый файл    */
 k_(TM_EXIT,   "Esc,Up",     0xc9413) /* выйти с сохранением   */
 k_(TM_QUIT,   "Esc,PgUp",   0xc9416) /* выйти совсем          */
 k_(TM_EXOLD,  "Esc,Ctrl+A", 0xc9c41) /* выйти без сохранения  */
-k_(TM_EXBACK, "Esc,Ctrl+B", 0xc9c42) /* - сохранив обе версии */
 k_(TM_RELOAD, "Meta+R",     0xc9452)
 a_(TM_RELOAD, "Ctrl+R",     0xc9452) /* перезагрузить файл    */
 k_(TM_UPDATE, "Meta+S",     0xc9453) /* сохранить изменения   */
@@ -545,7 +548,7 @@ NOTE:
   Tx:DL(N) -- delete N lines at cursor (default = 1)
   Tx:gtl() -- get-text-left convenience method = gets first chunk of non-spaces
                                        from text to the left of cursor position
-[line 548] xref: new.lua
+[line 551] xref: new.lua
 
   re = Re("..regex..",true/false) -- regular expression (arg: case sensitivity,
   re = Re[[..regex..]]                                default = case-sensitive)

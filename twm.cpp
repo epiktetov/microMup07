@@ -363,19 +363,12 @@ void tmUnlink (txt *t)          // unlink text from the file (change to PSEUDO)
   t->txredit =   TXED_YES;
 }
 /*---------------------------------------------------------------------------*/
-bool tmsave (txt *t, bool needBackup)
+bool tmsave (txt *t)
 {
   if (t->file == NULL || (t->txstat & (TS_PSEUDO|TS_DIRLST)) ||
                         !(t->txstat &  TS_CHANGED)) return TRUE;
   else
-  if (t->file->ft != QftTEXT) return FALSE; // use twSave() for other types
-  if (needBackup) {
-    QString backup_name = t->file->name + TwmBACKUP_EXT;
-    qfile *bfile = QfsNew(backup_name, t->file);
-    QfsDelete(bfile);
-    if (QfsRename(t->file, backup_name)) t->txstat |= TS_NEW;
-    else                                    return teferr(t);
-  }
+  if (t->file->ft != QftTEXT)  return FALSE; // use twSave() for other types
   TxTop(t); long deqsize = DqLen(t->txdstk);
   if (deqsize) {
     int omode = ((t->txstat & TS_NEW) || t->file->size > deqsize) ? FO_NEW
@@ -392,7 +385,7 @@ bool tmsave (txt *t, bool needBackup)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 bool tmSaveAs (txt *t, QString  fn)
 {
-  if (fn.compare(t->file->full_name, QfsIGNORE_CASE) == 0) return tmsave(t, 0);
+  if (fn.compare(t->file->full_name, QfsIGNORE_CASE) == 0) return tmsave(t);
   else {
     for (txt *to = texts; to; to = to->txnext) {
       if ((to->txstat & TS_BUSY) && to->file &&
@@ -411,13 +404,13 @@ bool tmSaveAs (txt *t, QString  fn)
       QfsClear(t->file);     t->file = fd; check_MCD(t);
       t->txstat &= ~(TS_DIRLST|TS_PSEUDO);
       t->txstat |= TS_CHANGED;
-      t->txredit =   TXED_YES; tmsave(t, FALSE); twRedraw(t); return true;
+      t->txredit =   TXED_YES;  tmsave(t);  twRedraw(t);  return true;
 } } }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-bool twSave (txt *t, wnd *vp, bool needBackup)
+bool twSave (txt *t, wnd *vp)
 {
   if (t->txstat & (TS_PSEUDO|TS_DIRLST)) return true;
-  else if (t->file->ft == QftTEXT)       return tmsave(t, needBackup);
+  else if (t->file->ft == QftTEXT)       return tmsave(t);
   else if (t->txstat & TS_CHANGED) {
     QString new_name = vp->sctw->mf->saveAsDialog(t);
     if (!new_name.isEmpty()) return tmSaveAs(t, new_name);
@@ -428,8 +421,8 @@ void tmSaveAll (void)                    /* сохранить ВСЕ измен
 {
   for (txt *t = texts; t; t = t->txnext) {
     if (t->txstat & TS_CHANGED) {
-      if (t->txwndptr) twSave(t, t->txwndptr, false); // <- saves QftNOFILE too
-      else             tmsave(t,              FALSE); //    (will ask for name)
+      if (t->txwndptr) twSave(t, t->txwndptr); // <- saves QftNOFILE as well
+      else             tmsave(t);              //         (will ask for name)
 } } }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 bool twSafeClose (txt *t, wnd *vp)
@@ -529,7 +522,7 @@ void tmFnewByTtxt (void)                 /* войти в новый файл (�
     else return;                   // and single-delimiter (64th pos only) fmts
   }
   else if (Ttxt->txstat & TS_DIRLST) { lm = DIRLST_FNPOS; rm = Lleng; }
-  else if (Ttxt->txstat & TS_GITLOG) { tmSyncPos();           return; }
+  else if (Ttxt->txstat & TS_GITLOG) { tmSyncPos(0);          return; }
   else if (Tx > Lleng) return;
   else {
                  for (lm = Tx; lm >= 0    && (uchar)Lebuf[lm]   != 0xAB;) lm--;
@@ -562,12 +555,7 @@ int TmCommand (int kcode)
   case TM_UPDATE: tmSaveAll(); break;        /* сохранить изменения на диске */
   case TM_EXIT:                              /* выйти из файла с сохранением */
     if (Ttxt != LCtxt &&
-             !twSave(Ttxt, Twnd, false)) return E_SFAIL;
-    twDirPop();
-    break;
-  case TM_EXBACK:                   /* выйти, сохранив новую и старую версию */
-    if (Ttxt != LCtxt &&
-             !twSave(Ttxt, Twnd, true)) return E_SFAIL;
+             !twSave(Ttxt, Twnd)) return E_SFAIL;
     twDirPop();
     break;
   case TM_EXOLD:                            /* выйти из файла без сохранения */
@@ -622,7 +610,8 @@ int TmCommand (int kcode)
     break;
   case TM_GREP:
   case TM_GREP2:   return (tmGrep(kcode) < 0) ? E_SFAIL : E_OK;
-  case TM_SYNCPOS: return (tmSyncPos()   < 0) ? E_SFAIL : E_OK;
+  case TM_SYNCPOX: return (tmSyncPos(0)  < 0) ? E_SFAIL : E_OK;
+  case TM_SYNCPOS: return (tmSyncPos(1)  < 0) ? E_SFAIL : E_OK;
   case TM_LUAF:    return luasExec(Ttxt,false);
   case TM_LUAS:    return luasExec(Ttxt, true);
   case TM_LUAN:    twNewLuaText(); return E_OK;

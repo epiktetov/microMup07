@@ -277,16 +277,13 @@ void vipReady()
        if (Lwnd) { wadjust(Lwnd,Lx,Ly); wpos(Lwnd,Lx-Lwnd->wtx,Ly-Lwnd->wty); }
   else if (Twnd) { wadjust(Twnd,Tx,Ty); wpos(Twnd,Tx-Twnd->wtx,Ty-Twnd->wty);
 //
-//
-//
-//
     if (Ttxt == NIL || Twnd->sctw == NIL) return;
     for (int i = 1; i < TXT_MARKS; i++) {
       if (Ttxt->txmarky[i] == Ty && Ttxt->txmarks[i]) {
-        Twnd->sctw->marks.update   (Ttxt->txmarks[i]);
-        Twnd->sctw->marks.show();              return;
-    } } Twnd->sctw->marks.hide(); //
-} }                               // hide mark window if line does not match
+        Twnd->sctw->diag.update    (Ttxt->txmarks[i], Ttxt->txmarkt[i]);
+        Twnd->sctw->diag.show();                                 return;
+    } } Twnd->sctw->diag.hide(); //
+} }                              // hide mark window if line does not match
 /*---------------------------------------------------------------------------*/
 void vipOnFocus (wnd *vp) /* if possible, goto window (cursor is not Ok yet) */
 { 
@@ -298,7 +295,7 @@ void vipFocusOff (wnd *vp) // save current text position (and sync with Ttxt)
   if (vp == Twnd) { Twnd->ctx = Tx;
                     Twnd->cty = Ty; if (Ttxt) wupdate(Ttxt, Twnd); }
   scblkoff();
-  wpos_off(vp); vp->sctw->marks.hide();
+  wpos_off(vp); vp->sctw->diag.hide();
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void vipActivate (wnd *vp)    // save current cursor position and sync active

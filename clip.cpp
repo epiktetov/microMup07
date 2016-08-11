@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07  Clipboard (using wxClipboard) & CS/LS op | (c) Epi MG, 2007-2014
+// МикроМир07  Clipboard (using wxClipboard) & CS/LS op | (c) Epi MG, 2007-2016
 //------------------------------------------------------+----------------------
 #include <QApplication>   /* Old le.c (c) Attic 1989,    (c) EpiMG 1996-2003 */
 #include <QClipboard>     /* old te.c (c) Attic 1989-96, (c) EpiMG 1998,2001 */
@@ -110,7 +110,7 @@ static void CSclose ()
 void cpsave() // flush everything we saved so far into disk file (used at exit
 {             // and for Calculator feature - feeding .micro7.clip to the 'bc')
   CSclose();  //
-  if (LCtxt && (LCtxt->txstat & TS_CHANGED)) tmsave(LCtxt, FALSE);
+  if (LCtxt && (LCtxt->txstat & TS_CHANGED)) tmsave(LCtxt);
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static void tecutlin() /* Защита от случайного нажатия на F3 вместо F4: если */

@@ -44,9 +44,8 @@ tchar *blktmov(tchar *from, tchar *to, long len)
 char *xstrndup (const char *orig, int limit)
 {
   const char *p = orig; int N = 0;
-  while     (*p++ && limit--) N++;
-  char *dup = xmalloc(N);
-  lblkmov((char*)orig, dup, N); return dup;
+  while     (*p++ && limit--) N++; char  *dup = xmalloc(N);
+  *lblkmov((char*)orig, dup, N)=0; return dup;
 }
 /*---------------------------------------------------------------------------*/
 /* nanoMir 2000 $Id: rt.c,v 1.4 2003/04/04 00:57:00 epi Exp $

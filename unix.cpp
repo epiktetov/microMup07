@@ -134,13 +134,9 @@ static void shellexec (txt *Stxt, int  &Sx,
                 Stxt->txredit =    oldTXED;
 }
 /*---------------------------------------------------------------------------*/
-void tmshell (int kcode)
+static QString tcmd2qstr (tchar *p, tchar *pend)
 {
-  tchar tp, *p = tcmdbuffer + tcmdpromptlen, *pend = tcmdbuffer + tcmdbuflen;
-  char cmdbuffer[MAXLPAC],                     *pc = cmdbuffer;
-  txt *Ctxt;
-  wnd *wind;
-  if (p == pend) return; // empty command line => should not do anything
+  char cmdbuffer[MAXLPAC], *pc = cmdbuffer; tchar tp;
   while (p < pend) {
     switch (tp = *p++) {
     case TmSCH_THIS_OBJ:
@@ -149,7 +145,13 @@ void tmshell (int kcode)
     default:
       *pc++ = (char)tp;
   } } *pc = 0;
-  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  return QString(cmdbuffer);
+}
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+static int shelltext (int kcode) /* select new Ttxt (and Twnd) for shell cmd */
+{                                /* returns 0 on success, non-zero for error */
+  txt *Ctxt;
+  wnd *wind;
   if (Ttxt->txstat & TS_PSEUDO) { TxEmpt(Ctxt = Ttxt); wind = Twnd; }
   else
   if (Twnd->wsibling && (Twnd->wsibling->wtext->txstat & TS_PSEUDO)) {
@@ -157,48 +159,45 @@ void tmshell (int kcode)
     Ctxt = Twnd->wsibling->wtext; TxEmpt(Ctxt);
   }
   else {
-    Ctxt = tmDesc(QfsELLIPSIS, false, Ttxt);               luasNtxt(Ctxt);
-    wind = vipSplitWindow(Twnd, kcode == TM_F2EXEC ? TM_VFORK : TM_HFORK);
+    Ctxt = tmDesc(QfsELLIPSIS, false, Ttxt);
+//+    wind = vipSplitWindow(Twnd, kcode == TM_F2EXEC ? TM_VFORK : TM_HFORK);
+    wind = vipSplitWindow(Twnd, kcode);
     if (wind) wattach(Ctxt, wind);
-    else    { vipBell();   return; }
-  }
-  if (wind != Twnd) vipActivate(wind);
+    else    { vipBell(); return 1; }   // the content is re-created => register
+  }                                    //                  as new text for Lua
+  if (wind != Twnd) vipActivate(wind); luasNtxt(Ctxt);
               vipUpdateWinTitle(wind); vipFocus(wind);
+  return 0;
+}
+/*---------------------------------------------------------------------------*/
+void tmshell (int kcode)
+{
+  QString cmd = tcmd2qstr(tcmdbuffer + tcmdpromptlen, tcmdbuffer + tcmdbuflen);
+  if (shelltext(kcode == TM_F2EXEC ? TM_VFORK : TM_HFORK))              return;
 //
-// Removed Sun Oct 21 12:12:00 2012 - all positions are cleared by TxEmpt or
-//                                                     when creating new text
-//   wind->ctx = wind->wtx = 0;
-//   wind->cty = wind->wty = 0;
-//   if (Twnd == wind) Tx = Ty = 0;
-//   else        vipActivate(wind); vipFocus(wind); vipUpdateWinTitle(wind);
-//--
-// Now insert the command (along with the prompt == current directory) into the
+// Now insert the command (along with the prompt = current directory) into the
 // text and execute UNIX shell command... then check if any files were changed
 //
-  TxTIL (Ttxt, tcmdbuffer, tcmdbuflen); Ty++;
+  TxTIL(Ttxt, tcmdbuffer, tcmdbuflen); Ty++;
   TxDown(Ttxt);
-  shellexec(Ttxt, Tx, Ty, cmdbuffer, Twnd); tmCheckFiles();
+  shellexec(Ttxt, Tx, Ty, cmd.cStr(), Twnd); tmCheckFiles();
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - grep - - */
 int tmGrep (int kcode)
-{                                                 // neither POSIX nor GNU grep
-  QString grep_command = "grep ";                 //  support wildcard searches
-       if (leOptMode & LeARG_WILDCARD) return -1; //
-  else if (leOptMode & LeARG_REGEXP) grep_command.append("-E");
-  else                               grep_command.append("-F");
-  if  (leOptMode & LeARG_IGNORECASE) grep_command.append("i");
-                                     grep_command.append("nH '");
-  tesParse();
-  if (spl <= 0) return -1;
-  tchar *tcmd = tcmdbuffer + tcmdpromptlen;
-  tcmd += qstr2tcs(grep_command, tcmd);
-  tcmd  = blktmov (spa,  tcmd, spl);
-  tcmd += qstr2tcs("' ", tcmd);
-  if (soptfilen) tcmd  = blktmov(soptfiles, tcmd, soptfilen);
-  else           tcmd += qstr2tcs("*",      tcmd);
-
-  tcmdbuflen = tcmd - tcmdbuffer;
-  tmshell(kcode == TM_GREP ? TM_FEXEC : TM_F2EXEC); return 0;
+{
+  if (leOptMode & LeARG_WILDCARD) return -1; // <- neither POSIX nor GNU grep
+  tesParse();       if (spl <= 0) return -1; //     support wildcard searches
+//
+  QString grep_cmd = QString("grep -%1%2nH '%3' %4")
+    .arg((leOptMode & LeARG_REGEXP)     ? "E" : "F")
+    .arg((leOptMode & LeARG_IGNORECASE) ? "i" :  "")
+    .arg(tcs2qstr(spa, spl))
+    .arg(soptfilen ? tcmd2qstr(soptfiles, soptfiles+soptfilen) : QString("*"));
+//
+  if (shelltext(kcode == TM_GREP ? TM_HFORK : TM_VFORK)) return -1;
+  TxIL(Ttxt, (char*)grep_cmd.cStr(), grep_cmd.length());      Ty++;
+  TxDown(Ttxt);
+  shellexec(Ttxt, Tx, Ty, grep_cmd.cStr(), Twnd); return 0;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tmLoadXeq (txt *t) /* load text by executing command from t->file->name */
@@ -225,7 +224,7 @@ static int scan_lines_up (char c1st, char *line_buffer)       /* SyncPos(tm) */
   while (line_buffer[0] == c1st); return steps-1; // the supplied buffer) while
 }                                                 // first char matches c1st
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-int tmSyncPos (void) /* SyncPos(tm) -- NOTE: only works with ASCII filenames */
+int tmSyncPos (int marks)  /* SyncPos(tm) -- only works with ASCII filenames */
 {
   char c, line_buffer[MAXLPAC]; long file_pos = 0, line_pos = 0, foo;
   wnd *other_wnd = NULL;
@@ -332,14 +331,21 @@ diff_sync_to_other_wnd:
 // Filename found, open that file in the other window, if not opened already in
 //                                              the sibling window (upper pane)
   txt  *prev_txt = Ttxt;
-  if ((other_wnd = Twnd->wsibling) != NULL &&
-       filename == other_wnd->wtext->file->name) { vipActivate(other_wnd);
-                                                   vipFocus   (other_wnd); }
-  else {
+  if ((other_wnd = Twnd->wsibling) == NULL ||    // check only name for sibling
+       filename != other_wnd->wtext->file->name) // but path as well for others
+  {                                              //
+    for (other_wnd = windows; other_wnd; other_wnd = other_wnd->wdnext) {
+      txt *t =                                       other_wnd->wtext;
+      if (t && t->file && t->file->name == filename
+                       && t->file->path == Ttxt->file->path) break;
+  } }
+  if (other_wnd) { vipActivate(other_wnd);   // if "other window" already exist
+                   vipFocus   (other_wnd); } // then just activate, else create
+  else {                                     //
     other_wnd = vipSplitWindow(Twnd, TM_VFORK);   if (!other_wnd) return -1;
     vipFocusOff(Twnd); if (!twEdit(other_wnd,filename,NULL,true)) return -1;
   }
-  luas2txtProc("MkSyncMarks", prev_txt, Ttxt);
-  tesetxy(line_pos, file_pos-1);     return 0;
+  if (marks) luas2txtProc("MkSyncMarks", prev_txt, Ttxt);
+  tesetxy(line_pos, file_pos-1);                return 0;
 }
 /*---------------------------------------------------------------------------*/

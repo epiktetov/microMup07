@@ -322,7 +322,7 @@ long tmswap (long required)
       if (tm == NIL) break;  /* самого подходящего не нашлось */
    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
       if (op & S_SFILE) {
-        if (!tmsave(tm, FALSE)) { tm->txstat |= TS_SAVERR; continue; }
+        if (!tmsave(tm)) { tm->txstat |= TS_SAVERR; continue; }
       }
       if (op & S_EFILE) {
         if (tm->clustk) DqEmpt(tm->clustk);

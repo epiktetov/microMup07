@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07  Command Codes Definition / transcoding   | (c) Epi MG, 1998-2014
+// МикроМир07  Command Codes Definition / transcoding   | (c) Epi MG, 1998-2016
 //------------------------------------------------------+----------------------
 //include <qnamespace.h>
 #include <QKeyEvent>
@@ -215,10 +215,10 @@ void MkLuaXEQ (QString text, wnd *vp) // text is only used when stack[-1] = nil
 }
 static int luMkXEQ (lua_State *L) // this function is called from Lua scripts
 {                                 // whenever explicit Mk:Do(something) used;
-  luaL_checktype(L,1,LUA_TTABLE); // no return value, but may raise an error
+  luaL_checktype(L,1,LUA_TTABLE); // returns "1" for error, nothing otherwise
   luaL_checkany (L,2);
-  MkLuaXEQ ("", Twnd); if (qkbhin()) { luaP_pushinteger(1);
-                                       return lua_error(L); }  else return 0;
+  MkLuaXEQ ("", Twnd); if (qkbhin()) { luaP_pushinteger(1); return 1; }
+                       else                                 return 0;
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MkStrXEQ (QString text, wnd *vp) // execute MicroMir command from its text

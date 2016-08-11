@@ -7,7 +7,7 @@
 txt *TxNew(bool qundo); void TxInit(), TxUnmark(int,txt *t), TxMarks0(txt *t);
 bool qTxTop   (txt *t); void TxDel (txt *t), TxUp  (txt *t), TxTop   (txt *t);
 bool qTxBottom(txt *t); void TxEmpt(txt *t), TxDown(txt *t), TxBottom(txt *t);
-void TxDiscard(txt *t);
+void TxDiscard(txt *t);                         void TxUnmarkY(txt *t,long y);
 void TxEnableSynt(txt *t, short clang);
 /*
  * Conversions between Ascii file string (UTF-8 encoding) and tchar string 

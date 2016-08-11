@@ -22,11 +22,35 @@ function Txt.openXref(Tx)        Tx.refs = { }       -- open new (throw-away)
   end; return newTx                           --     if ... end
 end                                           --       Rx:IL(smth); Tx:Xref(N)  end
 Mk["Ctrl+X"] = function(Tx)                   --     end
-  local Rx = Tx.refTx and Txt[Tx.refTx]       --   end  --  use Ctrl+X to jump
-  if not Rx then return end                   -- end    -- between these texts
+  local  Rx = Tx.refTx and Txt[Tx.refTx]      --   end  --  use Ctrl+X to jump
+  if not Rx then return Mk:Do(0xc1005) end    -- end    -- between these texts
   for i=Tx.Y,1,-1 do
     if Tx.refs[i] then Rx:focus(); Rx.Y = Tx.refs[i]; return end
   end
+end                         -- called from (tm)SyncPos
+function MkSyncMarks(Rx,Tx) --
+  local ref = Re[[([+./0-9A-z-]+):(\d+):((\d+):)?(.*)]]
+  local gre = Re"grep -\\w+ \'([^\\']+)\'"
+  local Y,N = Rx.Y,4;     local Tname,grept
+  if ref:ifind(Rx:line(Y)) then Tname = ref:cap(1) else return end
+  if gre:ifind(Rx:line(1)) then grept = gre:cap(1)             end
+  Tx.refTx = Rx.id;Tx.refs = { }
+  repeat
+    if ref:ifind(Rx:line(Y)) then
+      local name,y,_,x,text = ref:caps()
+      if name == Tname and tonumber(y) then
+        if grept  and  not tonumber(x) then
+          local Ts = Tx:line(tonumber(y))
+          x = Ts and Ts:find(grept)
+          if x then text = "" end
+        elseif text:find("error:") then text = "!"..text
+        elseif text:find("note:")  then text = "@"..text end
+        Tx.refs[tonumber(y)] = Y
+        Tx:mark(N, tonumber(x) or 2, y, text)
+        N = N+1; if N == 20 then return end
+      end
+    end Y = Y+1
+  until(Y > Rx.maxY)
 end
 do local function breakable(c) return (c == ' ' or c == ',' or c == ';') end
    local function squeeze(line,afterN)
@@ -78,24 +102,6 @@ do local function breakable(c) return (c == ' ' or c == ',' or c == ';') end
     Mk["Shift+F6"] = function(Tx)    DoBlockFormat(Tx)
                        while Tx.reX do BlockFormat(Tx) end end
   end
-end
-function MkSyncMarks(Rx,Tx)
-  local ref = Re[[([+./0-9A-z-]+):(\d+):((\d+):)?(.*)]]
-  local Y,N = Rx.Y,4;     local Tname
-  if ref:ifind(Rx:line(Y)) then Tname = ref:cap(1) else return end
-  -- print("MkSyncMarks(Tname="..Tname..",Y="..Y..",maxY="..Rx.maxY..")")
-  repeat
-    -- print("["..Y.."] "..Rx:line(Y))
-    if ref:ifind(Rx:line(Y)) then
-      local name,y,_,x,text = ref:caps()
-      -- print("name="..name..",x="..x..",y="..y..",text="..text)
-      if name == Tname then
-        x = tonumber(x) or 2
-        y = tonumber(y) or 0; Tx:mark(N,x,y,text)
-        N = N+1;       if N == 20 then return end
-      end
-    end Y = Y+1
-  until(Y > Rx.maxY)
 end
 function Mk2html(Tx)        -- convert MicroMir text (with ʁboldʀ etc) to HTML
   local Hx = Txt.open(true) --

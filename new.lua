@@ -1,4 +1,4 @@
---  see :/help, line 548 for ʁLua SCRIPTINGʀ reference (use Meta+Enter to open)
+--  see :/help, line 551 for ʁLua SCRIPTINGʀ reference (use Meta+Enter to open)
 --  :/auto.lua, line 19 for the source of auto-loaded script (incl. openXref)
 --
 Mk['^J,X'] = function(Tx,count)
