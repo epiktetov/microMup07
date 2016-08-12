@@ -216,12 +216,13 @@ static int luTxLine_it (lua_State *L)   // line iterator function called as:
   }
   else { luaP_pushnil(); luaP_pushnil(); }  return 2;
 }
-static int luTxLines (lua_State *)
-{
-  luasN_gettext(1);
-  luaP_pushCfunction(luTxLine_it); // function = luTxLine_it(self,N)
-  luaP_pushvalue  (1);             //    state = text descriptor
-  luaP_pushinteger(0); return 3;   // init.var = 0 (before 1st line)
+static int luTxLines (lua_State *)  // optional parameter to Tx:lines specifies
+{                                   // start position for iterator (default: 1)
+  luasN_gettext(1);                 //
+  long Y = (long)luaL_optnumber(L,2,1);
+  luaP_pushCfunction(luTxLine_it);  //    function = luTxLine_it(self,N)
+  luaP_pushvalue    (1);            //       state = text descriptor
+  luaP_pushinteger(Y-1); return 3;  //    init.var = Y-1 (before given line)
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 static int luTxIndex (lua_State *L) // Tx.X and Tx.Y - read/write access

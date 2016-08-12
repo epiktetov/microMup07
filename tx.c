@@ -373,11 +373,12 @@ tchar *TxInfo (wnd *w, long y, int *pl)       /* used for repaint in vip.cpp */
 {                                             /* to get current char mim.cpp */
   int len = 0, i, x;                          /* (return buf may be changed) */
   txt *t = w->wtext;
-  if (t && TxSetY(t, y)) {
-    if (w == Lwnd && y == Ly) blktmov(Lebuf, tcbuf, len = Lleng);
-    else                                 len = TxTRead(t, tcbuf);
-    if (len < tcbuflen)    blktspac(tcbuf + len, tcbuflen - len);
-    if (t->maxTy < y) t->maxTy = y;
+  if (w == Lwnd && y == Ly) blktmov(Lebuf, tcbuf, len = Lleng );
+  else if (t && TxSetY(t,y)) {
+    if (t->maxTy < y) t->maxTy = y;     len = TxTRead(t, tcbuf);
+  }
+  if (len < tcbuflen) blktspac(tcbuf+len, tcbuflen-len);
+  if (t) {
     for (i = 1; i < TXT_MARKS; i++) { if (t->txmarky[i] != y) continue;
                                       x = t->txmarkx[i];
     //
@@ -386,8 +387,8 @@ tchar *TxInfo (wnd *w, long y, int *pl)       /* used for repaint in vip.cpp */
     //
        tchar attr = tATTR(t->txmarkt[i]);
        if (tcharIsBlank(tcbuf[x])) tcbuf[x] = t->txmarkt[i];
-       else                        tcbuf[x] = (tcbuf[x] & AT_CHAR) | attr; x++;
-       if (x > MAXLPAC-2) break;   tcbuf[x] = (tcbuf[x] & AT_CHAR) | attr; x++;
+       else                        tcbuf[x] = (tcbuf[x] & AT_CHAR)|attr; x++;
+       if (x < MAXLPAC-1)        { tcbuf[x] = (tcbuf[x] & AT_CHAR)|attr; x++; }
        if (len < x) len = x;
   } }
   *pl = tcbuflen = len; return tcbuf;
