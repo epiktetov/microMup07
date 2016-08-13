@@ -47,15 +47,17 @@ short SyntSniffText (txt *text)
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void SyntLangOn()
-{
-  if (Ttxt->clang > CLangDISABLED) Ttxt->clang -= CLangDISABLED;
-  else exc(E_SFAIL);                        wndop(TW_ALL, Ttxt);
+{                             short clang;
+  if (Ttxt->clang  > CLangDISABLED) clang = Ttxt->clang - CLangDISABLED;
+  else if (0 < KbCount && KbCount < CLangMAX)     clang =       KbCount;
+  else exc(E_SFAIL);
+  if (Ttxt->clustk == NIL)         TxTop(Ttxt); // if Synt was never enabled
+  TxEnableSynt(Ttxt,clang); wndop(TW_ALL,Ttxt); // before => rescan from top
 }
-void SyntLangOff()
+void SyntLangOff() // (temporarily) disable Syntax checker, do not clear data
 {
-  if (CLangNONE < Ttxt->clang && Ttxt->clang < CLangMAX)
-                                 Ttxt->clang += CLangDISABLED;
-  else exc(E_SFAIL);                      wndop(TW_ALL, Ttxt);
+  if (Ttxt->clang <= CLangNONE || Ttxt->clang > CLangMAX) exc(E_SFAIL);
+      Ttxt->clang += CLangDISABLED;                wndop(TW_ALL, Ttxt);
 }
 int ShowBrakts = 1; // show-brackets mode: 0=no-pos-check, 1=normal, 2=full
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -512,7 +514,7 @@ char SyntType (tchar tc) { return Type_tc(tc); } // used by leNword() file le.c
 #define SyntMARK_WHEN_KEYWORD(endWord)          \
   if (L->in_word_set(tcp+word0, endWord-word0)) \
     for (i = word0; i < endWord; i++) tcp[i] |= AT_KEYWORD;
-//
+//-----------------------------------------------------------------------------
 // Colorize the line from given text (the line assumed to be located in tcbuf),
 // may change txt->thisSynts (in which case it empties the entire txt->cldstk):
 //
@@ -650,7 +652,7 @@ end_of_loop:
       DqAddB(text->cldstk, (char*)newSynts, syntlen); // force re-parse of text
       wndop(TW_DWN, text);            TxBottom(text); // below, make sure final
 } } }                                                 // Synts are updated too
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//-----------------------------------------------------------------------------
 int SyntParse(txt *text, char *str, int len, int *out) // NOTE: 'out' points to
 {                                                      //  text->this/prevSynts
   if (text->clang > CLangMAX) { *out = 0xD1; return 1; }
@@ -703,7 +705,7 @@ end_of_loop:
   if (brnclo+brx+haveBad > MAXSYNTBUF-1) brx = MAXSYNTBUF-brnclo-haveBad-1;
   *pout++ = ((mode == 'c') ? AT_COMMENT : 0) +  ( brnclo + brx + haveBad );
   pout = (int*)blkmov(text->prevSynts+1, pout+haveBad, sizeof(int)*brnclo);
-  for (i = 0; i < brx; i++) *(pout++) = (word1 << 8) | brakt[i]; //
-  if (haveBad) out[1] = badSynt;    return brnclo+brx+haveBad+1; // out[1] must
+  for (i = 0; i < brx; i++) *(pout++) = (word1 << 8) | brakt[i];
+  if (haveBad) out[1] = badSynt;    return brnclo+brx+haveBad+1;
 }
 //-----------------------------------------------------------------------------

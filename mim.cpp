@@ -556,6 +556,10 @@ void MiScTwin::UpdateMetrics()          // NOTE: assuming fixed-width font with
   fontHeight += MiApp_fontAdjUnder; info.vpResize();  diag.vpResize();
 }
 //-----------------------------------------------------------------------------
+void MiScTwin::RepaintVpPB (void)             // Repaint Viewpoint Position Bar
+{
+  update(Tx2qtX(vp->wsw)+1, mimTxtTOP, mimVpPOSBAR+2, Th2qtH(vp->wsh));
+}
 void MiScTwin::Repaint (int x, int y, int width, int height, bool NOW)
 {
 //  fprintf(stderr, "Repaint(%d,%d,%dx%d%s)\n", x, y, width,height,
@@ -600,13 +604,9 @@ void MiScTwin::paintEvent (QPaintEvent *ev) // main PaintEvent (called from Qt)
   for (rlist = text2upd.rects(), it  = rlist.begin(); it != rlist.end(); ++it)
     vipRepaint(vp, dc, this, Qx2txX(it->left()), Qx2txX(it->right()),
                              Qy2txY(it->top()),  Qy2txY(it->bottom()));
-  if (!border.isEmpty())
-       repaintPosBar(dc);
-}
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-void MiScTwin::repaintPosBar (QPainter& dc)
-{
-  txt *tx = vp->wtext; if (!tx) return;
+  if (border.isEmpty())            return;              // repaint Position Bar
+  txt    *tx = vp->wtext; if (!tx) return;
   double pre = vp->wty,
          win = vp->wsh,  post = tx->maxTy - win - pre; if (post < 0) post = 0;
   double total = pre+win+post;
@@ -637,10 +637,6 @@ void MiScTwin::repaintPosBar (QPainter& dc)
     dc.setPen(pen);
     dc.drawRect(vppBar.left()-1, N + mimBORDER, mimVpPOSBAR+1, mimVpPOSBAR+1);
 } }
-void MiScTwin::RepaintVpPB (void) //- - - - - - - - - - - - - - - - - - - - - -
-{
-  update(Tx2qtX(vp->wsw)+1, mimTxtTOP, mimVpPOSBAR+2, Th2qtH(vp->wsh));
-}
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiScTwin::Erase (QPainter& dc, QRect& rect)
 {

@@ -369,13 +369,15 @@ short tctoaf (tchar *orig, int len, char *dest_buf)
   return laf;
 }
 /*---------------------------------------------------------------------------*/
-tchar *TxInfo (wnd *w, long y, int *pl)       /* used for repaint in vip.cpp */
-{                                             /* to get current char mim.cpp */
-  int len = 0, i, x;                          /* (return buf may be changed) */
+tchar *TxInfo(wnd *w, long y, int *pl) /* TxInfo used for repaint in vip.cpp */
+{                                      /*    and to get current char mim.cpp */
+  int len = 0, i, x;                    /* (return buffer may be changed)    */
   txt *t = w->wtext;
-  if (w == Lwnd && y == Ly) blktmov(Lebuf, tcbuf, len = Lleng );
-  else if (t && TxSetY(t,y)) {
-    if (t->maxTy < y) t->maxTy = y;     len = TxTRead(t, tcbuf);
+  if (t && TxSetY(t, y)) { if (t->maxTy < y) // NOTE: must call TxSetY even if
+                               t->maxTy = y; //  using Lwnd (for SyntColorize)
+    //
+    if (w == Lwnd && y == Ly) blktmov(Lebuf, tcbuf, len = Lleng );
+    else                                  len = TxTRead(t, tcbuf);
   }
   if (len < tcbuflen) blktspac(tcbuf+len, tcbuflen-len);
   if (t) {

@@ -117,6 +117,7 @@ public:
   void UpdateGradientPixmap();
   void UpdatePrimeColors();
   void UpdateMetrics();
+  void RepaintVpPB();
   void Repaint(int     tx, int ty, int width, int height, bool NOW = false);
   void Scroll (int src_tx, int ty, int width, int height, int dy);
 protected:
@@ -138,11 +139,9 @@ public:
   int Tsw2qtWb(int tx) const { return mimTxtLEFT + mimTxtRIGHT + Tw2qtW(tx); }
   int Tsh2qtHb(int ty) const { return mimTxtTOP + mimTxtBOTTOM + Th2qtH(ty); }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  void paintEvent(QPaintEvent *ev);
-  void repaintPosBar(QPainter& dc);
-  void Erase(QPainter& dc, QRect& rect);             // Qt coords, whole widget
-  void Erase(QPainter& dc, int tx, int ty, int len); // text coords / area only
-  void RepaintVpPB();
+  void paintEvent(QPaintEvent *ev);                  // Qt coords, whole widget
+  void Erase(QPainter& dc, QRect& rect);             // text coords / area only
+  void Erase(QPainter& dc, int tx, int ty, int len); //
   void Text (QPainter& dc, int tx, int ty, int tattr, QString text);
   void Text (QPainter& dc, int tx, int ty, tchar *tp, int len);
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
