@@ -99,9 +99,11 @@ void tmCheckFiles();
 bool tmStart (QString param);                   /* <-- начать редактирование */
 bool twStart (QString filename, long ipos);
 bool twEdit  (wnd *vp, QString filename, txt *referer = 0, bool isNew = false);
-void twDirPush        (QString filename, txt *referer = 0); //  ^
-void twDirPop (void);                                       // new window, use
-void twDirCopy(wnd *from, wnd *to), twExit();               // vipActivate(vp)
+void twEditNew        (QString filename, txt *referer = 0); //  ^
+wnd *twFork(int kcode_XFORK);                               // new window, use
+void twDirPush(void);                                       // vipActivate(vp)
+void twDirPop (void);
+void twDirCopy(wnd *from, wnd *to), twExit();
 //
 // Find an existing text descriptor for given file, or create new one (with or
 // without undo capability); referer text is used to resolve relative pathnames

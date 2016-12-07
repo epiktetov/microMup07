@@ -225,7 +225,7 @@ void MiFrame::Open##XXX()                                             \
   QString init = (Ttxt && Ttxt->file) ? Ttxt->file->path : QString(); \
   QString name = QFileDialog::getMETHOD(this, "Open " XXXtext, init); \
   if (name.isEmpty()) return;                                         \
-  if (Ttxt) { vipFocusOff(Twnd); twDirPush(name, Ttxt); vipReady(); } \
+  if (Ttxt) { vipFocusOff(Twnd); twEditNew(name, Ttxt); vipReady(); } \
   else                           twStart  (name,    1);               \
 }
 MiFrameOPEN_XXX(File,    "file", getOpenFileName)

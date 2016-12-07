@@ -226,7 +226,8 @@ static int scan_lines_up (char c1st, char *line_buffer)       /* SyncPos(tm) */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 int tmSyncPos (int marks)  /* SyncPos(tm) -- only works with ASCII filenames */
 {
-  char c, line_buffer[MAXLPAC]; long file_pos = 0, line_pos = 0, foo;
+  char c,  line_buffer[MAXLPAC]; long file_pos = 0, line_pos = 0, foo;
+  wnd *sibling = Twnd->wsibling;
   wnd *other_wnd = NULL;
   short len,  steps = 0;                       // gcc "unix.cpp:277: error:..."
   QString filename;                            // grep "unix.cpp:273:int tm..."
@@ -276,9 +277,9 @@ int tmSyncPos (int marks)  /* SyncPos(tm) -- only works with ASCII filenames */
 // > {some-text}                  (parsed using traditional methods, of course)
 //
   else if ((c = line_buffer[0]) == '<' || c == '>') {
-    if ((other_wnd = Twnd->wsibling) == NULL) return -1; // only works if file
+    if (sibling == NULL) return -1;                      // only works if file
     else {                                               // is already opened
-      int offset = scan_lines_up(c, line_buffer);        // in "other" window
+      int offset = scan_lines_up(c, line_buffer);        // in sibling window
       if (offset < 0) return -1;                         // (nowhere to obtain
       if (memcmp(line_buffer, "---", 3) == 0             // the name otherwise)
           && (scan_lines_up('-', line_buffer) < 0 ||
@@ -288,8 +289,8 @@ int tmSyncPos (int marks)  /* SyncPos(tm) -- only works with ASCII filenames */
       if (*p == ',') p = dtol(p+1,         &foo);
                      p = dtol(p+1,    &file_pos); file_pos += offset;
     }
-    goto diff_sync_to_other_wnd; // obviously, "traditional methods" are
-  }                              // not authentic without goto statement
+    goto diff_sync_to_sibling_wnd; // obviously, "traditional methods" are
+  }                                // not authentic without goto statement
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // @@ -{line-other},{k} +{line},{n} @@ [comment]      « ʁUnified diff formatʀ »
 //  {context}
@@ -299,7 +300,7 @@ int tmSyncPos (int marks)  /* SyncPos(tm) -- only works with ASCII filenames */
 //  ...                 with cursor on hunk header or one of the added lines
 //
   else if (line_buffer[0] == '@' || line_buffer[0] == '+') {
-    if ((other_wnd = Twnd->wsibling) == NULL) return -1;
+    if (sibling == NULL) return -1;
     else {
       bool found = (line_buffer[0] == '@');
       while (!found && !qTxTop(Ttxt)) {         TxUp(Ttxt);
@@ -311,10 +312,10 @@ int tmSyncPos (int marks)  /* SyncPos(tm) -- only works with ASCII filenames */
     } } }
     if (unifiedDiff.exactMatch(line_buffer)) {
       file_pos = unifiedDiff.cap(1).toLong() + steps;
-diff_sync_to_other_wnd:
-      vipActivate(other_wnd);
-      vipFocus   (other_wnd); tesetxy(Tx, file_pos-1); return  0;
-    }                                                  return -1;
+diff_sync_to_sibling_wnd:
+      vipActivate(sibling);
+      vipFocus   (sibling); tesetxy(Tx, file_pos-1); return  0;
+    }                                                return -1;
   }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   else if (gnuFileLine.exactMatch(line_buffer)) {
@@ -329,11 +330,11 @@ diff_sync_to_other_wnd:
   else return -1; /* unknown format */
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // Filename found, open that file in the other window, if not opened already in
-//                                              the sibling window (upper pane)
+// the sibling window (upper pane). Note: only filename is checked for sibling,
+//                                      but for others we do check path as well
   txt  *prev_txt = Ttxt;
-  if ((other_wnd = Twnd->wsibling) == NULL ||    // check only name for sibling
-       filename != other_wnd->wtext->file->name) // but path as well for others
-  {                                              //
+  if (sibling && filename == sibling->wtext->file->name) other_wnd = sibling;
+  else {
     for (other_wnd = windows; other_wnd; other_wnd = other_wnd->wdnext) {
       txt *t =                                       other_wnd->wtext;
       if (t && t->file && t->file->name == filename
@@ -341,9 +342,13 @@ diff_sync_to_other_wnd:
   } }
   if (other_wnd) { vipActivate(other_wnd);   // if "other window" already exist
                    vipFocus   (other_wnd); } // then just activate, else create
-  else {                                     //
-    other_wnd = vipSplitWindow(Twnd, TM_VFORK);   if (!other_wnd) return -1;
-    vipFocusOff(Twnd); if (!twEdit(other_wnd,filename,NULL,true)) return -1;
+  else {                                     // a new one, forked from sibling,
+    if (sibling) { vipActivate(sibling);     // to preserve original dir stack
+                   vipFocus   (sibling);
+      if ((other_wnd = twFork(TM_VFORK)) == NULL) return -1;     twDirPush();
+    }
+    else if ((other_wnd = vipSplitWindow(Twnd, TM_VFORK)) == NULL) return -1;
+    if (!twEdit(other_wnd, filename, NULL, true))                  return -1;
   }
   if (marks) luas2txtProc("MkSyncMarks", prev_txt, Ttxt);
   tesetxy(line_pos, file_pos-1);                return 0;

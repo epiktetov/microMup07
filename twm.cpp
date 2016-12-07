@@ -97,6 +97,22 @@ bool twEdit (wnd *wind, QString filename, txt *referer, bool isNew)
                       vipUpdateWinTitle(wind);
                       vipRedrawWindow  (wind); return true;
 }
+void twEditNew (QString filename, txt *referer)
+{                                                        twDirPush();
+  if (!twEdit(Twnd, filename, referer ? referer : Ttxt)) twDirPop ();
+}
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+wnd *twFork (int kcode_XFORK)
+{
+  wnd *wind = vipSplitWindow(Twnd, kcode_XFORK);
+  if (wind) {
+    wupdate  (Ttxt, Twnd);
+    wattach  (Ttxt, wind); vipUpdateWinTitle(wind);
+    twDirCopy(Twnd, wind); vipActivate      (wind);
+                           vipRedrawWindow  (Twnd); return wind;
+  }
+  else return NULL;
+}
 /*---------------------------------------------------------------------------*/
 void twDirPop (void)
 {
@@ -111,7 +127,7 @@ void twDirPop (void)
   twExit();
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void twDirPush (QString filename, txt *referer)
+void twDirPush (void)
 {
   wdetach(Ttxt);
 //
@@ -127,7 +143,6 @@ void twDirPush (QString filename, txt *referer)
   }
   Twnd->wtx = 0;
   Twnd->wty = 0; 
-  if (!twEdit(Twnd, filename, referer ? referer : Ttxt)) twDirPop();
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void twDirCopy (wnd *from, wnd *to)
@@ -453,7 +468,7 @@ QString tmFentrFN (void)
   return fn; //                 ^
 }            // attrs stripped already, but this char not common in filenames
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void tmDoFentr (void) { if (filebuflen > LFPROMPT)  twDirPush(tmFentrFN()); }
+void tmDoFentr (void) { if (filebuflen > LFPROMPT)  twEditNew(tmFentrFN()); }
 void tmDoFentr2(void) { if (filebuflen > LFPROMPT) twShowFile(tmFentrFN()); }
 void twShowFile(QString name)
 {
@@ -481,7 +496,7 @@ static void tmExtractIncs (txt *mcd, QStringList& incList)
 static void tmFnewSearchIncs (QString foundName)
 {
        if (foundName.isEmpty ())                         return;
-  else if (QfsExists(foundName)) { twDirPush(foundName); return; }
+  else if (QfsExists(foundName)) { twEditNew(foundName); return; }
   else {
     QStringList::const_iterator  it;
     QStringList incList, searchList;
@@ -503,9 +518,9 @@ static void tmFnewSearchIncs (QString foundName)
 #endif
     for (it = searchList.constBegin(); it != searchList.constEnd(); it++) {
       QString filename = (*it) + "/" + foundName;
-      if (QfsExists(filename)) { twDirPush(filename); return; }
+      if (QfsExists(filename)) { twEditNew(filename); return; }
     }
-    twDirPush(foundName); // enter that file even if it is not know to exist
+    twEditNew(foundName); // enter that file even if it is not know to exist
 } }                       // (create empty text)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tmFnewByTtxt (void)                 /* войти в новый файл (имя из Ttxt) */
@@ -533,7 +548,7 @@ void tmFnewByTtxt (void)                 /* войти в новый файл (�
       while (rm < Lleng && !strchr(" \'\",>)",      (char)Lebuf[rm]  )) rm++;
       tmFnewSearchIncs(tcs2qstr(Lebuf+lm, rm-lm));                    return;
   } }
-  if (lm < rm) twDirPush(tcs2qstr(Lebuf+lm, rm-lm), Ttxt);
+  if (lm < rm) twEditNew(tcs2qstr(Lebuf+lm, rm-lm), Ttxt);
 }
 /*---------------------------------------------------------------------------*/
 static void infilnam (void)      /* return by Enter, see teCR() in file te.c */
@@ -586,14 +601,8 @@ int TmCommand (int kcode)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   case TM_HFORK:                     /* горизонтальный fork и к нижнему окну */
   case TM_VFORK:                     /* create new window и к правому окну   */
-    wind = vipSplitWindow(Twnd, KbCode);
-    if (wind) {
-      wupdate  (Ttxt, Twnd);
-      wattach  (Ttxt, wind); vipUpdateWinTitle(wind);
-      twDirCopy(Twnd, wind); vipActivate      (wind);
-                             vipRedrawWindow  (Twnd); return E_OK;
-    }
-    else return E_SFAIL;
+    if (twFork(KbCode)) return E_OK;
+    else                return E_SFAIL;
 
   case TM_UWINDOW: case TM_LWINDOW: case TM_RWINDOW:
   case TM_DWINDOW:
