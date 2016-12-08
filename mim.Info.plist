@@ -2,54 +2,31 @@
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleIdentifier</key>
-	<string>com.epiktetov.mimcroMir</string>
+	<key>CFBundleIdentifier</key><string>com.epiktetov.microMir</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
-			<key>CFBundleTypeName</key>
-			<string>µMup07 directory</string>
+			<key>CFBundleTypeName</key><string>µMup07 directory</string>
 			<key>CFBundleTypeExtensions</key>
-			<array>
-				<string>dir</string>
-			</array>
-			<key>CFBundleTypeOSTypes</key>
-			<array>
-				<string>~epi</string>
-			</array>
-			<key>CFBundleTypeIconFile</key>
-			<string>micros</string>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>LSIsAppleDefaultForType</key>
-			<true/>
+				<array><string>dir</string></array>
+			<key>CFBundleTypeIconFile</key><string>micros</string>
+			<key>CFBundleTypeRole</key>    <string>Editor</string>
+			<key>LSIsAppleDefaultForType</key><true/>
 		</dict>
 		<dict>
 			<key>CFBundleTypeExtensions</key>
-			<array>
-				<string>*</string>
-			</array>
-			<key>CFBundleTypeOSTypes</key>
-			<array>
-				<string>****</string>
-			</array>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
+				<array><string>*</string></array>
+			<key>CFBundleTypeRole</key><string>Editor</string>
 		</dict>
 	</array>
-	<key>CFBundleExecutable</key>
-	<string>@EXECUTABLE@</string>
-	<key>CFBundleIconFile</key>
-	<string>@ICON@</string>
-	<key>CFBundlePackageType</key>
-	<string>APPL</string>
-	<key>CFBundleSignature</key>
-	<string>~epi</string>
-	<key>CFBundleVersion</key>
-	<string>1.0</string>
-	<key>CFBundleInfoDictionaryVersion</key>
-	<string>6.0</string>
-	<key>CFBundleDevelopmentRegion</key>
-	<string>English</string>
+	<key>CFBundleExecutable</key> <string>µMup07</string>
+	<key>CFBundleIconFile</key>   <string>microMir.icns</string>
+	<key>CFBundlePackageType</key>         <string>APPL</string>
+	<key>CFBundleSignature</key>           <string>~epi</string>
+	<key>CFBundleVersion</key>              <string>1.0</string>
+	<key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
+	<key>CFBundleDevelopmentRegion</key><string>English</string>
+	<key>NSPrincipalClass</key>   <string>NSApplication</string>
+	<key>NSHighResolutionCapable</key>     <string>True</string>
 </dict>
 </plist>

@@ -47,7 +47,7 @@ short SyntSniffText (txt *text)
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void SyntLangOn()
-{                             short clang;
+{                             short clang =               CLangNONE;
   if (Ttxt->clang  > CLangDISABLED) clang = Ttxt->clang - CLangDISABLED;
   else if (0 < KbCount && KbCount < CLangMAX)     clang =       KbCount;
   else exc(E_SFAIL);

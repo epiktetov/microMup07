@@ -1,7 +1,7 @@
 The quick brown fox jumped over the lazy dog's back.
 test,test,  test;test;  single[test]  double((test))
 1	tab
-12	tab      $QT_END_LICENSE$
+12	tab   wM   $QT_END_LICENSE$
 123	tab                           just_in_time   el-i-one   oh-zero
 	tab,	tab,	tab   -NOT-   for_holidays   ll-II-11   OOO-000
 
