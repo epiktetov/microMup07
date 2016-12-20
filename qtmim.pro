@@ -5,7 +5,7 @@ CONFIG += release
 #                                platform-dependent location of the Lua library
 macx {
   INCLUDEPATH += /opt/local/include # for Lua
-  LIBS += -L/opt/local/lib -llua -framework Cocoa
+  LIBS += /opt/local/lib/liblua.a -framework Cocoa
 } else:unix {
   INCLUDEPATH += /usr/include/lua5.2
   LIBS += -llua5.2
