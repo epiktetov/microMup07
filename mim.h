@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07 Main Header + Scrollable/Gradient Window  | (c) Epi MG, 2004-2016
+// МикроМир07 Main Header + Scrollable/Gradient Window  | (c) Epi MG, 2004-2017
 //------------------------------------------------------+----------------------
 #ifndef MIM_H_INCLUDED
 #define MIM_H_INCLUDED
@@ -19,6 +19,8 @@ extern int  MiApp_defWidth, MiApp_defHeight;  extern QString MiApp_autoLoadLua;
 #define defWinWIDTH  80 // default window width (in characters)
 #define defWinHEIGHT 50 // - - height (lines)
 #define altWinHEIGHT 42 // alternate default height
+#define altWinWIDTH 120 // - - width
+#define ultWinWIDTH 160 // - - ultra-wide
 #define mimBORDER     2 // border around text area (in pixels)
 #define mimVpPOSBAR   2 // width of "position" bar (in pixels)
 #define mimTxtTOP      mimBORDER
@@ -28,9 +30,9 @@ extern int  MiApp_defWidth, MiApp_defHeight;  extern QString MiApp_autoLoadLua;
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 class MiFrame : public QMainWindow
 {
-  Q_OBJECT QAction *size_act; QSize tSize; bool wrapped;
-           QMessageBox *mbox; QSplitter *sash;
-           QMenu  *size_menu; int  sashHeight; QFont textFont, boldFont;
+  Q_OBJECT QAction *size_act, *def_size_act, *alt_size_act,*ult_size_act;
+           QMessageBox *mbox; QSplitter *sash; QSize tSize; bool wrapped;
+           QMenu  *size_menu; int  sashHeight; QFont textFont,  boldFont;
   MiScTwin *main, *scwin;
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 public:    MiFrame(MiFrame *base); MiScTwin *NewScTwin(wnd *vp,MiScTwin *base);
@@ -45,7 +47,8 @@ public slots:
   void OpenDir ();  void SaveAll(); void ShowLicense();
   void finishClose(int qtStandBtn); void ShowHelp();
   void shrinkwrap();    
-  void fallbackSize(); 
+  void fallbackSize(); void set_altWidth();
+  void set_defWidth(); void set_ultWidth(); void set_newWidth(int);
   void splitterMoved(int pos);
 public:
   void closeEvent (QCloseEvent  *ev); bool safeClose(MiScTwin *pane);

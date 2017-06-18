@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07   Main Frame + Application Data + ScTwin  | (c) Epi MG, 2004-2016
+// МикроМир07   Main Frame + Application Data + ScTwin  | (c) Epi MG, 2004-2017
 //------------------------------------------------------+----------------------
 #include <QApplication>
 #include <QAction>
@@ -169,6 +169,12 @@ MiFrame::MiFrame (MiFrame *base) : tSize(0,0), wrapped(false),
   size_menu = menuBar()->addMenu("size");
   size_act = size_menu->addAction("fallback-size");
   connect(size_act, SIGNAL(triggered()), this, SLOT(fallbackSize()));
+  def_size_act = size_menu->addAction(QString("%1x").arg(defWinWIDTH));
+  alt_size_act = size_menu->addAction(QString("%1x").arg(altWinWIDTH));
+  ult_size_act = size_menu->addAction(QString("%1x").arg(ultWinWIDTH));
+  connect(def_size_act, SIGNAL(triggered()), this, SLOT(set_defWidth()));
+  connect(alt_size_act, SIGNAL(triggered()), this, SLOT(set_altWidth()));
+  connect(ult_size_act, SIGNAL(triggered()), this, SLOT(set_ultWidth()));
   QString short_version = QString("ver.%1").arg(microVERSION);
   QMenu *dummy_version_menu = menuBar()->addMenu(short_version);
          dummy_version_menu->setDisabled(true);
@@ -354,6 +360,9 @@ void MiFrame::shrinkwrap()
          if (tSize != MiFrameSize) size_act->setText(myQSize2txt(MiFrameSize));
     else if (tSize != defWinSize)  size_act->setText(myQSize2txt(defWinSize));
     else                           size_act->setText(myQSize2txt(altWinSize));
+    def_size_act->setEnabled(tSize.width() != defWinWIDTH);
+    alt_size_act->setEnabled(tSize.width() != altWinWIDTH);
+    ult_size_act->setEnabled(tSize.width() != ultWinWIDTH);
 #ifndef Q_OS_MAC
     if (menuBarHeight < 0) menuBarHeight = menuBar()->height();
     mxSz.rheight() += menuBarHeight;
@@ -380,6 +389,15 @@ void MiFrame::fallbackSize()
     main->vp->wsh = maH;
     main->vp->wsw = tSize.width(); main->vpResize();  shrinkwrap();
 } }
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void MiFrame::set_newWidth (int w)
+{
+  if (main) {   main->vp->wsw = w;
+    if (scwin) scwin->vp->wsw = w; main->vpResize(); shrinkwrap();
+} }
+void MiFrame::set_defWidth() { set_newWidth(defWinWIDTH); }
+void MiFrame::set_altWidth() { set_newWidth(altWinWIDTH); }
+void MiFrame::set_ultWidth() { set_newWidth(ultWinWIDTH); }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiFrame::splitterMoved (int pos)
 {
