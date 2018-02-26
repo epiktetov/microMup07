@@ -20,6 +20,8 @@ macx {
   ICON = microMir.icns
   QMAKE_INFO_PLIST = mim.Info.plist
   QMAKE_PKGINFO_TYPEINFO = "~epi"
+  QMAKE_MAC_SDK            = macosx10.11
+  QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.11
 }
 QMAKE_CFLAGS   += -std=c99
 !win32:DEFINES += UNIX

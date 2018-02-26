@@ -88,7 +88,7 @@ do local function breakable(c) return (c == ' ' or c == ',' or c == ';') end
                         Tx.reY      = Tx.Y; BlockFormat(Tx) end
   end
   local function TryBlockFormat(Tx)
-    if Tx.reX then  BlockFormat(Tx) else Mk:XEQ(0xf5035) end
+    if Tx.reX then  BlockFormat(Tx) else Mk:Do(0xf5035) end
   end
   Mk["^J,F6"] = function(Tx,count)
         if           count then Tx.fmtFromX,Tx.fmtToX = 1,count+1
