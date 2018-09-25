@@ -527,9 +527,8 @@ int luLF_read (txt *t) // function returns: -1:fail, 0:empty, 1:truncated, 2:ok
     if (rc == 0) return empty ? 0 : 2;
     else {
       QString err = Utf8("«..%1..»").arg(lua_tostring(L,-1));
-      luaQn_pop(1);
-      if (empty)                                 return -1; // error
-      DqAddE(t->txustk, err.cStr(), err.size()); return  1; // truncated
+      DqAddE(t->txustk, err.uStr(),err.size()); luaQn_pop(1);
+      tLF->txy++;                    return  1;
   } }
   else {
     fprintf(stderr, "MkLF[%s] not found\n", t->file->lf.uStr());

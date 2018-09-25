@@ -9,3 +9,9 @@ Mk['^J,X'] = function(Tx,count)
     end
   end
 end
+MkLF["filter"] = function(filename,addText)
+  local filter = Re[[...]];
+  for str in io.lines(filename) do
+    if str:len() > 0 then addText( str ) end
+  end
+end
