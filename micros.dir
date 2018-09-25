@@ -26,7 +26,7 @@ Shell commands and tmSyncPos (formerly UNIX-specific)          |unix.h
 ViewPort (interface between Qt/C++ and legacy C code) and some |vip.h
      other stuff used in both C and C++ code (like QString ops)|vip.cpp
 ---------------------------------------------------------------|---------------
-Qt project file, adds microMir.icns micros.icns micons.psd etc |qtmim.pro
+Qt project file, adds microMir.icns and mim.Info.plist         |qtmim.pro
 Qt resource file adds micro.keys and other files to executable |qtmim.qrc
 Qt4 config file for macx (to ensure no foreign plugins loaded) |qt4.conf
 Desktop file for Linux -- copy that to /usr/share/applications |qtmim.desktop
@@ -36,7 +36,7 @@ template for new script (loaded by ^J,N command, twNewLuaText) |new.lua
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -|- - - - - - - -
                                                (auto-generated)|Makefile
 zlib-style license                                             |LICENSE
-MacOS info.plist                                               |mim.Info.plist
+MacOS info.plist, add micros.icns for *.dir files (micros.dir) |mim.Info.plist
 ---------------------------------------------------------------|---------------
 --------------- Legacy code (not converted to C++) ------------|---------------
 Text Editor                                                    |te.h
