@@ -14,7 +14,7 @@ char *xmalloc (long n)
   if  (!p) exc(E_NOMEM);  return p; // (if caller does not need anything, they
 }                                   // will be happy with that byte anyway)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-#define BIG_MEM_CHUNK 60*1024*1024
+#define BIG_MEM_CHUNK 120*1024*1024      /* 120 MiB is just peanuts nowadays */
 /*
  * Инициализация "большого" сегмента памяти -- platform-specific manipulations
  * with VirtualAlloc() etc are removed, now it just malloc()'s a bug chunk and
