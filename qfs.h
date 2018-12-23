@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07           Qt-based File System            | (c) Epi MG, 2007-2014
+// МикроМир07           Qt-based File System            | (c) Epi MG, 2007-2018
 //------------------------------------------------------+--------------------*/
 #ifndef QFS_H_INCLUDED
 #define QFS_H_INCLUDED
@@ -28,14 +28,15 @@ struct qfile_tag        /* mic.h defines 'typedef struct qfile_tag == qfile' */
   QString path, name;       /*   Отдельно path и собственно имя файла        */
   qint64        size;       /*   Размер файла в байтах                       */
   QDateTime  updated;       /*   Время последней модификации                 */
+  bool       utf16le;       /* (internal) file in UTF-16LE converted in read */
   bool      writable;
   QString         lf; /* Load Filter, index in MkLF[] = Lua method to filter */
 #endif                /* the content of the file on load; empty => no filter */
 };                    /* (set by tmDesc / used by tmDoLoad, not used in Qfs) */
 #ifdef __cplusplus
-qfile *QfsDup (qfile *file);
-QDir  *QfsDir (qfile *file);
-QFile *QfsFile(qfile *file);
+qfile *QfsDup (qfile *file);    // qfile* pointers refer to either qtxtfile or
+QDir  *QfsDir (qfile *file);    // qdirfile objects (inheritance for hidden C)
+QFile *QfsFile(qfile *file);    //
 struct qtxtfile : public qfile_tag { QFile Qf; };
 struct qdirfile : public qfile_tag { QDir  QD; };
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

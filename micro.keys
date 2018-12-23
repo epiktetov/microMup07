@@ -265,7 +265,7 @@ are squeezed into one)
 
 ʁSEARH AND REPLACE.ʀ MicroMir can search in text mode (case-sensitive or not), in
 wildcard mode (? matches any symbol and * matches any substring), or in regular
-expression one (see http://qt-project.org/doc/qt-4.8/QRegExp.html); the mode is
+expression one (see http://doc.qt.io/archives/qt-4.8/qregexp.html); the mode is
 selected when entering search/replace pattern.
 
   Ctrl/Meta+F = Home End - edit search/replace pattern (start search by Return)

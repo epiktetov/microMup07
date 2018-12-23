@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07           Qt-based File System            | (c) Epi MG, 2007-2016
+// МикроМир07           Qt-based File System            | (c) Epi MG, 2007-2018
 //------------------------------------------------------+----------------------
 #include <QString>
 #include "mic.h"
@@ -66,8 +66,9 @@ qfile *QfsNew (QString filename, qfile *referer)
   }
   file->updated  = Qi.lastModified(); file->size =  Qi.size();
   file->writable = QfsIsWritable(Qi); file->path =  Qi.path();
-  file->full_name = Qi.path() + "/" + file->name; return file;
-}
+  file->full_name = Qi.path() + "/" + file->name;
+  file->utf16le   = false;           return file; // either = new qtxtfile;
+}                                                 //     or = new qdirfile;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 qfile *QfsDup (qfile *base)
 {
@@ -106,12 +107,21 @@ const QIODevice::OpenMode QfsMode[4] =
 };
 int QfsOpen (qfile *file, int open_mode)
 {
-  if (file->ft == QftTEXT) {
-    qtxtfile *tfile = (qtxtfile *)file;
-    QfsUpdateInfo(file);
-    if (open_mode == FO_READ && !tfile->Qf.exists()) return 0;
-    else   return tfile->Qf.open(QfsMode[open_mode]) ? 1 : -1;
-  } else   return                                          -1;
+  if (file->ft != QftTEXT) return -1;
+  qtxtfile *tfile = (qtxtfile *)file;
+  QfsUpdateInfo(file);
+  if (open_mode == FO_READ) {
+    if (!tfile->Qf.exists())                  return  0;
+    if (!tfile->Qf.open(QIODevice::ReadOnly)) return -1;
+    unsigned char                          pbuf[6];
+    if (tfile->Qf.peek((char*)pbuf,6) == 6 &&
+        ( (pbuf[0] == 0xFF && pbuf[1] == 0xFE) ||
+          (pbuf[1] == 0    && pbuf[3] == 0 && pbuf[5] == 0) )) {
+      file->utf16le = true;
+      file->size   /=    2; // simplified UTF-16 support works by just dropping
+    }             return 1; // every second character from file (usually zeros)
+  }
+  return tfile->Qf.open(QfsMode[open_mode]) ? 1 : -1;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void QfsClose (qfile *file)
@@ -130,10 +140,18 @@ bool QfsRename (qfile *file, QString to_name)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 long QfsRead (qfile *file, long size, char *buffer)
 {
-  if (file->ft == QftTEXT) return ((qtxtfile*)(file))->Qf.read(buffer, size);
-  else                     return -1;
-}
-long QfsWrite (qfile *file, long size, char *buffer)
+  if (file->ft != QftTEXT) return -1;
+  qtxtfile *tfile = (qtxtfile *)file;
+  if (file->utf16le) {
+    long len, length = 0;   char cbuf[1024];
+    while ((len = tfile->Qf.read(cbuf,1024)) > 0) {
+      for (int i = 0; i < len && length < size; length++, i += 2)
+                                                *buffer++ = cbuf[i];
+    }  return length;
+  }
+  else return tfile->Qf.read(buffer, size);          // by design, file read in
+}                                                    // UTF-16 would be written
+long QfsWrite (qfile *file, long size, char *buffer) // back in (default) UTF-8
 {
   if (file->ft == QftTEXT) return ((qtxtfile*)(file))->Qf.write(buffer, size);
   else                     return -1;

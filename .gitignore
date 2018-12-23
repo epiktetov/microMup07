@@ -1,8 +1,9 @@
+.DS_Store
+.qmake.stash
 Makefile*
 version.h
 moc_*.cpp
 qrc_*.cpp
 obj/
 *.app/
-bundle/
 release/
