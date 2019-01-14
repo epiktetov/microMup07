@@ -2,6 +2,7 @@
 .qmake.stash
 Makefile*
 version.h
+moc_*.h
 moc_*.cpp
 qrc_*.cpp
 obj/
