@@ -1,4 +1,4 @@
-МикроМир07 © Attic 1989-91, © Epi MG, 1998-2018 -- keycodes -->|micro.keys
+МикроМир07 © Attic 1989-91, © Epi MG, 1998-2020 -- keycodes -->|micro.keys
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -|- - - - - - - -
 Самый главный header файл, to be included the first everywhere |mic.h
 Main Header + Scrollable Text Window (ScTwin) class / C++ only |mim.h
