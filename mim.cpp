@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07   Main Frame + Application Data + ScTwin  | (c) Epi MG, 2004-2017
+// МикроМир07   Main Frame + Application Data + ScTwin  | (c) Epi MG, 2004-2020
 //------------------------------------------------------+----------------------
 #include <QApplication>
 #include <QAction>
@@ -30,9 +30,9 @@ static QString MimVersion()
   return Utf8("µMup07 version %1 (" QtPLATF ")").arg(microVERSION);
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-bool dosEOL = false;   /* Настраиваемые параметры: - DOS/Windows end-of-line */
-int debugDQ = 0;       /* - debug DQ memory allocation (used in dq.c file)   */
-int TABsize = 4;       /* - табуляция, обычно 4 или 8 символов, configurable */
+int  dosEOL = 0;   /* Настраиваемые параметры: - DOS(1)/unix(2)/mixed(0) EOL */
+int debugDQ = 0;   /* - debug DQ memory allocation (used in dq.c file)       */
+int TABsize = 4;   /* - табуляция, обычно 4 или 8 символов, configurable     */
 QSize MiFrameSize;
        bool MiApp_debugKB    = false;
 static bool MiApp_timeDELAYS = false;
@@ -119,10 +119,11 @@ int main(int argc, char *argv[])
   //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   for (int i = 1; i < argc; i++) {
     QString param = Utf8(argv[i]);
-         if (param.compare("-dos",IGNORE_CASE) == 0) dosEOL           =  TRUE;
-    else if (param.compare("-dq", IGNORE_CASE) == 0) debugDQ          =  TRUE;
-    else if (param.compare("-ti", IGNORE_CASE) == 0) MiApp_timeDELAYS =  true;
-    else if (param.compare("-kb", IGNORE_CASE) == 0) MiApp_debugKB    =  true;
+         if (param.compare("-dos", IGNORE_CASE) == 0) dosEOL           =     1;
+    else if (param.compare("-unix",IGNORE_CASE) == 0) dosEOL           =     2;
+    else if (param.compare("-dq",  IGNORE_CASE) == 0) debugDQ          =  TRUE;
+    else if (param.compare("-ti",  IGNORE_CASE) == 0) MiApp_timeDELAYS =  true;
+    else if (param.compare("-kb",  IGNORE_CASE) == 0) MiApp_debugKB    =  true;
     else if (param == "-") { if (tmStart(QfsEMPTY_NAME)) return app.exec();
                              else                        return 2;        }
     else {
@@ -147,8 +148,8 @@ void mimExit()
   cpsave(); QCoreApplication::quit();
 }
 //-----------------------------------------------------------------------------
-MiFrame::MiFrame (MiFrame *base) : tSize(0,0), wrapped(false),
-                                   mbox(0), main(0), scwin(0)
+MiFrame::MiFrame (MiFrame *base) : mbox(0), tSize(0,0), wrapped(false),
+                                   main(0), scwin(0)
 {
 #ifndef Q_OS_MAC
   QMenu *dummy_menu = menuBar()->addMenu(Utf8("µMup07"));

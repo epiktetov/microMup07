@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07              Texts - Тексты               | (c) Epi MG, 2007-2016
+// МикроМир07              Texts - Тексты               | (c) Epi MG, 2007-2020
 //------------------------------------------------------+--------------------*/
 #include "mic.h"             /* Old tx.c (c) Attic 1989, (c) EpiMG 1998,2001 */
 #include "qfs.h"
@@ -267,6 +267,8 @@ short aftotc (const char *orig, int len, tchar *dest_buf)
     if (c == ACPR && orig < orig_end && (*orig & 0xC0) == 0x80) {
       attr = (tchar)(AT_IN_FILE & (*orig++ << 16));    continue;
     }
+    else if (c == CR) *dest++ = (tchar)';' | AT_TAB | attr;
+    //
     // Unfold '\t' from file: Replace TAB with proper number of spaces and mark
     // the first space with AT_TAB attribute (keeping other axisting attrs too)
     //
@@ -332,8 +334,10 @@ short tctoaf (tchar *orig, int len, char *dest_buf)
     }
     csa = c & AT_CHAR; /* = character sans attributes */
     if (c & AT_TAB) { 
-      if (csa != ' ') *dest_buf++ = (char)(csa - '@');  /* control character */
-      else {
+      switch (csa) {
+       default: *dest_buf++ = (char)(csa - '@'); break; /* control character */
+      case ';': *dest_buf++ = CR;                break;
+      case ' ':
         for (j = itc+1; j < len && (j % TABsize) != 0
                                 && (char)orig[j] == ' '; j++) ;
         *dest_buf++ = TAB;

@@ -103,7 +103,7 @@ k_(TM_UWINDOW,     "Meta+Up",     0xc1013) /* - к верхнему окну    
 k_(TM_RWINDOW,     "Meta+Right",  0xc1014) /* - к правому окну       */
 k_(TM_DWINDOW,     "Meta+Down",   0xc1015) /* - к нижнему окну       */
 k_(TM_SYNCPOX,     "Ctrl+X",      0xc1005)
-k_(TM_SYNCPOS,     "Meta+Return", 0xc1004) /* Синхронизировать позицию:      */
+k_(TM_SYNCPOS,     "Meta+Return", 0xc1004) /* <- Синхронизировать позицию:   */
 a_(TM_SYNCPOS, "Ctrl+Alt+Return", 0xc1004) /*        открыть в соседнем окне */
 a_(TM_LWINDOW, "Ctrl+Alt+Left",   0xc1012) /*        упомянутый здесь файл и */
 a_(TM_UWINDOW, "Ctrl+Alt+Up",     0xc1013) /*        перейти в указанную тут */
@@ -112,10 +112,10 @@ a_(TM_DWINDOW, "Ctrl+Alt+Down",   0xc1015) /*     grep, (uni)diff, compilers */
 /*
 As a consequence of First Principle, Return & Tab keys do not insert any symbol
 into text, but instead work as cursor movement commands (there are commands for
-inserting TAB into text and splitting lines at cursor, though).
+inserting TAB and CR into text and splitting lines at cursor, though):
 
   Tab / Shift+Tab  - move cursor to next / previous TAB position
-  Ctrl+Shift+Tab   - insert TAB character into text
+  Alt+Shift+Tab    - insert TAB character into text
   Ctrl+Shift+1     - set marker 1 (red)   |
   Ctrl+Shift+2     - set marker 2 (green) | the markers are shown in the text
   Ctrl+Shift+3     - set marker 3 (blue)  | as colored "flag" with number and
@@ -127,6 +127,7 @@ inserting TAB into text and splitting lines at cursor, though).
   Ctrl+Shift+N     - go to previous marker up in the text
   Return           - move cursor to beginning of next line
   Shift+Return     - move cursor to next line, aligned with text in current one
+  Alt+Shift+Return - insert CR character (only when in mixed end-of-line mode)
 
 Note: for convenience, "go to marker" command sets the marker if not set yet,
 and "set marker" works as toggle (and also clears all other marker from line)
@@ -136,9 +137,8 @@ k_(LE_LTAB,   "Shift+Tab",          0xd2202) /* в предыдущую|   та�
 a_(LE_LTAB,   "Shift+Backtab",      0xd2202) /*      (Backtab ≈ Shift+Tab) */
 k_(LE_TABCHR, "Ctrl+Shift+Tab",     0xf2602) /*                            */
 a_(LE_TABCHR, "Ctrl+Shift+Backtab", 0xf2602) /* вставить символ TAB ('\t') */
-#ifdef Q_OS_MAC                              /* (Ctrl+Tab reserved on Mac) */
-a_(LE_TABCHR, "Alt+Shift+Backtab",  0xf2602)
-#endif
+a_(LE_TABCHR,  "Alt+Shift+Backtab", 0xf2602) /* (Ctrl+Tab reserved on Mac) */
+k_(LE_CRCHAR,  "Alt+Shift+Return",  0xf2613)
 k_(TE_SMARK0, "Ctrl+Shift+`", 0xd2630) /* установить (или очистить)  */
 k_(TE_SMARK1, "Ctrl+Shift+1", 0xd2631) /*  маркер 1 = красный флажок */
 k_(TE_SMARK2, "Ctrl+Shift+2", 0xd2632) /*  маркер 2 = зеленый флажок */

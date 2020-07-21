@@ -15,6 +15,11 @@ mic.h:54:9: error: AF_ERROR definition
 mic.h:42:20: note: not the same as AT_ERROR attribute
 mic.h:64:12: TABsize is defined here
 
+080 AaàáâαÄäБбBbβвГγгCcçDdΔδДдEeèéêεЁёFfGgЖжЗзHhηΘθIiìíîïιИиЙйJj
+140 KkκкLlΛλЛлMmμмNnνнÑñΞξOoòóôÖöПπпPpρрQqRrSsßΣσTtτтUuùúûÜüVvWw
+200 XxχYУyυZzζФфφΨψЦцЧчШшЩщъЫыЬьЭэЮюЯяÆæŒœΩω
+    0....5....1....5....2....5....3....5....4....5....5....5....
+
 AaàáâÄäБбBbвГгCcçDdДдEeèéêЁёFfЖжGgЗзHhIiíîïИиЙйJjKkкLlЛлMmмNnнÑñ
 OoóôÖöПпPpQqRrрSsßTtтUuùúûÜüVvWwXxYУyÿZzФфφЦцЧчШшЩщъЫыЬьЭэЮюЯяæœ
 ┌───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┐

@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07    le = Line Editor -- Редактор строки    | (c) Epi MG, 2006-2012
+// МикроМир07    le = Line Editor -- Редактор строки    | (c) Epi MG, 2006-2020
 //------------------------------------------------------+--------------------*/
 #include "mic.h"             /* Old le.c (c) Attic 1989, (c) EpiMG 1996-2003 */
 #include "ccd.h"
@@ -192,6 +192,7 @@ void lebs() { if (LeInsMode || (Lebuf[Lx] & AT_SUPER)) { Lx--; leDC();      }
 void lespchar() { if (KbRadix == 0) exc (E_ILCHAR);
                   else             leLLCE(KbCount); } // character by code
 void lechar()   {             leLLCE(KbCode|Lattr); } // regular character
+void lecrchar() { if (!dosEOL)  leLLCE(';'|AT_TAB); } // CR for mixed EOL
 void letabchr() 
 { 
   static tchar TABchars[] = { ' '|AT_TAB,' ',' ',' ',' ',' ',' ',' ' };
@@ -491,6 +492,7 @@ comdesc lecmds[] =
   { LE_BS,     lebs,            CA_LinMOD|CA_NBEG }, /* удалить до курсора   */
   { LE_SPCHAR, lespchar, CA_EXT|CA_LinMOD|CA_NEND|CA_RPT },
   { LE_TABCHR, letabchr, CA_EXT|CA_LinMOD|CA_NEND }, /* insert TAB           */
+  { LE_CRCHAR, lecrchar, CA_EXT|CA_LinMOD|CA_NEND }, /* insert CR, mixed EOL */
   { LE_HCHAR0, lehchar0, CA_EXT|CA_LinMOD|CA_NEND }, /* ins: TmSCH_THIS_OBJ  */
   { LE_HCHAR1, lehchar1, CA_EXT|CA_LinMOD|CA_NEND }, /* ins: LeSCH_REPL_END  */
   { LE_HCHAR2, lehchar2, CA_EXT|CA_LinMOD|CA_NEND }, /* ins: LeSCH_REPL_BEG  */

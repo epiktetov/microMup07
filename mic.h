@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07         Самый главный header файл         | (c) Epi MG, 2006-2016
+// МикроМир07         Самый главный header файл         | (c) Epi MG, 2006-2020
 //------------------------------------------------------+--------------------*/
 #ifndef MIC_H_INCLUDED  /* Old "nm.h" (c) Attic 1989-90, (c) EpiMG 1998-2001 */
 #define MIC_H_INCLUDED
@@ -63,7 +63,7 @@ typedef long tchar;                           /* Unicode символ с атр�
 /*---------------------------------------------------------------------------*/
 extern int TABsize; /* Настраиваемые параметры - табуляция, 4 или 8 символов */
 extern int debugDQ; /* - debug DQ memory allocation, -dq command line option */
-extern bool dosEOL; /* - DOS/Windows style for end-of-line (CR/LF вместо LF) */
+extern int  dosEOL; /* - DOS(1)/unix(2)/mixed(0) end-of-line (CR/LF либо LF) */
 #if defined(Q_OS_MAC)
 #define QtPLATF "macx"
 #elif defined(Q_OS_LINUX)

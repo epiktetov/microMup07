@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07       Деки                                | (c) Epi MG, 2007-2016
+// МикроМир07       Деки                                | (c) Epi MG, 2007-2020
 //------------------------------------------------------+----------------------
 * Original "dq.c" (c) Attic 1989-91
 *                 (c) EpiMG 1997-2001
@@ -25,9 +25,8 @@ CR LF (или только LF). Таким образом, появление с
 ся по памяти, расширяя просвет до размера "оптимального экстента".
 
    Записи текстового дека разделяются LF или CR LF, при чтении запись выдается
-без терминаторов. Добавляемая запись терминируется CR LF (если dosEOL истинно)
-или одним LF (в противном случае).  При загрузке из конца дека удаляется EOF 
-(если такой имеется) и добавляются (при отсутствии) LF.
+без терминаторов (в случае dosEOL=0 конечый CR сохраняется). Добавляемая запись
+терминируется CR LF (если dosEOL=1) или одним LF (в противном случае).
 */
 #include "mic.h"
 #include "qfs.h"
@@ -154,13 +153,15 @@ void DqAddB (deq *d, char *data, int len)
     d->dbeg -= real_len+4;   pb  = d->dbeg;    *(short*)pb = len;
     blkmov(data, pb+2, len); pb += real_len+2; *(short*)pb = len;
   }
-  else if (dosEOL) {
+  else if (dosEOL == 1) {
     extgap(d, len+2, TRUE);                 d->dbeg -= len+2;
     pb = lblkmov(data, d->dbeg, len); *pb++ = CR; *pb++ = LF;
   }
-  else { extgap(d, len+1, TRUE);     d->dbeg -= len+1;
-         pb = lblkmov(data, d->dbeg, len); *pb++ = LF; }
-}
+  else {
+    if (dosEOL == 2 && len > 0 && data[len-1] == CR) len--;
+    extgap(d, len+1, TRUE);               d->dbeg -= len+1;
+    pb = lblkmov(data, d->dbeg, len);           *pb++ = LF;
+} }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void DqAddE (deq *d, char *data, int len)
 {
@@ -172,11 +173,13 @@ void DqAddE (deq *d, char *data, int len)
     blkmov(data, pb+2, len); pb += real_len+2; *(short*)pb = len;
   }
   else {
-    if (dosEOL) { extgap(d, len+2, FALSE);
-                  pb = lblkmov(data, d->dend, len); *pb++ = CR; *pb++ = LF; }
+    if (dosEOL == 1) { extgap(d, len+2, FALSE);
+                       pb = lblkmov(data, d->dend, len);
+                       *pb++ = CR;           *pb++ = LF; }
     else { 
+      if (dosEOL == 2 && len > 0 && data[len-1] == CR) len--;
       extgap(d, len+1, FALSE);
-      pb = lblkmov(data, d->dend, len); *pb++ = LF;
+      pb = lblkmov(data, d->dend, len);           *pb++ = LF;
     }
     d->dend = pb;
 } }
@@ -194,7 +197,7 @@ char *DqLookupForw(deq *d, int pos, int *len_out, int *real_len_out)
     for (pb = pbeg+1; pb < d->dend && pb[-1] != LF; pb++);
     len = (real_len = pb - pbeg) - 1;
     if (len < 0) exc(E_MOVDOWN);
-    if (len > 0 && pb[-2] == CR) len--;
+    if (len > 0 && dosEOL && pb[-2] == CR) len--;
   }
   if (len > MAXLUP-1) len = MAXLUP-1;
   if (len_out) *len_out = len;
@@ -219,7 +222,7 @@ char *DqLookupBack(deq *d, int pos, int *len_out, int *real_len_out)
     for (pb = pend-1; pb > d->dbeg && pb[-1] != LF; pb--);
     len = (real_len = pend - pb) - 1;
     if (len < 0) exc(E_MOVUP);
-    if (len > 0 && pend[-2] == CR) len--;
+    if (len > 0 && dosEOL && pend[-2] == CR) len--;
   }
   if (len > MAXLUP-1) len = MAXLUP-1;
   if (len_out) *len_out = len;
