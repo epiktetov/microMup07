@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07       Shell commands and tmSyncPos        | (c) Epi MG, 2007-2016
+// МикроМир07       Shell commands and tmSyncPos        | (c) Epi MG, 2007-2020
 //------------------------------------------------------+--------------------*/
 #include <QString>        /* Old tm.c (c) Attic 1989-91, (c) EpiMG 1997-2003 */
 #include <QRegExp>
@@ -73,12 +73,18 @@ static void appendText(txt *Stxt, int& Sx, char *text, char *tend)
 //  }
 //  TxTRep(Ttxt, Lebuf, Tx = Lleng);
 //
-  if (qTxBottom(Stxt)) TxIL(Stxt, text, Sx = tend-text);
+  int             len = my_min(tend-text, MAXLUP);
+  if (qTxBottom(Stxt)) TxIL(Stxt, text, Sx = len);
   else {
-    Lleng = TxTRead(Stxt, Lebuf);
-    Lleng += aftotc(text, tend-text, Lebuf+Lleng);
-    TxTRep(Stxt, Lebuf, Sx = Lleng);
-} }
+    int olen =         TxRead(Stxt, afbuf);
+    if (olen+len > MAXLUP) len = MAXLUP-Sx;
+    if (len > 0) {
+      lblkmov(text, afbuf + olen,   len);
+      TxRep  (Stxt, afbuf,  olen += len);
+    }                          Sx = olen;
+  }
+  if (Sx > Stxt->txrm) Sx = Stxt->txrm;
+}
 static void appendCR(txt *Stxt, int& Sx, long& Sy)
 {
   TxDown(Stxt); Sx = Stxt->txlm; Sy++;
