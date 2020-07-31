@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07 ViewPort (interface Qt/C++ • legacy code) | (c) Epi MG, 2006-2016
+// МикроМир07 ViewPort (interface Qt/C++ • legacy code) | (c) Epi MG, 2006-2020
 //------------------------------------------------------+----------------------
 #include <QApplication>
 #include <QPainter>
@@ -306,9 +306,8 @@ void vipActivate (wnd *vp)    // save current cursor position and sync active
   if (tmLoad(vp->wtext)) {
     Ttxt = vp->wtext; Tx = vp->ctx;
     if (TxSetY (Ttxt, Ty = vp->cty) == FALSE) Ty = Ttxt->txy;
-    clipRefocus();
-    Twnd = vp; // no vipFocus(Twnd) here!
-} }
+    Twnd = vp; //
+} }            // no vipFocus(Twnd) here!
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void vipGotoXY (int x, int y)           /* click in the active window (Twnd) */
 {

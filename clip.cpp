@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07  Clipboard (using wxClipboard) & CS/LS op | (c) Epi MG, 2007-2016
+// МикроМир07  Clipboard (using wxClipboard) & CS/LS op | (c) Epi MG, 2007-2020
 //------------------------------------------------------+----------------------
 #include <QApplication>   /* Old le.c (c) Attic 1989,    (c) EpiMG 1996-2003 */
 #include <QClipboard>     /* old te.c (c) Attic 1989-96, (c) EpiMG 1998,2001 */
@@ -32,20 +32,16 @@ void clipStart()
   QObject::connect(theClipboard, SIGNAL(selectionChanged()),
                    theDummyClip,           SLOT(changed2()));
 }
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+// - - - - - - - - - - - - - - - - - - -
 void clipChanged (QClipboard::Mode mode)
 {
   if (mode == clipMode) cb_new_data++;
 }
 void dummyClip::changed1() { clipChanged(QClipboard::Clipboard); }
 void dummyClip::changed2() { clipChanged(QClipboard::Selection); }
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void clipRefocus () { cb_refocusing = true; }
-void clipFocusOff()
-{
-  if (cb_refocusing) cb_refocusing = false;
-  else toClipboard();
-}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void clipRefocus () {      cb_refocusing =         true; }
+void clipFocusOff() { if (!cb_refocusing) toClipboard(); }
 /*---------------------------------------------------------------------------*/
 // Внутренний cut/paste буфер: запомненные символы собираятся в ccbuf, строки
 // сразу кладутся в LCtxt (в начало добавляется специальный символ по которому
@@ -82,6 +78,7 @@ static void CPempty (void)
 static void CSsave1 (int X, int len, bool trim)  /* Save 1 line at given pos */
 {                                                /* & len in Lebuf, trimming */
   if (!cpopen) CPempty();                        /* spaces if requested      */
+  cb_refocusing =  false;
   int lns = 0;
   while (len-- && cclen < MAXLPAC) {
     tchar tc = Lebuf[X++];

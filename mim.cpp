@@ -843,7 +843,7 @@ void MiScTwin::timerEvent(QTimerEvent *)
 //-----------------------------------------------------------------------------
 void MiScTwin::focusInEvent(QFocusEvent *) 
 { 
-  gotFocus = pgtime(); vipOnFocus(vp); info.show();
+  gotFocus = pgtime(); vipOnFocus(vp); info.show();          clipRefocus();
 }                                                                           
 void MiScTwin::focusOutEvent(QFocusEvent *) { vipFocusOff(vp); info.hide();
                                               clipFocusOff (); stopTimer(); }
