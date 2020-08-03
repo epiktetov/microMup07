@@ -19,10 +19,11 @@ COMMAND LINE
    section below)   mim dirname     - open the contents of given directory
                     mim .           - start with current directory contents
 Options:
- -dos - save files in DOS/Win format (with CR LF) instead of default POSIX (LF)
- -dq  - debug memory allocation |
- -ti  - show execution timing   | not intended for regular use, for debugging
- -kb  - show keyboard commands  | purposes only, do not use unless instructed
+ -dos  - save files in MS DOS format (with CR LF) instead of default POSIX (LF)
+ -unix - force POSIX format (if no -dos/unix => mixed mode, use LF and show CR)
+ -dq - debug memory allocation |
+ -ti - show execution timing   | debugging only, not intended for regular use
+ -kb - show keyboard commands  |
 */
 k_BEGIN
 /*
@@ -76,25 +77,28 @@ For window handling, MicroMir uses concept familiar to UNIX programmers: 'fork'
 (make a copy of the window) and 'replace file' (although this does not actually
 replaces anything, it just pushes current text into stack like Esc <down> does)
 
-  Meta+'+'('=') - open new window with the same contents as in current one
+  Meta+'+'('=') - open a new window with the same contents as in current one
   Meta+'-'      - split the window into two panes, forking the contents
   Meta+'\'/Del  - ask for filename and enter that file (see FILES below)
   Meta+']'      - open persistent scratch pad (~/.micro7.blah file)
   Meta+{arrow}  - move cursor to closest window in given direction
-  Ctrl+X        - SyncPos(tm) - open file mentioned here in the upper pane
   Meta+Return   - SyncPos + call MkSyncMarks (see auto.lua) to sync markers
+  Ctrl+X        - (tm)SyncPos - open file mentioned here (if not opend yet) in
+      new window and move cursor to the mentioned line (for grep, compiler etc)
 
 NOTE: commands in this section have alias Ctrl+Alt+X (except for Ctrl+Alt+Del)
 */
-k_(TM_VFORK,   "Meta+=",      0xc103d) /* открыть новое окно с тем   */
-a_(TM_VFORK,   "Ctrl+Alt+=",  0xc103d) /*        же самым содержимым */
+k_(TM_VFORK,   "Meta+=",      0xc103d) /* открыть новое окно с тем же самым  */
+a_(TM_VFORK,   "Meta+Ins",    0xc103d) /*                         содержимым */
+a_(TM_VFORK,   "Ctrl+Alt+=",  0xc103d)
+a_(TM_VFORK,   "Ctrl+Alt+Ins",0xc103d)
 k_(TM_HFORK,       "Meta+-",  0xc102d) /* поделить окно пополам      */
 a_(TM_HFORK,   "Ctrl+Alt+-",  0xc102d) /*                            */
 k_(TM_FENTR,   "Meta+Del",    0xf1007) /* ввести имя и войти         */
 a_(TM_FENTR,   "Meta+\\",     0xf1007) /*           в указанный файл */
 a_(TM_FENTR,   "Ctrl+Alt+\\", 0xf1007) /*                            */
-k_(TM_GOBLAH,  "Ctrl+Alt+]",  0xf1008)
-a_(TM_GOBLAH,  "Meta+]",      0xf1008)
+k_(TM_GOBLAH,  "Ctrl+Alt+]",  0xf1008) /*                            */
+a_(TM_GOBLAH,  "Meta+]",      0xf1008) /*                            */
 k_(TM_F1ENTR,      NULL,      0xc10f1) /* в том же окне:      Return */
 k_(TM_F2ENTR,      NULL,      0xc10f2) /* в новом окне: Shift+Return */
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -190,11 +194,11 @@ for text modification:
   Del         | delete current character         | delete current line
   Backspace   | delete/clear char left of cursor | delete/clear word on left
   ------------+----------------------------------+--------------------------
-  Ctrl+D     - delete from cursor to end of line
   Ctrl+U     - delete/clear all characters up to cursor position
+  Ctrl+D     - delete from cursor to end of line
   Ctrl+Q     - squeeze the word after cursor (and trailing spaces) from text
-  Esc,Ctrl+D - delete everything from cursor to end of file
-  Esc,Ctrl+U - delete everything from the beginning up to cursor (very strong)
+  Esc,Ctrl+U - delete everything from the beginning of file up to current line
+  Esc,Ctrl+D - delete text from cursor to end of file (unless in the 1st line)
 */
 k_(LE_IC,     "Ins",          0xf4006) /* вставить пробел на месте курсора   */
 k_(LE_DC,     "Del",          0xf4007) /*    удалить символ под курсором     */
@@ -360,10 +364,6 @@ a_(LE_LEFT,    "Shift+Left",   0xe0012) /* влево       |             */
 a_(TE_UP,      "Shift+Up",     0xe0013) /* вверх       | с отметкой  */
 a_(LE_RIGHT,   "Shift+Right",  0xe0014) /* вправо      |     блоком  */
 a_(TE_DOWN,    "Shift+Down",   0xe0015) /* вниз        |             */
-a_(LE_BEG,     "Ctrl+Shift+,", 0xe0412) /* в начало    |             */
-a_(LE_BEG,     "Ctrl+Shift+<", 0xe0412) /*      строки |             */
-a_(LE_END,     "Ctrl+Shift+.", 0xe0414) /* в конец, за |             */
-a_(LE_END,     "Ctrl+Shift+>", 0xe0414) /*   не-пробел |             */
 k_(LE_MWORD,   "Ctrl+W",       0xc8057) /* выделить текущее слово    */
 k_(TX_MCBLOCK,     "F5",       0xc8034) /* == "постоянный" блок      */
 /*
@@ -657,16 +657,15 @@ Ins/Del keys (but have extra function or numpad keys), then you can use these:
 
 See "Lua SCRIPTING" for remapping MicroMir commands to different key sequences.
 -------------------------------------------------------------------------------
-Some useful Alt+CHARs (most present on Mac already, but a couple of them moved)
+Some useful Alt+CHAR (most are present on Mac already, but a few of them moved)
 */
-a_(0, "Alt+1", 0x00B9) /* ¹ */
-a_(0, "Alt+2", 0x00B2) /* ² */    a_(0, "Alt+Shift+@", 0x2122) /* ™ (moved) */
-a_(0, "Alt+3", 0x00B3) /* ³ */    a_(0, "Alt+Shift+:", 0x205D) /* ⁝         */
-a_(0, "Alt+9", 0x2023) /* ‣ */
-a_(0, "Alt+=", 0x2248) /* ≈ (moved)                             W↑          */
-a_(0, "Alt+X", 0x00D7) /* ×                                  A← S↓ D→       */
-                            a_(0, "Alt+W", 0x2191)
-a_(0, "Alt+A", 0x2190)      a_(0, "Alt+S", 0x2193)      a_(0, "Alt+D", 0x2192)
+a_(0, "Alt+1", 0x00B9) /* ¹ */    a_(0, "Alt+Shift+!", 0x00A1) /* ¡         */
+a_(0, "Alt+2", 0x00B2) /* ² */    a_(0, "Alt+Shift+:", 0x205D) /* ⁝ (moved) */
+a_(0, "Alt+3", 0x00B3) /* ³ */    a_(0, "Alt+=",       0x2248) /* ≈         */
+a_(0, "Alt+D", 0x2023) /* ‣ */
+a_(0, "Alt+X", 0x00D7) /* × */
+a_(0, "Alt+Shift+W", 0x2191)   a_(0, "Alt+Shift+A", 0x2190) /*    W↑    */
+a_(0, "Alt+Shift+S", 0x2193)   a_(0, "Alt+Shift+D", 0x2192) /* A← S↓ D→ */
 #ifndef Q_OS_MAC
                                   a_(0, "Alt+Shift+#", 0x2039) /* ‹ (3) */
                                   a_(0, "Alt+Shift+$", 0x203A) /* › (4) */
@@ -676,13 +675,16 @@ a_(0, "Alt+8",  0x2022) /* • */   a_(0, "Alt+Shift+*", 0x00B0) /* ° (8) */
 a_(0, "Alt+-",  0x2013) /* – */   a_(0, "Alt+Shift++", 0x00B1) /* ±     */
 a_(0, "Alt+R",  0x00AE) /* ® */
 a_(0, "Alt+T",  0x2020) /* † */
-a_(0, "Alt+O",  0x00F8) /* ø */   a_(0, "Alt+Shift+O", 0x00D8) /* Ø */
+a_(0, "Alt+O",  0x00F8) /* ø */
+a_(0, "Alt+W",  0x201E) /* „ */
 a_(0, "Alt+[",  0x201C) /* “ */   a_(0, "Alt+Shift+{", 0x201D) /* ” */
 a_(0, "Alt+]",  0x2018) /* ‘ */   a_(0, "Alt+Shift+}", 0x2019) /* ’ */
 a_(0, "Alt+\\", 0x00AB) /* « */   a_(0, "Alt+Shift+|", 0x00BB) /* » */
+a_(0, "Alt+F",  0x0192) /* ƒ */
 a_(0, "Alt+G",  0x00A9) /* © */
 a_(0, "Alt+J",  0x2206) /* ∆ */
-a_(0, "Alt+;",  0x2026) /* … */   a_(0, "Alt+Shift+V", 0x25CA) /* ◊ */
+a_(0, "Alt+;",  0x2026) /* … */
+a_(0, "Alt+V",  0x221A) /* √ */   a_(0, "Alt+Shift+V", 0x25CA) /* ◊ */
 a_(0, "Alt+M",  0x00B5) /* µ */
 a_(0, "Alt+,",  0x2264) /* ≤ */
 a_(0, "Alt+.",  0x2265) /* ≥ */

@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07  Command Codes Definition / transcoding   | (c) Epi MG, 1998-2016
+// МикроМир07  Command Codes Definition / transcoding   | (c) Epi MG, 1998-2020
 //------------------------------------------------------+----------------------
 //include <qnamespace.h>
 #include <QKeyEvent>
@@ -233,11 +233,12 @@ void MkStrXEQ (QString text, wnd *vp) // execute MicroMir command from its text
         if (i == len-1) break;
         vipOnKeyCode(vp, text.at(++i).unicode());
       }
-      else if (k ==  0x2039) {   // ‹
-        if ((N = text.indexOf(Utf8("›"),i+1)) > 0) {
+      else if (k ==  0x2039) {   // ‹                // MicroMir command
+        if ((N = text.indexOf(Utf8("›"),i+1)) > 0) { // e.g. ‹Ctrl+Alt+Ins›
           luaP_getglobal("Mk");
-          luaP_getfield(-1,text.mid(i+1,N-i-1).cStr()); i=N; MkLuaXEQ("", vp);
-      } }
+          luaP_getfield(-1,text.mid(i+1,N-i-1).cStr()); i = N; MkLuaXEQ("",vp);
+        } else                                              vipOnKeyCode(vp,k);
+      }
       else if (k == 0xD7) {      // ×
         if ((N = text.indexOf(Utf8("⁝"),i+1)) > 0) {
           KbRadix = 1;                                // applied to next command
