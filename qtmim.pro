@@ -1,4 +1,4 @@
-#!qmake -- Qt4/Qt5 project file for µMup07 app (for MacOS Х / Linux / Windows)
+#!qmake -- Qt4/Qt5 project file for µMup07 app (for macOS / Linux / Windows)
 TEMPLATE = app
 CONFIG += release
 # -----------------------------------------------------------------------------
@@ -84,5 +84,12 @@ macx:equals(QT_MAJOR_VERSION,4) {
      install_name_tool -change $$QtGUI4/QtGui   $$QtGUIname  $$MimEXE
 
   QMAKE_EXTRA_TARGETS += qtcore qt_gui qt_nib qtbundle
+}
+# - - - - - - - - - - - - - - - -
+macx:equals(QT_MAJOR_VERSION,5) {
+  qtbundle.target = bundle
+  qtbundle.depends = all
+  qtbundle.commands = macdeployqt µMup07.app -verbose=2
+  QMAKE_EXTRA_TARGETS += qtbundle
 }
 # -----------------------------------------------------------------------------

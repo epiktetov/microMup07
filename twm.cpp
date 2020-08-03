@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07           Text & Window Manager           | (c) Epi MG, 2004-2016
+// МикроМир07           Text & Window Manager           | (c) Epi MG, 2004-2020
 //------------------------------------------------------+----------------------
 #include <QCoreApplication> // need QCoreApplication::arguments
 #include <QRegExp>
@@ -520,8 +520,8 @@ static void tmFnewSearchIncs (QString foundName)
       QString filename = (*it) + "/" + foundName;
       if (QfsExists(filename)) { twEditNew(filename); return; }
     }
-    twEditNew(foundName); // enter that file even if it is not know to exist
-} }                       // (create empty text)
+    twEditNew(foundName); // enter the file by given name even if not found,
+} }                       // this will create empty text/file with that name
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tmFnewByTtxt (void)                 /* войти в новый файл (имя из Ttxt) */
 {
@@ -530,8 +530,8 @@ void tmFnewByTtxt (void)                 /* войти в новый файл (�
        if (Block1size(&lm, &rm)) ; //-
   else if ((Ttxt->txstat & TS_MCD) && !(Lebuf[0] & AT_PROMPT)) {
 #define USE_MCD_MARGIN(LEFTorRIGHT) \
-  if (Lleng > LEFTorRIGHT &&        \
-  (char)Lebuf[LEFTorRIGHT] == LDS_MCD) { lm = LEFTorRIGHT+1; rm = Lleng; }
+    if (Lleng > LEFTorRIGHT &&      \
+    (char)Lebuf[LEFTorRIGHT] == LDS_MCD) { lm = LEFTorRIGHT+1; rm = Lleng; }
          USE_MCD_MARGIN(MCD_RIGHT) //
     else USE_MCD_MARGIN(MCD_LEFT)  // allow both double-delimiter (64+69th pos)
     else return;                   // and single-delimiter (64th pos only) fmts
@@ -544,9 +544,9 @@ void tmFnewByTtxt (void)                 /* войти в новый файл (�
     if (lm >= 0) for (rm = Tx; rm < Lleng && (uchar)Lebuf[rm-1] != 0xBB;) rm++;
     else {
       lm = rm = Tx;
-      while (lm > 0     && !strchr(" \'\",(<\xBB)", (char)Lebuf[lm-1])) lm--;
-      while (rm < Lleng && !strchr(" \'\",>)",      (char)Lebuf[rm]  )) rm++;
-      tmFnewSearchIncs(tcs2qstr(Lebuf+lm, rm-lm));                    return;
+      while (lm > 0     && !strchr(" \'\",(<", (char)Lebuf[lm-1])) lm--;
+      while (rm < Lleng && !strchr(" \'\",>)", (char)Lebuf[rm]  )) rm++;
+      tmFnewSearchIncs(tcs2qstr(Lebuf+lm, rm-lm));               return;
   } }
   if (lm < rm) twEditNew(tcs2qstr(Lebuf+lm, rm-lm), Ttxt);
 }

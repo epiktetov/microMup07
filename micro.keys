@@ -1,7 +1,7 @@
 /*-----------------------------------------------------------------------------
- * µMup07 = МикроМир07 = multi-platform text editor • MacOS Х • Linux • Windows
+ *  µMup07 = МикроМир07 = multi-platform text editor • macOS • Linux • Windows
  * ----------------------------------------------------------------------------
- * original "MicroMir" idea (c) А.Г.Кушниренко, Г.В.Лебедев (мехмат МГУ)   1981
+ * original "МикроМир" idea (c) А.Г.Кушниренко, Г.В.Лебедев (мехмат МГУ)   1981
  * "nanoMir" implementation (c) Attic (Д.В.Варсанофьев, А.Г.Дымченко) 1989-1991
  * "nanoMir" and МикроМир07 (c) EpiMG (М.Г.Эпиктетов)   1998-2001 and 2006-2020
 -------------------------------------------------------------------------------
@@ -148,7 +148,7 @@ k_(TE_SMARK1, "Ctrl+Shift+1", 0xd2631) /*  маркер 1 = красный фл�
 k_(TE_SMARK2, "Ctrl+Shift+2", 0xd2632) /*  маркер 2 = зеленый флажок */
 k_(TE_SMARK3, "Ctrl+Shift+3", 0xd2633) /*  маркер 3 = синий флажок   */
 a_(TE_SMARK0, "Ctrl+Shift+~", 0xd2630) /*                            */
-a_(TE_SMARK1, "Ctrl+Shift+!", 0xd2631) /* (на MacOS Х и Linux        */
+a_(TE_SMARK1, "Ctrl+Shift+!", 0xd2631) /* (на macOS и Linux          */
 a_(TE_SMARK2, "Ctrl+Shift+@", 0xd2632) /* shift+N уже преобразовано) */
 a_(TE_SMARK3, "Ctrl+Shift+#", 0xd2633)
 k_(TE_CMARK0, "Ctrl+`",       0xd2430) /* перейти к маркеру 0        */
@@ -428,10 +428,10 @@ press Esc <down> (the name should be separated from surrounding text by spaces,
 commas or quotes - if is't not, you'll need to use block selection to mark it)
 
  In that case MicroMir searches for the file in stadard locations for includes
- (/usr/local/include and /usr/include on Linux and MacOS X) and then in places
- specified by 'incdris' lines at the bottom on 'micros.dir' -- those lines are
- iserted by Shift+Ins while at the very bottom of the file, and have protected
- prefix and optional platform restriction, for example:
+ (/usr/local/include, /usr/include on Linux and macOS) and in places specified
+ by 'incdris' lines at the bottom on 'micros.dir' - those lines are iserted by
+ by Shift+Ins (with protected prefix) while at the very bottom of the file and
+ may have optional platform restriction, for example:
 
   ʂincdirs»ʀ(unix)/usr/include/lua5.2 -- search in this directory on Linux only
   ʂincdirs»ʀ(win32)../lua/include     -- search there only on Windows

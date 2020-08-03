@@ -5,11 +5,10 @@ LIBS if it does not). After that, building is simple:
 
 	qmake qtmim.pro && make
 
-In order to make the MacOS X application bundle not dependent on external
+In order to make the macOS application bundle not dependent on external
 Qt frameworks, run the following command:
 
-	make bundle            # for Qt 4.x (no plugins)
-	macdeployqt µMup07.app # for Qt 5.x
+	make bundle
 
-For help with the editing (and you will need it, trust me) see `micro.keys`
-file in this repository, or on-line at http://www.epiktetov.com/micro-keys
+For help with the editing refer to `micro.keys` file in this repository,
+or on-line at http://www.epiktetov.com/micro-keys (may be not up-to-date)
