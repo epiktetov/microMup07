@@ -318,6 +318,7 @@ void vipGotoXY (int x, int y)           /* click in the active window (Twnd) */
 void vipOnKeyCode (wnd *vp, int ev)   /* called from MkMimXEQ (file ccd.cpp) */
 {
        if (ev == TK_LINFO) vp->sctw->info.updateInfo(MitLINE_BLOCK);
+  else if (ev == TK_PINFO) vp->sctw->info.updateInfo(MitLINE_POSXY);
   else if (ev == TK_CHARK) vp->sctw->info.updateInfo(MitCHARK);
   else if (ev == TW_CDOWN) { wpos_off(vp);
     if (Lwnd) ExitLEmode();          // set Ty to the last line in the window,

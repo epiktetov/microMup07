@@ -74,7 +74,7 @@ extern int  dosEOL; /* - DOS(1)/unix(2)/mixed(0) end-of-line (CR/LF либо LF)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #define MAXPATH    400                     /* Некоторые магические константы */
 #define MAXDIRSTK   12
-#define MAXTXRM    360 /* Максимальная ширина текта в редакторе (default)    */
+#define MAXTXRM   4096 /* Максимальная ширина текта в редакторе (default)    */
 #define MAXLUP   16384 /* Максимальная длина строки в файле                  */
 #define MAXLPAC   4096 /* Максимальная длина строки в редакторе (le.c, te.c) */
 #define MAXSYNTBUF  42 /* Буфер для synt checker                             */

@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07      Syntax checker / text colorizer      | (c) Epi MG, 2011-2016
+// МикроМир07      Syntax checker / text colorizer      | (c) Epi MG, 2011-2020
 //------------------------------------------------------+--------------------*/
 #ifndef SYNT_H_INCLUDED
 #define SYNT_H_INCLUDED
@@ -17,6 +17,7 @@ enum SyntSupportedLangs {
   CLangMAX,
   CLangDISABLED = 8
 };
+#define MAXBRAC 256  /* maximum bracket stack size (see MAXSYNTBUF in mic.h) */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 // Colorize the line from given text (the line assumed to be located in tcbuf),
 // may change txt->thisSynts (in which case it empties the entire txt->cldstk),

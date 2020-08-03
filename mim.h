@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07 Main Header + Scrollable/Gradient Window  | (c) Epi MG, 2004-2017
+// МикроМир07 Main Header + Scrollable/Gradient Window  | (c) Epi MG, 2004-2020
 //------------------------------------------------------+----------------------
 #ifndef MIM_H_INCLUDED
 #define MIM_H_INCLUDED
@@ -63,7 +63,8 @@ class MacEvents : public QObject { Q_OBJECT
   protected:  bool eventFilter(QObject *obj, QEvent *event); };
 #endif
 //-----------------------------------------------------------------------------
-enum MiInfoType { MitUSE_CURRENT = 0, MitLINE_BLOCK = 1, MitCHARK = 2 };
+enum MiInfoType { MitUSE_CURRENT = 0, MitLINE_BLOCK = 1,
+                                      MitLINE_POSXY = 2, MitCHARK = 3 };
 class MiInfoWin : public QWidget
 {
   MiInfoType infoType; QString displayText;

@@ -603,7 +603,8 @@ k_(TE_SHBRAK,  "Ctrl+O",       0xce44f) /* переключить режим   *
 
   Ctrl+A - abandon (cancel) current command (e.g. stop entering search pattern)
   Ctrl+K - display unicode value of the current character in the info window
-  Ctrl+L - display line number in the info window (default)
+  Ctrl+L - display line number / block size / backet balance (default)
+  Ctrl+P - display cursor position in text (character and line numbers)
   Ctrl+Y - (sYstem) = ask for shell command and execute it
    in shell command:
         light blue 'ʈ•ʀ' (Ctrl+'<') is replaced with the name of current file,
@@ -613,6 +614,7 @@ k_(TK_NONE,   NULL,     0xce000) /* None command */
 k_(TK_BREAK,  "Ctrl+A", 0xce441)
 k_(TK_CHARK,  "Ctrl+K", 0xce44b)
 k_(TK_LINFO,  "Ctrl+L", 0xce44c)
+k_(TK_PINFO,  "Ctrl+P", 0xce44d)
 k_(TM_SHELL,  "Ctrl+Y", 0xfe459) /* ввести и выполнить команду shell         */
 k_(TM_FEXEC,  NULL,     0xceef1) /* в том же окне:                    Return */
 k_(TM_F2EXEC, NULL,     0xceef2) /* в новом окне:               Shift+Return */

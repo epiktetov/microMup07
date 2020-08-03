@@ -913,21 +913,27 @@ void MiInfoWin::paintEvent (QPaintEvent *)
   else if (MiApp_timeDELAYS &&
      (dx = (int)(pgtime()-last_MiCmd_time)) > 1) { info.sprintf("%4dms", dx);
                                        dc.drawText(sctw->Tx2qtX(0), Y, info); }
-  else {     wnd *vp = sctw->vp;
-    info.sprintf("%8d", int((vp == Twnd) ? Ty : vp->cty) + 1);
-    if (vp->wtext && 0 < vp->wtext->clang && vp->wtext->clang < CLangMAX) {
-      int *Synts, numSynts;
-      if (ShowBrakts == 2 && TxSetY(vp->wtext, vp->wty + vp->cy))
-           Synts = vp->wtext->prevSynts;
-      else Synts = vp->wtext->lastSynts; numSynts = Synts[0] & AT_CHAR;
-      int i;
-      for (i = 0; i < numSynts && info[i] == ' '; i++)
-                        info[i] = QChar(Synts[i+1] & 0xFF);
-      if (i < numSynts) info[i] = QChar(0x2026); // …
+  else { wnd *vp = sctw->vp;
+    dy = int((vp == Twnd) ? Ty : vp->cty) + 1;
+    if (infoType == MitLINE_POSXY) {
+      info.sprintf("%d:%d", (vp == Twnd ? Tx : vp->ctx) + 1, dy);
+      dx = 8 - info.size();                   if (dx < 0) dx = 0;
+      dc.drawText(sctw->Tx2qtX(dx) + sctw->fontWidth/2, Y, info);
     }
-    dc.drawText(sctw->Tx2qtX(0),                     Y, info.mid(0, 5));
-    dc.drawText(sctw->Tx2qtX(5) + sctw->fontWidth/2, Y, info.mid(5, 3));
-  }
+    else { info.sprintf("%8d", dy);
+      if (vp->wtext && 0 < vp->wtext->clang && vp->wtext->clang < CLangMAX) {
+        int *Synts, numSynts;
+        if (ShowBrakts == 2 && TxSetY(vp->wtext, vp->wty + vp->cy))
+             Synts = vp->wtext->prevSynts;
+        else Synts = vp->wtext->lastSynts; numSynts = Synts[0] & AT_CHAR;
+        int i;
+        for (i = 0; i < numSynts && info[i] == ' '; i++)
+                                    info[i]   = QChar(Synts[i+1] & 0xFF);
+        if (0 < i && i < numSynts)  info[i-1] = QChar(0x2026); // …
+      }
+      dc.drawText(sctw->Tx2qtX(0),                     Y, info.mid(0, 5));
+      dc.drawText(sctw->Tx2qtX(5) + sctw->fontWidth/2, Y, info.mid(5, 3));
+  } }
   dc.drawText(sctw->Tx2qtX(9), Y, clipStatus());
 }
 void MiInfoWin::updateInfo (MiInfoType mit) { if (mit) infoType = mit;

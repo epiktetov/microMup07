@@ -524,9 +524,9 @@ void SyntColorize (txt *text, tchar *tcp, int& len)
   SyntLang_t *L = &SyntLangs[text->clang];
   //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   int newSynts[MAXSYNTBUF], numNews = 1;    newSynts[0] = 0;
-  char brakt [MAXTXRM]; int brnclo = text->prevSynts[0] & AT_CHAR;
-  int  brakp [MAXTXRM]; int brx = 0; if (brnclo > MAXSYNTBUF) brnclo = 0;
-  int  braclo[MAXTXRM]; int brtclo = 0;
+  char brakt [MAXBRAC]; int brnclo = text->prevSynts[0] & AT_CHAR;
+  int  brakp [MAXBRAC]; int brx = 0; if (brnclo > MAXSYNTBUF) brnclo = 0;
+  int  braclo[MAXBRAC]; int brtclo = 0;
   int i, word0 = 0, word1 = 0, badSynt = 0;
   bool in_le_mode = (Lwnd && Ly == text->txy);
   char mode = (text->prevSynts[0] & AT_COMMENT) ? 'c' : '.';
@@ -573,7 +573,7 @@ void SyntColorize (txt *text, tchar *tcp, int& len)
 quoted: tcp[N]     |= AT_QOPEN;         //
         tcp[N = i] |= AT_QCLOSE; break; // either mark "good" quotes or bad one
       case '(':
-        if (brx < MAXTXRM) { brakp[brx] = N;
+        if (brx < MAXBRAC) { brakp[brx] = N;
                              brakt[brx] = tc; brx++; } break;
       case ')':
         if (brx) { brx--;
@@ -658,7 +658,7 @@ int SyntParse(txt *text, char *str, int len, int *out) // NOTE: 'out' points to
   if (text->clang > CLangMAX) { *out = 0xD1; return 1; }
   SyntLang_t *L = &SyntLangs[text->clang];
   //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  char brakt [MAXTXRM]; int brnclo = text->prevSynts[0] & AT_CHAR;
+  char brakt [MAXBRAC]; int brnclo = text->prevSynts[0] & AT_CHAR;
   int i, word0 = 0, word1 = 0, badSynt = 0, haveBad = 0,  brx = 0;
   int *pout = out;            if (brnclo > MAXSYNTBUF) brnclo = 0;
   char mode = (text->prevSynts[0] & AT_COMMENT) ? 'c' : '.';
@@ -687,7 +687,7 @@ int SyntParse(txt *text, char *str, int len, int *out) // NOTE: 'out' points to
                             else if (str[N] == c ) break; }
       break;
     case '(':
-      if (brx < MAXTXRM) brakt[brx++] = str[N];
+      if (brx < MAXBRAC) brakt[brx++] = str[N];
       break;
     case ')': if (brx) brx--;
       else

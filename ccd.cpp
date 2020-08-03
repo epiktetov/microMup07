@@ -110,9 +110,8 @@ QString MkToString (int kcode)
 }
 inline QString MkQuoteCmd(QString& cmd) { return Utf8("‹") + cmd + Utf8("›"); }
 /*---------------------------------------------------------------------------*/
-#define MkMAX_MACRO_SIZE 350 /* the only limitation is to be able editing it */
-QString MkMacro;             /*  (so Mk.Fn="value" should fit under MAXTXRM) */
 int MkRecording = 0;
+QString MkMacro;
 inline QString MacroName(int N) { return QString("F%1").arg(N+6); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void MkStartRecording (int N)
@@ -179,7 +178,7 @@ void MkMimXEQ (int kcode, int modMask, QString text, wnd *vp)
                MkMacro.append(Utf8("⑆")+text); break;
       default: MkMacro.append          (text); break;
     }
-    if (MkMacro.size() > MkMAX_MACRO_SIZE) { vipBell(); MkStopRecording(); }
+    if (MkMacro.size() > MAXTXRM) { vipBell(); MkStopRecording(); }
   }
   MkLuaXEQ(text, vp);   // Lua stack here: [-2] global "Mk" (not used below)
 }                       //                 [-1] Mk[kcode] value (may be nil)
