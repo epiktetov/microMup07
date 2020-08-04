@@ -55,7 +55,7 @@ bool MacEvents::eventFilter (QObject*, QEvent *ev)
   if (ev->type() == QEvent::FileOpen) {
     QString filename = static_cast<QFileOpenEvent*>(ev)->file();
     if (Ttxt && isNoRealText(Ttxt)) tmLoadIn(Ttxt, filename);
-    else                            twStart (filename,    1); return true;
+    else                            twStart       (filename); return true;
   } else                                                      return false;
 }
 # define mimFONTFACENAME "Menlo"
@@ -124,14 +124,14 @@ int main(int argc, char *argv[])
     else if (param.compare("-dq",  IGNORE_CASE) == 0) debugDQ          =  TRUE;
     else if (param.compare("-ti",  IGNORE_CASE) == 0) MiApp_timeDELAYS =  true;
     else if (param.compare("-kb",  IGNORE_CASE) == 0) MiApp_debugKB    =  true;
-    else if (param == "-") { if (tmStart(QfsEMPTY_NAME)) return app.exec();
+    else if (param == "-") { if (twStart(QfsEMPTY_NAME)) return app.exec();
                              else                        return 2;        }
     else {
 #ifdef Q_OS_WIN                // Qt operates with correct forward slashes, but
       param.replace('\\','/'); // argv here comes from Windows, have to replace
 #endif
       if (param.startsWith("'")) param.replace(0,1,QfsXEQ_PREFIX);
-      if (tmStart(param)) return app.exec();
+      if (twStart(param)) return app.exec();
       else                return 1;
   } }
 #ifdef Q_OS_MAC                 // When file/directory is drag-n-dropped on our
@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
 #else                           // is not specified in command line; open empty
 #define mimNoNAME "."           // file to avoid showing unwanted contents
 #endif
-  if (tmStart(mimNoNAME)) return app.exec();
+  if (twStart(mimNoNAME)) return app.exec();
   else                    return 2;
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -233,7 +233,7 @@ void MiFrame::Open##XXX()                                             \
   QString name = QFileDialog::getMETHOD(this, "Open " XXXtext, init); \
   if (name.isEmpty()) return;                                         \
   if (Ttxt) { vipFocusOff(Twnd); twEditNew(name, Ttxt); vipReady(); } \
-  else                           twStart  (name,    1);               \
+  else                           twStart  (name);                     \
 }
 MiFrameOPEN_XXX(File,    "file", getOpenFileName)
 MiFrameOPEN_XXX(Dir,"directory", getExistingDirectory)

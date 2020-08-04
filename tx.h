@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07          Texts - Тексты (header)          | (c) Epi MG, 2007-2016
+// МикроМир07          Texts - Тексты (header)          | (c) Epi MG, 2007-2020
 //------------------------------------------------------+--------------------*/
 #ifndef TX_H_INCLUDED        /* Old tx.h (c) Attic 1989, (c) EpiMG 1998,2001 */
 #define TX_H_INCLUDED
@@ -27,7 +27,7 @@ void TxFRep(txt *t, tchar *p);
 void TxIL  (txt *t,  char *line, short len), TxDL(txt *t), TxDEL_beg(txt *t);
 void TxTIL (txt *t, tchar *line, short len),               TxDEL_end(txt *t);
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-extern char   afbuf[]; extern short tab_size;
-extern char   txbuf[]; extern txt     *texts;
+extern short tab_size;  extern char afbuf[];
+extern txt     *texts;
 /*---------------------------------------------------------------------------*/
 #endif                                                      /* TX_H_INCLUDED */

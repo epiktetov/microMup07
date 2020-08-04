@@ -25,6 +25,7 @@ extern "C" {
 #include "le.h"
 #include "te.h"
 #include "tx.h"
+#include "ud.h"
 }
 #ifdef Q_OS_WIN
 # define MiDEFAULT_SHELL "C:/Windows/system32/cmd.exe"
@@ -216,6 +217,43 @@ void tmLoadXeq (txt *t) /* load text by executing command from t->file->name */
   long Sy = 0; QString cmd =  t->file->name; // <- copy the value first, since
                cmd.remove(0,1).remove(-1,1); //  remove() changes the argument
   shellexec(t, Sx, Sy, cmd.cStr());
+}
+/*---------------------------------------------------------------------------*/
+void tmDirLST (txt *t)             /* load directory listing into given text */
+{
+  QDir *dir = QfsDir(t->file);
+  QStringList filters;   filters << (t->file->name);
+  QFileInfoList filist = dir->entryInfoList(filters, 
+         QDir::AllEntries|QDir::Hidden|QDir::System, QDir::Name);
+
+  for (QFileInfoList::const_iterator it  = filist.constBegin();
+                                     it != filist.constEnd(); ++it) {
+    QString line;
+    QFile::Permissions attr = it->permissions();
+    ushort ftattr = it->isDir() ? 0x281 : 0x280;
+    char type = QFile::symLinkTarget(it->filePath()).isEmpty()
+                       ? (it->isDir() ? 'd' : '-')   : 'l';
+    // Note:
+    // unlike the standard 'ls -l' command, the list shows file permissions of
+    // the TARGET file (but with first character changed to 'l' for symlinks)
+    //
+    line.sprintf("%lc%c%c%c%c%c%c%c%c%c%c%lc%12d %s %lc%ls", ftattr, type,
+         attr & QFile::ReadOwner  ? 'r' : '-',
+         attr & QFile::WriteOwner ? 'w' : '-',
+         attr & QFile::ExeOwner   ? 'x' : '-',
+         attr & QFile::ReadGroup  ? 'r' : '-',
+         attr & QFile::WriteGroup ? 'w' : '-',
+         attr & QFile::ExeGroup   ? 'x' : '-',
+         attr & QFile::ReadOther  ? 'r' : '-',
+         attr & QFile::WriteOther ? 'w' : '-',
+         attr & QFile::ExeOther   ? 'x' : '-',  0x280,
+         int(it->size()),  QfsModDateText(*it).cStr(),
+         ftattr, (wchar_t *)(it->fileName().utf16()));
+    TxTIL(t, Lebuf, qstr2tcs(line, Lebuf)); TxDown(t);
+  } 
+  if (t->txudeq) udclear(t); //<- reset undo start to this point (initial blank
+  t->vp_ctx = t->txlm = DIRLST_FNPOS; //         state is not very interesting)
+  t->txstat |= TS_DIRLST | TS_RDONLY;
 }
 /*---------------------------------------------------------------------------*/
 static int scan_lines_up (char c1st, char *line_buffer)       /* SyncPos(tm) */

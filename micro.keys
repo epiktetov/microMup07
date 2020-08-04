@@ -79,10 +79,12 @@ replaces anything, it just pushes current text into stack like Esc <down> does)
 
   Meta+'+'('=') - open a new window with the same contents as in current one
   Meta+'-'      - split the window into two panes, forking the contents
-  Meta+'\'/Del  - ask for filename and enter that file (see FILES below)
-  Meta+']'      - open persistent scratch pad (~/.micro7.blah file)
+  Meta+'\'(Del) - ask for filename and enter that file (see FILES below)
+  Meta+']'      - open persistent scratch pad (saved in ~/.micro7.blah file)
+  Meta+PgDown   - open deck of recently closed files (: ~/.micro7.deck file)
+  (Esc,PgUp) - (closes window, saving all changes, see FILES commands below)
   Meta+{arrow}  - move cursor to closest window in given direction
-  Meta+Return   - SyncPos + call MkSyncMarks (see auto.lua) to sync markers
+  Meta+Return   - SyncPos + call MkSyncMarks (see auto.lua) to create markers
   Ctrl+X        - (tm)SyncPos - open file mentioned here (if not opend yet) in
       new window and move cursor to the mentioned line (for grep, compiler etc)
 
@@ -97,16 +99,21 @@ a_(TM_HFORK,   "Ctrl+Alt+-",  0xc102d) /*                            */
 k_(TM_FENTR,   "Meta+Del",    0xf1007) /* ввести имя и войти         */
 a_(TM_FENTR,   "Meta+\\",     0xf1007) /*           в указанный файл */
 a_(TM_FENTR,   "Ctrl+Alt+\\", 0xf1007) /*                            */
-k_(TM_GOBLAH,  "Ctrl+Alt+]",  0xf1008) /*                            */
-a_(TM_GOBLAH,  "Meta+]",      0xf1008) /*                            */
 k_(TM_F1ENTR,      NULL,      0xc10f1) /* в том же окне:      Return */
 k_(TM_F2ENTR,      NULL,      0xc10f2) /* в новом окне: Shift+Return */
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 k_(TM_LWINDOW,     "Meta+Left",   0xc1012) /* перейти к левому окну  */
 k_(TM_UWINDOW,     "Meta+Up",     0xc1013) /* - к верхнему окну      */
 k_(TM_RWINDOW,     "Meta+Right",  0xc1014) /* - к правому окну       */
 k_(TM_DWINDOW,     "Meta+Down",   0xc1015) /* - к нижнему окну       */
-k_(TM_SYNCPOX,     "Ctrl+X",      0xc1005)
+k_(TM_GOBLAH,      "Meta+]",      0xf1008)
+k_(TM_TODECK,      "Meta+[",      0xf100d)
+a_(TM_TODECK,      "Meta+PgDown", 0xf100d)
+a_(TM_TODECK,  "Ctrl+Alt+PgDown", 0xf100d)
+a_(TM_GOBLAH,  "Ctrl+Alt+]",      0xf1008)
+a_(TM_TODECK,  "Ctrl+Alt+[",      0xf100d)
+k_(TM_SYNCPOX, "Ctrl+X",          0xc1005)
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 k_(TM_SYNCPOS,     "Meta+Return", 0xc1004) /* <- Синхронизировать позицию:   */
 a_(TM_SYNCPOS, "Ctrl+Alt+Return", 0xc1004) /*        открыть в соседнем окне */
 a_(TM_LWINDOW, "Ctrl+Alt+Left",   0xc1012) /*        упомянутый здесь файл и */

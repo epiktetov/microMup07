@@ -11,9 +11,10 @@ extern "C" {
 # define TRUE  ((bool)1)
 # define FALSE ((bool)0)
 #endif
-#define ALESFILNAM "~/.micro7.ales" /* auto-load executable script */
-#define BLAHFILNAM "~/.micro7.blah" /* persistent scratch pad      */
-#define CLIPFILNAM "~/.micro7.clip" /* clipboard content, clip.cpp */
+#define ALESFILNAM "~/.micro7.ales" /* auto-loaded executable script */
+#define BLAHFILNAM "~/.micro7.blah" /* blah = persistent scratch pad */
+#define CLIPFILNAM "~/.micro7.clip" /* clipboard content, clip.cpp   */
+#define DECKFILNAM "~/.micro7.deck" /* deck of recently closed files */
 #define CR      '\015'
 #define LF      '\012'
 #define clipEOL '\012'

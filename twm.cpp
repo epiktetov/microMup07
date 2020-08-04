@@ -14,7 +14,7 @@
 #include "luas.h"
 extern "C" {
 #include "dq.h"
-#include "le.h" // uses Lebuf for dirlist generation
+#include "le.h"
 #include "te.h"
 #include "tx.h"
 #include "ud.h"
@@ -28,28 +28,30 @@ void tmInitialize (void)
   TeInit(); LeStart(); clipStart(); luasInit();
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-bool tmStart (QString param)
+static long extract_ipos (QString param, QString& filename)
 {
-  QRegExp ptn("(.+):(\\d+):$");
+  QRegExp ptn("([^:]+):(\\d+):");
   if (ptn.exactMatch(param)) {
-    QString filename = ptn.cap(1);
-    QString init_pos = ptn.cap(2);
-    long ipos = init_pos.toLong();
-    if (!filename.isEmpty() && ipos > 0) return twStart(filename, ipos);
-  }                                      return twStart(param,       1);
+    filename  = ptn.cap(1);
+    long ipos = ptn.cap(2).toLong();
+    if (!filename.isEmpty() && ipos > 0) return ipos;
+  }
+  filename = param; return 0;
 }
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-bool twStart (QString filename, long ipos)
+bool twStart (QString param) /* - - - - - - - - - - - - - - - - - - - - - - -*/
 {
-  Twnd = vipNewWindow(NULL, -1, -1, TM_VFORK);
-  if (twEdit(Twnd, filename)) {
+  QString                         filename;
+  long ipos = extract_ipos(param, filename);
+  Twnd = vipNewWindow(NULL, -1,-1, TM_VFORK);
+  bool ok = twEdit(Twnd, filename);
+  if  (ok) {
 #ifndef Q_OS_LINUX // force cursor on Mac and Windows (not needed on Linux, as
     vipReady();    // the application window gets focus / raise automatically)
 #endif
-    Twnd->sctw->mf->raise ();
-    Ty = ipos-1; return true; // set initial pos after twEdit (which reset it)
+    Twnd->sctw->mf->raise  ();
+    if (ipos > 0) Ty = ipos-1; // set initial pos after twEdit (which reset it)
   }
-  vipFreeWindow(Twnd); return false;
+  else vipFreeWindow(Twnd); return ok;
 }
 void twExit() { if (vipFreeWindow(Twnd)) mimExit(); }
 /*---------------------------------------------------------------------------*/
@@ -74,11 +76,13 @@ void wdetach (txt *t) /*- - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     for (wnd *vp = t->txwndptr; vp; vp = vp->wnext)
       if (vp->wnext == Twnd) { vp->wnext = Twnd->wnext; break; }
   }
-  if (t->txwndptr == NULL) t->txstat &= ~TS_WND;
-  Twnd->wtext = NULL;
-  Twnd->wnext = NULL; t->vp_wtx = Twnd->wtx; t->vp_ctx = Tx;
-                      t->vp_wty = Twnd->wty; t->vp_cty = Ty;
-}
+  Twnd->wtext = NULL; t->vp_wtx = Twnd->wtx; t->vp_ctx = Tx;
+  Twnd->wnext = NULL; t->vp_wty = Twnd->wty; t->vp_cty = Ty;
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  if (t->txwndptr == NULL) {           t->txstat &=    ~TS_WND;
+    if ((t->txstat & (TS_PSEUDO|TS_DIRLST)) == 0 && t != DKtxt)
+      saveToDeck(t->file->full_name, Ty);
+} }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static void twRedraw (txt *t)    /* redraw all attached windows after rename */
 {
@@ -98,9 +102,13 @@ bool twEdit (wnd *wind, QString filename, txt *referer, bool isNew)
                       vipRedrawWindow  (wind); return true;
 }
 void twEditNew (QString filename, txt *referer)
-{                                                        twDirPush();
-  if (!twEdit(Twnd, filename, referer ? referer : Ttxt)) twDirPop ();
-}
+{
+  QString                            real_fname;
+  long ipos = extract_ipos(filename, real_fname);          twDirPush();
+  if (!twEdit(Twnd, real_fname, referer ? referer : Ttxt)) twDirPop ();
+  else                          //                               ^
+    if (ipos > 0) Ty = ipos-1;  // if cannot start editing file, pop dir stack,
+}                               // set initial pos after twEdit if successful
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 wnd *twFork (int kcode_XFORK)
 {
@@ -109,9 +117,8 @@ wnd *twFork (int kcode_XFORK)
     wupdate  (Ttxt, Twnd);
     wattach  (Ttxt, wind); vipUpdateWinTitle(wind);
     twDirCopy(Twnd, wind); vipActivate      (wind);
-                           vipRedrawWindow  (Twnd); return wind;
-  }
-  else return NULL;
+                           vipRedrawWindow  (Twnd);
+  } return wind;
 }
 /*---------------------------------------------------------------------------*/
 void twDirPop (void)
@@ -257,45 +264,6 @@ txt *tmDesc (QString filename, bool needUndo, txt *referer)
 bool teferr (txt *t) { QString msg = QStingFERROR.arg(t->file->full_name);
                        vipError(msg);                        return false; }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-#define DIRLST_FNPOS 36      /* position of a filename in the TS_DIRLST text */
-//
-static void tmDirLST (txt *t)
-{
-  QDir *dir = QfsDir(t->file);
-  QStringList filters;   filters << (t->file->name);
-  QFileInfoList filist = dir->entryInfoList(filters, 
-         QDir::AllEntries|QDir::Hidden|QDir::System, QDir::Name);
-
-  for (QFileInfoList::const_iterator it  = filist.constBegin();
-                                     it != filist.constEnd(); ++it) {
-    QString line;
-    QFile::Permissions attr = it->permissions();
-    ushort ftattr = it->isDir() ? 0x281 : 0x280;
-    char type = QFile::symLinkTarget(it->filePath()).isEmpty()
-                       ? (it->isDir() ? 'd' : '-')   : 'l';
-    // Note:
-    // unlike the standard 'ls -l' command, the list shows file permissions of
-    // the TARGET file (but with first character changed to 'l' for symlinks)
-    //
-    line.sprintf("%lc%c%c%c%c%c%c%c%c%c%c%lc%12d %s %lc%ls", ftattr, type,
-         attr & QFile::ReadOwner  ? 'r' : '-',
-         attr & QFile::WriteOwner ? 'w' : '-',
-         attr & QFile::ExeOwner   ? 'x' : '-',
-         attr & QFile::ReadGroup  ? 'r' : '-',
-         attr & QFile::WriteGroup ? 'w' : '-',
-         attr & QFile::ExeGroup   ? 'x' : '-',
-         attr & QFile::ReadOther  ? 'r' : '-',
-         attr & QFile::WriteOther ? 'w' : '-',
-         attr & QFile::ExeOther   ? 'x' : '-',  0x280,
-         int(it->size()),  QfsModDateText(*it).cStr(),
-         ftattr, (wchar_t *)(it->fileName().utf16()));
-    TxTIL(t, Lebuf, qstr2tcs(line, Lebuf)); TxDown(t);
-  } 
-  if (t->txudeq) udclear(t); //<- reset undo start to this point (initial blank
-  t->vp_ctx = t->txlm = DIRLST_FNPOS; //         state is not very interesting)
-  t->txstat |= TS_DIRLST | TS_RDONLY;
-}
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static void check_MCD (txt *t) // TODO: check file contents instead
 {
   if (t->file->name.compare(QfsROOTFILE, QfsIGNORE_CASE) == 0) {
@@ -317,7 +285,7 @@ bool tmDoLoad (txt *t)  /*- - - - - - - - - - - - - - - - - - - - - - - - - -*/
   case QftNOFILE:              // there is no place to reload them from anyway)
   case QftNIL:    return true; //-
   case QftPSEUDO: tmLoadXeq(t); break; // - load by executing command: unix.cpp
-  case QftDIR:    tmDirLST( t); break; // - load directory listing (see above)
+  case QftDIR:    tmDirLST( t); break; // - load directory listing to that text
   case QftTEXT:
     if (t->file->lf.isEmpty() || (oc = luLF_read(t)) < 0)
     {
@@ -477,6 +445,7 @@ void twShowFile(QString name)
 }
 void twOpenALEStx() { twShowFile (ALESFILNAM); }
 void twOpenBLAHtx() { twShowFile (BLAHFILNAM); }
+void twOpenDECKtx() { twShowFile (DECKFILNAM); }
 void twNewLuaText() { twShowFile(":/new.lua");   // open file, then unlink it
      tmUnlink(Ttxt);  vipUpdateWinTitle(Twnd); } // (and update window title)
 /*---------------------------------------------------------------------------*/
@@ -626,6 +595,7 @@ int TmCommand (int kcode)
   case TM_LUAN:    twNewLuaText(); return E_OK;
   case TM_LUAA:    twOpenALEStx(); return E_OK;
   case TM_GOBLAH:  twOpenBLAHtx(); return E_OK;
+  case TM_TODECK:  twOpenDECKtx(); return E_OK;
   default:
     return E_NOCOM;
   } return E_OK;

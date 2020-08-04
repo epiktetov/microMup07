@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07           Text & Window Manager           | (c) Epi MG, 2004-2016
+// МикроМир07           Text & Window Manager           | (c) Epi MG, 2004-2020
 //------------------------------------------------------+----------------------
 #ifndef TWM_H_INCLUDED  /* Old "nm.h" (c) Attic 1989-90, (c) EpiMG 1998-2001 */
 #define TWM_H_INCLUDED  /* old "wd.h" (c) Attic 1989, then (c) EpiMG 1996,98 */
@@ -8,10 +8,11 @@
 #define MCD_LEFT     63     /* первый (основной) разделитель в micros.dir    */
 #define MCD_RIGHT    68     /* второй разделитель в micros.dir (optional)    */
 #define TXT_MARKS    20     /* макс.количество запомненных маркеров в тексте */
-#define TXT_MARK_ERR  4
-#define TXT_MARK_INFO 5
-#define TXT_MARK_SMTH 6
-#define TXT_MARK_WARN 7
+#define TXT_MARK_ERR  4     /* |                                             */
+#define TXT_MARK_INFO 5     /* | index in 'tchar txMarkT[TXT_MARKS]' array,  */
+#define TXT_MARK_SMTH 6     /* | keeping mark types, see  file te.c, line 49 */
+#define TXT_MARK_WARN 7     /* |                                             */
+#define DIRLST_FNPOS 36     /* position of a filename in the TS_DIRLST text  */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 struct txt_tag 
 {
@@ -96,13 +97,12 @@ struct wnd_tag
 void tmInitialize();
 void tmCheckFiles();
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-bool tmStart (QString param);                   /* <-- начать редактирование */
-bool twStart (QString filename, long ipos);
+bool twStart (QString param);                   /* <-- начать редактирование */
+wnd *twFork(int kcode_XFORK);
 bool twEdit  (wnd *vp, QString filename, txt *referer = 0, bool isNew = false);
 void twEditNew        (QString filename, txt *referer = 0); //  ^
-wnd *twFork(int kcode_XFORK);                               // new window, use
-void twDirPush(void);                                       // vipActivate(vp)
-void twDirPop (void);
+void twDirPush(void);                                       // new window, use
+void twDirPop (void);                                       // vipActivate(vp)
 void twDirCopy(wnd *from, wnd *to), twExit();
 //
 // Find an existing text descriptor for given file, or create new one (with or

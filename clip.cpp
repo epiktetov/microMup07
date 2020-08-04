@@ -335,3 +335,29 @@ void tedelblock()  /* delete / collapse the block (even in replacement mode) */
   scblkoff(); // unlike "clear" command this one always unmark the block (since
 }             // the text is collapsed, old selection does not make much sense)
 /*---------------------------------------------------------------------------*/
+txt *DKtxt = NULL;   /* text for deck (saved in DECKFILNAM "~/.micro7.deck") */
+#define DKsize 52
+//
+void saveToDeck (QString fname, long ty)
+{
+  int len, name_len = fname.length(), Ncolon;
+  if (DKtxt == NULL) {
+    if ((DKtxt = tmDesc(DECKFILNAM, false)) == NULL) return;
+    if (!tmLoad(DKtxt))                              return;
+  }
+  for (TxTop(DKtxt); !qTxBottom(DKtxt); TxDown(DKtxt)) {
+    char *tline = TxGetLn      (DKtxt,    &len);
+    QString qln = QString::fromUtf8(tline, len);
+    if ((Ncolon = qln.indexOf(':')) < 0) continue;
+    if (Ncolon == name_len &&
+         fname == qln.left(Ncolon)) { TxDL(DKtxt); break; }
+  }
+  TxSetY(DKtxt,     DKsize-1);
+  if (DKtxt->txy >= DKsize-1) TxDEL_end(DKtxt);
+  //- - - - - - - - - - - - - - - - - - - - - -
+  fname += QString(":%1:").arg(ty+1);
+  QByteArray utline = fname.toUtf8();
+  TxTop(DKtxt);
+  TxIL (DKtxt, utline.data(), utline.size()); tmsave(DKtxt);
+}
+/*---------------------------------------------------------------------------*/
