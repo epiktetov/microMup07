@@ -336,7 +336,9 @@ short tctoaf (tchar *orig, int len, char *dest_buf)
     if (c & AT_TAB) { 
       switch (csa) {
        default: *dest_buf++ = (char)(csa - '@'); break; /* control character */
-      case ';': *dest_buf++ = CR;                break;
+      case ';':
+        if (itc == len-1) *dest_buf++ = CR; /* convert CR at the end of line */
+        else       laf--;            break; /* remove it from text elsewhere */
       case ' ':
         for (j = itc+1; j < len && (j % TABsize) != 0
                                 && (char)orig[j] == ' '; j++) ;
