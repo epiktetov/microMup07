@@ -23,6 +23,7 @@ void tallblockop(comdesc *cp);       /* "tall cursor" block ops (exits LE)   */
 void clipToCB(), clipFromCB();       /* forced to/from clipboard operation   */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void teclin(), tecdlin();            /* te "copy line" and "copy & delete"   */
+void           teclpos();            /* te "copy current filename/position"  */
 void tecsblock(),                    /*          "character save" for blocks */
      tesdblock(),                    /*  save & delete / collapse for blocks */
      teclrblock(), tedelblock();     /* clear / delete (collapse) the block  */
@@ -32,12 +33,12 @@ extern txt *DKtxt;                   /* Deck (list of recently closed files) */
 int  Block1size (int *x0, int *x1);  /* <- Return 1-line block size (+x0/x1) */
 bool BlockXYsize(int *dx, int *dy);  /*   0 if no block, exc() if multi-line */
 int  Block1move(tchar *b, int max);
+void saveToDeck(txt *t,  long txy);
 /*---------------------------------------------------------------------------*/
 #ifdef __cplusplus
 }
 #ifdef QSTRING_H
   QString clipStatus();
-  void saveToDeck(QString full_name, long txy);
 #endif
 #include <QObject>
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07    te = Text editor - Редактор текста     | (c) Epi MG, 2006-2016
+// МикроМир07    te = Text editor - Редактор текста     | (c) Epi MG, 2006-2020
 //------------------------------------------------------+--------------------*/
 #include "mic.h"          /* Old te.c (c) Attic 1989-96, (c) EpiMG 1998,2001 */
 #include "ccd.h"
@@ -416,6 +416,7 @@ comdesc tecmds[] =
   { TE_CLIN,   teclin,     CA_LCUT |       CA_NEND }, /* запомнить строку */
   { TE_CDLIN,  tecdlin,    CA_LCUT |CA_MOD|CA_NEND }, /* - с удалением    */
   { LE_PASTE,  cpaste,              CA_MOD         }, /* вспомнить        */
+  { TE_CLPOS,  teclpos,             0              },
   { TE_TOCLIP, clipToCB,            0              },
   { TE_FROMCB, clipFromCB,          CA_MOD         },
 /*

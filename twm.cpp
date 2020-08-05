@@ -78,10 +78,9 @@ void wdetach (txt *t) /*- - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   }
   Twnd->wtext = NULL; t->vp_wtx = Twnd->wtx; t->vp_ctx = Tx;
   Twnd->wnext = NULL; t->vp_wty = Twnd->wty; t->vp_cty = Ty;
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  if (t->txwndptr == NULL) {           t->txstat &=    ~TS_WND;
-    if ((t->txstat & (TS_PSEUDO|TS_DIRLST)) == 0 && t != DKtxt)
-      saveToDeck(t->file->full_name, Ty);
+  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  if (t->txwndptr == NULL) {         t->txstat &=    ~TS_WND;
+    if ((t->txstat & (TS_PSEUDO|TS_DIRLST))==0 && t != DKtxt) saveToDeck(t,Ty);
 } }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static void twRedraw (txt *t)    /* redraw all attached windows after rename */

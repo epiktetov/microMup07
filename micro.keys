@@ -332,6 +332,7 @@ are provided for your convenience):
   Shift+F2 - save word and delete it
         F3 - add ("save") current line to copy/paste buffer
   Shift+F3 - save line and delete it
+   Home,F3 - save a line with current position (full filename, line number)
         F4 - paste the buffer content into text (does not clear the buffer)
 Note
   Multi-line text in c/p-buffer inserted depending on where it came from: block
@@ -344,6 +345,7 @@ k_(LE_CWORD,        "F2", 0xc7031) /* запомнить текущее слов
 k_(LE_CDWORD, "Shift+F2", 0xc7231) /* - - текущее слово с удалением         */
 k_(TE_CLIN,         "F3", 0xc7032) /* добавить строку в буфер ("запомнить") */
 k_(TE_CDLIN,  "Shift+F3", 0xc7232) /* - - запомнить строку с удалением      */
+k_(TE_CLPOS,   "Home,F3", 0xc7832) /* - - запомнить файл/позицию как строку */
 k_(LE_PASTE,        "F4", 0xf7033) /* вспомнить все запомненное             */
 /*
   Ctrl/Meta+C - save selection (if any), and force copy to system clipboard

@@ -6,6 +6,7 @@
 #include <QStringList>    /* old cp.c (c) Attic 1989     (c) EpiMG 1998-99   */
 #include "mim.h"
 #include "ccd.h"
+#include "qfs.h"
 #include "twm.h"
 #include "vip.h"
 #include "clip.h"
@@ -110,18 +111,27 @@ void cpsave() // flush everything we saved so far into disk file (used at exit
   if (LCtxt && (LCtxt->txstat & TS_CHANGED)) tmsave(LCtxt);
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-static void tecutlin() /* Защита от случайного нажатия на F3 вместо F4: если */
-{                      /* последнее запоминаемое было символы, откзатать (но */
-  if (cpopen) {        /*                            только 1 раз, выполнить */
-    if (cpnocl) { cpnocl = false; exc(E_LCUT); }  /*  затребованную операцию */
-    else CSclose(); }                             /*   если user настаивает) */
-  else   CPempty();
-  clbuf[0] = CpSCH_NEW_LINE; int len = TxRead(Ttxt, clbuf+1);
+/* Защита от случайного нажатия на F3 вместо F4: если последнее запоминаемое */
+/* было символы, отказать (но только 1 раз, выполнить затребованную операцию */
+/*                                             если пользователь настаивает) */
+static void tecutlin (int len)
+{
+       if (!cpopen) CPempty();
+  else if (!cpnocl) CSclose();
+  else    { cpnocl =  false; exc(E_LCUT); }
+  clbuf[0] = CpSCH_NEW_LINE;
   TxBottom(LCtxt);
   TxIL(LCtxt, clbuf, len+1); LCtxt->txstat |= TS_CHANGED; cpempt = false;
 }
-void teclin()  { tecutlin(); Ty++;       }
-void tecdlin() { tecutlin(); TxDL(Ttxt); }
+static int pos_to_clbuf1 (txt *t, long ty)
+{
+  char *p = scpy(t->file->full_name.uStr(), clbuf+1);
+       *p++ = ':';                   p = ltod(p, ty);
+       *p++ = ':';            return p -   (clbuf+1);
+}
+void teclin()  { tecutlin( TxRead(Ttxt, clbuf+1) ); Ty++;       }
+void tecdlin() { tecutlin( TxRead(Ttxt, clbuf+1) ); TxDL(Ttxt); }
+void teclpos() { tecutlin(pos_to_clbuf1(Ttxt, Ty));             }
 /*---------------------------------------------------------------------------*/
 void cpclose() { CSclose(); cpopen = false; }
 void cpreopen() 
@@ -338,26 +348,23 @@ void tedelblock()  /* delete / collapse the block (even in replacement mode) */
 txt *DKtxt = NULL;   /* text for deck (saved in DECKFILNAM "~/.micro7.deck") */
 #define DKsize 52
 //
-void saveToDeck (QString fname, long ty)
+void saveToDeck (txt *t, long ty)
 {
-  int len, name_len = fname.length(), Ncolon;
+  QString fname = t->file->full_name;          char *pline = clbuf+1;
+  int len, name_len = fname.length(), pos_len = pos_to_clbuf1(t, ty);
   if (DKtxt == NULL) {
     if ((DKtxt = tmDesc(DECKFILNAM, false)) == NULL) return;
     if (!tmLoad(DKtxt))                              return;
   }
   for (TxTop(DKtxt); !qTxBottom(DKtxt); TxDown(DKtxt)) {
-    char *tline = TxGetLn      (DKtxt,    &len);
-    QString qln = QString::fromUtf8(tline, len);
-    if ((Ncolon = qln.indexOf(':')) < 0) continue;
-    if (Ncolon == name_len &&
-         fname == qln.left(Ncolon)) { TxDL(DKtxt); break; }
+    char *tline = TxGetLn(DKtxt, &len);
+    if (len > name_len         &&
+        tline[name_len] == ':' &&
+        memcmp(tline, pline, name_len) == 0) { TxDL(DKtxt); break; }
   }
   TxSetY(DKtxt,     DKsize-1);
   if (DKtxt->txy >= DKsize-1) TxDEL_end(DKtxt);
-  //- - - - - - - - - - - - - - - - - - - - - -
-  fname += QString(":%1:").arg(ty+1);
-  QByteArray utline = fname.toUtf8();
   TxTop(DKtxt);
-  TxIL (DKtxt, utline.data(), utline.size()); tmsave(DKtxt);
+  TxIL (DKtxt, pline, pos_len);  tmsave(DKtxt);
 }
 /*---------------------------------------------------------------------------*/
