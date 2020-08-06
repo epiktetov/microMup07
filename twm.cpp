@@ -30,7 +30,7 @@ void tmInitialize (void)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static long extract_ipos (QString param, QString& filename)
 {
-  QRegExp ptn("([^:]+):(\\d+):");
+  QRegExp ptn("(.+):(\\d+):");
   if (ptn.exactMatch(param)) {
     filename  = ptn.cap(1);
     long ipos = ptn.cap(2).toLong();
@@ -81,7 +81,7 @@ void wdetach (txt *t) /*- - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   if (t->txwndptr == NULL) {           t->txstat &=   ~TS_WND;
     if ((t->txstat & (TS_PSEUDO|TS_DIRLST)) == 0 && t != DKtxt
-      && t->file->full_name.indexOf(':')    <  0)  saveToDeck(t, Ty);
+      && t->file->full_name.at(0) != ':'  ) saveToDeck(t, Ty);
 } }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static void twRedraw (txt *t)    /* redraw all attached windows after rename */
