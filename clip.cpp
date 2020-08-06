@@ -126,8 +126,8 @@ static void tecutlin (int len)
 static int pos_to_clbuf1 (txt *t, long ty)
 {
   char *p = scpy(t->file->full_name.uStr(), clbuf+1);
-       *p++ = ':';                   p = ltod(p, ty);
-       *p++ = ':';            return p -   (clbuf+1);
+       *p++ = ':';                 p = ltod(p, ty+1);
+       *p++ = ':';          return p -     (clbuf+1);
 }
 void teclin()  { tecutlin( TxRead(Ttxt, clbuf+1) ); Ty++;       }
 void tecdlin() { tecutlin( TxRead(Ttxt, clbuf+1) ); TxDL(Ttxt); }
