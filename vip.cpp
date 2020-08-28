@@ -471,7 +471,7 @@ inline int vipDoFind (QString line, int st_len, int from_pos, bool backward)
 } }
 int vipFind (char *str, int st_len, int from_pos, bool backward)
 {
-  QString line = QString::fromUtf8(str, st_len);
+  QString line = QString::fromUtf8(str, st_len);   st_len = line.size();
   int pos, i;
   for (pos = i = 0; i < st_len && pos < from_pos; pos++,i++)
     if (line.at(i).unicode() == 9) pos += TABsize - (pos % TABsize) - 1;

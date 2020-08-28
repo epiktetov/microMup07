@@ -319,8 +319,8 @@ void tesdown (void)
       if (qkbhin())       exc(E_KBREAK); TxDown(Ttxt);
       if (qTxBottom(Ttxt)) exc(E_SFAIL);       x = -1;
     } 
-    else { Ty = Ttxt->txy;
-           Tx = x; return; }
+    else { Ty = Ttxt->txy; if (x > Ttxt->txrm) exc(E_EDTEND);
+           Tx = x;                                    return; }
 } }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tesup(void) 
@@ -333,8 +333,8 @@ void tesup(void)
     }
     char *str = TxGetLn(Ttxt, &len); x = vipFind(str,len, (x<0)?len:x-1, true);
     if (x >= 0) {
-      Ty = Ttxt->txy;
-      Tx = x; return;
+      Ty = Ttxt->txy; if (x > Ttxt->txrm) exc(E_EDTEND);
+      Tx = x;                                    return;
 } } }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static int tereplace()
