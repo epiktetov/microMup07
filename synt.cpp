@@ -19,7 +19,7 @@ short SyntKnownLang (QString filename)
 {                                         // temporarily Objective-C == C++
   QRegExp ShFile(".+\\.sh");              //
   QRegExp CppFile(".+\\.(c|cpp|cxx|h|hpp|hxx|m|mm)", Qt::CaseInsensitive);
-  QRegExp LuaFile(".+\\.lua");
+  QRegExp LuaFile(".+\\.(lua|ales)");
   QRegExp PerlFile(".+\\.pl");
   QRegExp PythonFile(".+\\.py");
        if (ShFile.exactMatch(filename))     return CLangSH + CLangDISABLED;

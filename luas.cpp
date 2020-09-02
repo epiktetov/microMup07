@@ -505,9 +505,10 @@ static int luLF_addText(lua_State*)                     //---------------------
 {                                     size_t len;
   const char *text = luaL_checklstring(L,1,&len);
   size_t gap = cpdiff(tLF->txdstk->dbeg, tLF->txustk->dend);
-  if (len+MAXTXRM > gap)      luaL_error(L,"out-of-memory");
+  if (len+MAXTXRM > gap)      luaL_error(L,"out-of-memory"); int nLF = 0;
+  for (const char *p = text; (p = strchr(p,'\n')) != NULL; p++)    nLF++;
   DqAddE(tLF->txustk, (char*)text, len);
-  tLF->txy++;                  return 0;
+  tLF->txy += nLF+1;           return 0;
 }
 // MkLF["filter"] = function(filename,addText) -- this function will be called
 //   for str in io.lines(filename) do          -- for filenames specified with
