@@ -420,7 +420,7 @@ int vipOnRegCmd (wnd *vp, int kcode)                     /* regular commands */
       case E_LEXIT: continue; // <-- re-try the command on TE and/or TM level
       case E_OK:       break;
       case E_KBREAK: vipBell();              break;
-      default:       vipBell(); setkbhin(1); break; // we've done here, break
+      default: vipErrEvent(rc); setkbhin(1); break; // we've done here, break
       }                                      break; // the while(KbCode) loop
     }
     else if ((cp = Tdecode(KbCode)) != NULL) rc = TeCommand(cp);
@@ -432,7 +432,7 @@ int vipOnRegCmd (wnd *vp, int kcode)                     /* regular commands */
     case E_LENTER: rc = E_OK; break; // - LenterARG called
     case E_OK:                break; // - everything all right
     case E_KBREAK: vipBell(); break; // - KB break (kbhin already set)
-    default:       vipBell();        // - some error encountered => place
+    default: vipErrEvent(rc);        // - some error encountered => place
                  setkbhin(1); break; //       an interript into kbhin queue
     }                       
     KbCode  = 0; // cleanup KbStuff (and force end-of-loop as well)
@@ -586,6 +586,10 @@ void vipFileTooBigError (qfile *f, long size)
 {
   vipError(QString("File %1 is too big (size: %2), truncated")
                          .arg(QfsShortName(f)).arg(size));
+}
+void vipErrEvent (int E_code)
+{
+  vipBell(); // if (Twnd) Twnd->sctw->DisplayInfo(QString("e:%1").arg(E_code));
 }
 /*---------------------------------------------------------------------------*/
 QString vipQstrX (QString str)                /* currently not used anywhere */

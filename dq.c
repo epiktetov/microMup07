@@ -37,21 +37,21 @@ static deq deq0, *freedeqs = NIL, *gapdeq, *lockdeq;
 static bool DqReserveExt  = TRUE;
 static long tmswap(long req_mem); /* выкидывает заменимое, return: available */
 /*---------------------------------------------------------------------------*/
-void DqInit(char *membuf, long bufsize)     /* create "anti-deq" that covers */
+deq *DqInit(char *membuf, long bufsize)     /* create "anti-deq" that covers */
 {                                           /* memory that other deqs cannot */
   deq0.dbext = 0; gapdeq = NIL;             /* use (it has reverse beg/end)  */
   deq0.deext = 0;
   deq0.dprev = &deq0;  deq0.dend = membuf;
-  deq0.dnext = &deq0;  deq0.dbeg = membuf+bufsize;
+  deq0.dnext = &deq0;  deq0.dbeg = membuf+bufsize; return &deq0;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-deq *DqNew (short typ, short bext, short eext)
+deq *DqNew (short typ, short bext, short eext, txt *town)
 {
   deq *d; if (freedeqs) { d = freedeqs; freedeqs = d->dnext; }
           else            d = (deq*)xmalloc(sizeof(deq));
   deq *dn = deq0.dprev;
   d->dprev = dn;
-  dn->dnext = d;                    d->dtyp  = typ;
+  dn->dnext = d;   d->owner = town; d->dtyp  = typ;
   d->dnext = &deq0; deq0.dprev = d; d->dbext = bext;
   d->dbeg = d->dend = dn->dend;     d->deext = eext; return d;
 }
@@ -125,6 +125,7 @@ void extgap (deq *d, long len, bool move_previous)
   if (DqFree() < len && tmswap(len) < len) { /* Если нет места: swap smthng */
     DqReserveExt = FALSE;                    /* still fail => ignore extent */
     if (DqFree() < len) {
+      tmDumpDeqs();
       vipError( "Нет памяти (out ot memory)"); exc(E_NOMEM);
   } }
   for (delta = deq0.dextra, d = deq0.dnext; d != d2nd; d = d->dnext) {

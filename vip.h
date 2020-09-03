@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07 ViewPort (interface Qt/C++ • legacy code) | (c) Epi MG, 2006-2016
+// МикроМир07 ViewPort (interface Qt/C++ • legacy code) | (c) Epi MG, 2006-2020
 //------------------------------------------------------+--------------------*/
 #ifndef VIP_H_INCLUDED  /* Old "nm.h" (c) Attic 1989-90, (c) EpiMG 1998-2001 */
 #define VIP_H_INCLUDED  /* old "wd.h" (c) Attic 1989, then (c) EpiMG 1996,98 */
@@ -108,9 +108,11 @@ int vipConvert (tchar *str, int str_len, int cvt_type, tchar *out_buf);
 #define cvTO_RADIX   16 /* number to any base (default hex)         returned */
 /*---------------------------------------------------------------------------*/
 void vipError (const char *message);                              /* vip.cpp */
+void vipErrEvent (int E_code_mic_h);
 #ifdef QFS_H_INCLUDED
   void vipFileTooBigError(qfile *f, long size);
 #endif
+void tmDumpDeqs();
 #ifdef __cplusplus
 }
 #endif

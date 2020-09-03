@@ -19,11 +19,12 @@ extern "C" {
 #include "tx.h"
 #include "ud.h"
 }
+static deq *deq0_for_debug = NULL;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tmInitialize (void)
-{
-  long memsize;
-  char *membuf = MemInit(&memsize); DqInit(membuf, memsize);
+{                            long memsize;
+  char   *membuf = MemInit     (&memsize);
+  deq0_for_debug = DqInit(membuf,memsize);
   TxInit();
   TeInit(); LeStart(); clipStart(); luasInit();
 }
@@ -271,6 +272,31 @@ static void check_MCD (txt *t) // TODO: check file contents instead
                          t->txrm = MCD_LEFT;
 } }
 /*---------------------------------------------------------------------------*/
+void tmDumpDeqs()             /* dump all deqs info to debug memory problems */
+{
+  qfile   *qf = QfsNew("~/.micro7.dump",  NULL);
+  FILE *dumpf = fopen(qf->full_name.cStr(),"w");
+  if   (dumpf == NULL)                   return;
+  const char *fname;
+  for (deq *d = deq0_for_debug->dnext; d != deq0_for_debug; d = d->dnext) {
+    if (d->dtyp == DT_TEXT) {
+      fname = d->owner->file ? d->owner->file->full_name.cStr() : "NULL";
+      fprintf(dumpf, "\n%04x:%s\n ", d->owner->txstat,            fname);
+    }
+    fprintf(dumpf, "%c%c", d->dbext? '{' : '[', d->dtyp);
+    long len = DqLen(d);
+         if (len > 1048576) fprintf(dumpf, "%ldM", (len+524288)/1048576);
+    else if (len > 1024)    fprintf(dumpf, "%ldk", (len+512)   /1024   );
+    else                    fprintf(dumpf, "%ld",   len                );
+    fprintf(dumpf, "%c", d->deext ? '}' : ']');
+    long gap = cpdiff(d->dnext->dbeg, d->dend);
+         if (gap > 1048576) fprintf(dumpf, "-%ldM-", (gap+524288)/1048576);
+    else if (gap > 1024)    fprintf(dumpf, "-%ldk-", (gap+512)   /1024   );
+    else if (gap > 0)       fprintf(dumpf, "-%ld-",   gap                );
+  }
+  fprintf(dumpf, "\n"); fclose(dumpf); delete qf;
+}
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tmDumpList() /* dumps the list of all text objects (for debug purposes) */
 {
   for (txt *tx = texts; tx; tx = tx->txnext) {
@@ -596,6 +622,7 @@ int TmCommand (int kcode)
   case TM_LUAA:    twOpenALEStx(); return E_OK;
   case TM_GOBLAH:  twOpenBLAHtx(); return E_OK;
   case TM_TODECK:  twOpenDECKtx(); return E_OK;
+  case TM_LDBG:    tmDumpDeqs  (); return E_OK;
   default:
     return E_NOCOM;
   } return E_OK;

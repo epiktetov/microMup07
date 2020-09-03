@@ -516,6 +516,7 @@ these commands (plus ":/auto.lua" automatically loaded/executed at startup):
 k_(TM_LUAF,    "^J,Ctrl+J", 0xfc000) /* загрузить и выполнить программу на   */
 k_(TM_LUAS, "Ctrl+Shift+J", 0xfcc00) /*  языке Lua из текущего текста/строки */
 k_(TM_LUAA, "^J,A",         0xfc00a)
+k_(TM_LDBG, "^J,D",         0xfc00d)
 k_(TM_LUAN, "^J,N",         0xfc00e) /* ? likely to be removed in the future */
 /*
 MicroMir-specific Lua objects and operations

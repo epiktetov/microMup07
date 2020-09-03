@@ -1,12 +1,9 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07       Деки (deques) для Tx и Undo         | (c) Epi MG, 2007-2014
+// МикроМир07       Деки (deques) для Tx и Undo         | (c) Epi MG, 2007-2020
 //------------------------------------------------------+--------------------*/
 #ifndef DQ_H_INCLUDED                           /* Old "dq.h" (c) Attic 1989 */
 #define DQ_H_INCLUDED
 
-void DqInit(char *membuf, long bufsize);
-long DqFree();                               /* <- total free memory in deqs */
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 struct deq_tag
 {
   char     *dbeg, *dend;   /* указатель на начало / за конец дека            */
@@ -15,13 +12,18 @@ struct deq_tag
                  *dprev;   /* предыдущий дек                                 */
   long           dextra;   /* промежуток свыше квоты                         */
   short            dtyp;   /* тип дека: 't'ext, 'u'ndo, 's'ynt-info          */
+  struct txt_tag *owner;   /* +ссылка на текст-владелец (только для отладки) */
 };
-/* Типы деков - поле dtyp (младший бит означает двоичный дек:  */
-#define DT_TEXT 't' /* верхний/нижний стек для текстов (ascii) */
+/* Типы деков - поле dtyp (младший бит означает двоичный дек): */
+#define DT_TEXT 'T' /* верхний стек (ustk) для текстов (ascii) */
+#define DT_TXTD 't' /* нижний стек (dstk)              (ascii) */
 #define DT_UNDO 'u' /* буфер откатки                  (binary) */
 #define DT_SYNT 's' /* буфер для Syntax checker       (binary) */
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+deq *DqInit(char *membuf, long bufsize);
+long DqFree();                               /* <- total free memory in deqs */
 /*---------------------------------------------------------------------------*/
-deq *DqNew(short typ, short bext, short eext);
+deq *DqNew(short typ, short bext, short eext, txt *town);
 bool DqDel(deq *d);
 
 #define DT_IsBIN(dtyp) (dtyp & 1)

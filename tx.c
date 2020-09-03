@@ -38,11 +38,13 @@ txt *TxNew(bool qundo) /* Создание текста / удаление он�
     if (tprev) tprev->txnext = t;
     else               texts = t;
   }
-  t->txustk = DqNew(DT_TEXT, 0, MAXLUP); t->txudfile = -1; TxMarks0(t);
-  t->txdstk = DqNew(DT_TEXT, MAXLUP, 0);
-  t->txudeq = qundo ? DqNew(DT_UNDO, 0, UDLQUOTA) : NIL; t->txlm = 0;
-  t->txudcptr = t->txudlptr  = 0;     t->txwndptr = NIL; t->txrm =    MAXTXRM;
-  t->clustk   = t->cldstk    = 0;     t->txlructr = 0;   t->txstat |= TS_BUSY;
+  t->txustk = DqNew(DT_TEXT, 0, MAXLUP, t); t->txudfile = -1; TxMarks0(t);
+  t->txdstk = DqNew(DT_TXTD, MAXLUP, 0, t);
+  t->txudeq = qundo ? DqNew(DT_UNDO, 0, UDLQUOTA, t) : NIL;
+  t->txlm = 0;
+  t->txrm = MAXTXRM;
+  t->txudcptr = t->txudlptr = 0; t->txwndptr = NIL;  t->txstat |= TS_BUSY;
+  t->clustk   = t->cldstk   = 0; t->txlructr = 0;
   t->clang  = 0;
   t->vp_ctx = t->vp_wtx = 0; t->txy = t->maxTy = 0;
   t->vp_cty = t->vp_wty = 0;
@@ -54,8 +56,8 @@ txt *TxNew(bool qundo) /* Создание текста / удаление он�
 void TxEnableSynt (txt *t, short clang)       /* add deqs for syntax checker */
 {
   if (( t->clang = clang ) && t->clustk == NIL && t->cldstk == NIL) {
-    t->clustk = DqNew(DT_SYNT, 0, MAXLPAC);
-    t->cldstk = DqNew(DT_SYNT, MAXLPAC, 0);
+    t->clustk = DqNew(DT_SYNT, 0, MAXLPAC, t);
+    t->cldstk = DqNew(DT_SYNT, MAXLPAC, 0, t);
 } }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void TxMarks0 (txt *t)        /* clear (set to zero) all marks in given text */
