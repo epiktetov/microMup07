@@ -311,7 +311,7 @@ void lecbold()
 }                                                      // window is updated
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void lemovleft() 
-{ 
+{
   int x0,x1; if (Block1size(&x0, &x1)) BlockTx--;
              else { x0 = Lx;
                     x1 = Lxre; } Lx--; llmove(x0-1, x1, -1, NIL);
@@ -320,7 +320,7 @@ void lemovright() /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 { 
   int x0,x1; if (Block1size(&x0, &x1)) BlockTx++;
              else { x0 = Lx;
-                    x1 = Lxre; } Lx++; llmove(x0, x1+1, +1, NIL);
+                    x1 = Lxre-1; } Lx++; llmove(x0, x1+1, +1, NIL);
 }
 /*---------------------------------------------------------------------------*/
 static tchar *tpstrdup (tchar *tline, int len) /* duplicate as Pascal string */
