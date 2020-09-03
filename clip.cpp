@@ -364,7 +364,7 @@ void saveToDeck (txt *t, long ty)
   }
   TxSetY(DKtxt,     DKsize-1);
   if (DKtxt->txy >= DKsize-1) TxDEL_end(DKtxt);
-  TxTop(DKtxt);
-  TxIL (DKtxt, pline, pos_len);  tmsave(DKtxt);
+  TxTop(DKtxt);    TxIL(DKtxt, pline, pos_len);
+  DKtxt->txstat |= TS_CHANGED;   tmsave(DKtxt);
 }
 /*---------------------------------------------------------------------------*/
