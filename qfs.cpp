@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07           Qt-based File System            | (c) Epi MG, 2007-2018
+// МикроМир07           Qt-based File System            | (c) Epi MG, 2007-2020
 //------------------------------------------------------+----------------------
 #include <QString>
 #include "mic.h"
@@ -116,7 +116,8 @@ int QfsOpen (qfile *file, int open_mode)
     unsigned char                          pbuf[6];
     if (tfile->Qf.peek((char*)pbuf,6) == 6 &&
         ( (pbuf[0] == 0xFF && pbuf[1] == 0xFE) ||
-          (pbuf[1] == 0    && pbuf[3] == 0 && pbuf[5] == 0) )) {
+          (pbuf[0] != 0    && pbuf[2] != 0 && pbuf[4] != 0 &&
+           pbuf[1] == 0    && pbuf[3] == 0 && pbuf[5] == 0) )) {
       file->utf16le = true;
       file->size   /=    2; // simplified UTF-16 support works by just dropping
     }             return 1; // every second character from file (usually zeros)

@@ -41,7 +41,7 @@ deq *DqInit(char *membuf, long bufsize)     /* create "anti-deq" that covers */
 {                                           /* memory that other deqs cannot */
   deq0.dbext = 0; gapdeq = NIL;             /* use (it has reverse beg/end)  */
   deq0.deext = 0;
-  deq0.dprev = &deq0;  deq0.dend = membuf;
+  deq0.dprev = &deq0;  deq0.dend = membuf;      deq0.dextra = 0;
   deq0.dnext = &deq0;  deq0.dbeg = membuf+bufsize; return &deq0;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -66,20 +66,20 @@ bool DqDel (deq *d)
     d->dnext = freedeqs;  freedeqs = d; return TRUE;
 } }
 /*---------------------------------------------------------------------------*/
-long DqFree()                         /* calculate total free memory in deqs */
-{                                     /*   if DqReserveExt => don't consider */
-  deq *d = &deq0;                     /*   memory under extents to be "free" */
-  long f = 0;
-  do {
+long DqFree()        /* calculate total free memory in deqs, if DqReserveExt */
+{                    /* => do not consider memory under extents to be "free" */
+  long total = 0;
+  for (deq *d = deq0.dnext; d != &deq0; d = d->dnext) {
     long len = cpdiff(d->dnext->dbeg, d->dend);
     if (DqReserveExt) {
       long maxext = my_max(d->deext, d->dnext->dbext);
       if (len > maxext) len -= maxext;
       else              len  =      0;
     }
-    f += (d->dextra = len & (~1));
+    d->dextra = len & (~1); // extra memory that may be reclaimed for this deq
+    total    +=  d->dextra; // + total reclaimable memory for all active deqs
   }
-  while ((d = d->dnext) != &deq0); return f;
+  return total;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #include <stdio.h>
@@ -122,6 +122,7 @@ void extgap (deq *d, long len, bool move_previous)
                     len, move_previous ? ",prev" : ""); DqPrintDeqs(); }
   if (d1st->deext > len) len = d1st->deext;
   if (d2nd->dbext > len) len = d2nd->dbext;
+ /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   if (DqFree() < len && tmswap(len) < len) { /* Если нет места: swap smthng */
     DqReserveExt = FALSE;                    /* still fail => ignore extent */
     if (DqFree() < len) {

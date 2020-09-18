@@ -10,7 +10,7 @@ struct deq_tag
   short    dbext, deext;   /* оптимальный размер экстента для начала / конца */
   struct deq_tag *dnext,   /* следующий дек                                  */
                  *dprev;   /* предыдущий дек                                 */
-  long           dextra;   /* промежуток свыше квоты                         */
+  long           dextra;   /* промежуток свыше квоты (set for all by DqFree) */
   short            dtyp;   /* тип дека: 't'ext, 'u'ndo, 's'ynt-info          */
   struct txt_tag *owner;   /* +ссылка на текст-владелец (только для отладки) */
 };
