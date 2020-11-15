@@ -266,14 +266,12 @@ void MiFrame::closeEvent (QCloseEvent *ev)
   else                                     ev->ignore();
 }                                    
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-bool MiFrame::safeClose (MiScTwin *sctw)  // NOTE: sctw pointer in the MiFrame
-{                                         // is supposed to be cleaned up from
-  if (sctw == NULL) return true;          // twSafeClose/twExit->vipFreeWindow
-  txt *t = sctw->vp->wtext;
-  if (twSafeClose(t, sctw->vp)) return true;
+bool MiFrame::safeClose (MiScTwin *sctw)
+{
+  if (sctw == NULL || twSafeClose(sctw->vp)) return true;
   if (mbox) delete mbox;
   mbox = new QMessageBox(Utf8("µMup07 warning"),
-          t->file->name+" has been modified.\n"
+                sctw->vp->wtext->file->name + " has been modified.\n"
            "Do you want to save your changes?", QMessageBox::Warning,
         QMessageBox::Save|QMessageBox::Default, QMessageBox::Discard,
        QMessageBox::Cancel|QMessageBox::Escape, this,     Qt::Sheet);

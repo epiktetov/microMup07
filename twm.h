@@ -65,6 +65,8 @@ struct txt_tag
 void wattach(txt *text, wnd *vp);
 void wupdate(txt *text, wnd *vp);
 void wdetach(txt *text);
+#define TxCHANGED(_t)   ((_t->txstat &            TS_CHANGED) != 0)
+#define TxTHROWAWAY(_t) ((_t->txstat & (TS_PSEUDO|TS_DIRLST)) != 0)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 struct dirstk_tag
 {
@@ -117,8 +119,8 @@ void tmFentr  (void),
 void tmLoadIn(txt *t, QString  filename); // replace (empty) text with the file
 bool tmSaveAs(txt *t, QString  filename); // rename to given name && force save
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-bool twSave     (txt *t, wnd *vp); /* either Save or SaveAs */
-bool twSafeClose(txt *t, wnd *vp); /* close if not changed  */
+bool twSave     (txt *t, wnd *vp);     /* either Save (where read) or SaveAs */
+bool twSafeClose        (wnd *vp);     /* detaches windows, if safe to close */
 void twShowFile(QString filename);
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 extern "C" {

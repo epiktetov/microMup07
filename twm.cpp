@@ -79,10 +79,11 @@ void wdetach (txt *t) /*- - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   }
   Twnd->wtext = NULL; t->vp_wtx = Twnd->wtx; t->vp_ctx = Tx;
   Twnd->wnext = NULL; t->vp_wty = Twnd->wty; t->vp_cty = Ty;
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  if (t->txwndptr == NULL) {           t->txstat &=   ~TS_WND;
-    if ((t->txstat & (TS_PSEUDO|TS_DIRLST)) == 0 && t != DKtxt
-      && t->file->full_name.at(0) != ':'  ) saveToDeck(t, Ty);
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  if (t->txwndptr == NULL) {           t->txstat &= ~TS_WND;
+    if (TxTHROWAWAY(t)  ||   t == DKtxt) return;
+    if (t->file->full_name.at(0) == ':') return;
+    else                      saveToDeck(t, Ty);
 } }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static void twRedraw (txt *t)    /* redraw all attached windows after rename */
@@ -374,10 +375,9 @@ void tmUnlink (txt *t)          // unlink text from the file (change to PSEUDO)
 /*---------------------------------------------------------------------------*/
 bool tmsave (txt *t)
 {
-  if (t->file == NULL || (t->txstat & (TS_PSEUDO|TS_DIRLST)) ||
-                        !(t->txstat &  TS_CHANGED)) return TRUE;
+  if (t->file == NULL || !TxCHANGED(t) || TxTHROWAWAY(t)) return true;
   else
-  if (t->file->ft != QftTEXT)  return FALSE; // use twSave() for other types
+  if (t->file->ft != QftTEXT)  return false; // use twSave() for other types
   TxTop(t); long deqsize = DqLen(t->txdstk);
   if (deqsize) {
     int omode = ((t->txstat & TS_NEW) || t->file->size > deqsize) ? FO_NEW
@@ -418,8 +418,8 @@ bool tmSaveAs (txt *t, QString  fn)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 bool twSave (txt *t, wnd *vp)
 {
-  if (t->txstat & (TS_PSEUDO|TS_DIRLST)) return true;
-  else if (t->file->ft == QftTEXT)       return tmsave(t);
+  if (TxTHROWAWAY(t))              return true;
+  else if (t->file->ft == QftTEXT) return tmsave(t);
   else if (t->txstat & TS_CHANGED) {
     QString new_name = vp->sctw->mf->saveAsDialog(t);
     if (!new_name.isEmpty()) return tmSaveAs(t, new_name);
@@ -434,13 +434,18 @@ void tmSaveAll (void)                    /* сохранить ВСЕ измен
       else             tmsave(t);              //         (will ask for name)
 } } }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-bool twSafeClose (txt *t, wnd *vp)
+bool twSafeClose (wnd *vp)           /* NOTE: directory stack is NOT checked */
 {
-  if ((t->txstat & TS_CHANGED) && !(t->txstat & (TS_PSEUDO|TS_DIRLST))
-                               && t->txwndptr->wnext == NULL) return false;
-  Twnd =  vp;
-  wdetach(t); twExit(); return true; /* NOTE: directory stack is NOT checked */
-}
+  txt *t  =  vp->wtext;
+  wnd *other_vp = NULL;
+  if (TxCHANGED(t) && !TxTHROWAWAY(t)) {
+    for (wnd *w = windows; w != NULL; w = w->wdnext)
+                       if (w != vp && w->wtext == t) other_vp = w;
+    if (other_vp == NULL)                            return false;
+  }
+  Twnd =  vp;              // return false (not safe to close) if given window
+  wdetach(t); return true; // has changed text that's not throw-away type (and
+}                          // no other window), true if window safely detached
 /*---------------------------------------------------------------------------*/
 #define  FPROMPT AF_PROMPT "File:"
 #define LFPROMPT 5
@@ -579,8 +584,8 @@ int TmCommand (int kcode)
     twDirPop();
     break;
   case TM_QUIT:                                      /* выйти из окна совсем */
-    Twnd->sctw->mf->safeClose(Twnd->sctw);
-    break;
+    if (twSafeClose(Twnd)) twExit();
+    else return E_SFAIL;      break;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   case TM_FNEW:   tmFnewByTtxt(); break; /* войти в новый файл (имя из Ttxt) */
   case TM_FENTR:  tmFentr  ();    break; /* ввести имя файла...              */
