@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07    te = Text editor - Редактор текста     | (c) Epi MG, 2006-2020
+// МикроМир07    te = Text editor - Редактор текста     | (c) Epi MG, 2006-2022
 //------------------------------------------------------+--------------------*/
 #include "mic.h"          /* Old te.c (c) Attic 1989-96, (c) EpiMG 1998,2001 */
 #include "ccd.h"
@@ -419,6 +419,14 @@ comdesc tecmds[] =
   { TE_CLPOS,  teclpos,             0              },
   { TE_TOCLIP, clipToCB,            0              },
   { TE_FROMCB, clipFromCB,          CA_MOD         },
+  { TE_LD1UP,  teldpgUp,            CA_MOD         }, /* ┐  line-drawing  */
+  { TE_LD1LT,  teldpgLeft,          CA_MOD         }, /* │ pseudo-graphic */
+  { TE_LD1DN,  teldpgDown,          CA_MOD         }, /* │  (single line) */
+  { TE_LD1RT,  teldpgRight,         CA_MOD         }, /* ┘                */
+  { TE_LD2UP,  teldpgDblUp,         CA_MOD         }, /* ╗              ↑ */
+  { TE_LD2LT,  teldpgDblLeft,       CA_MOD         }, /* ║ line-drawing ← */
+  { TE_LD2DN,  teldpgDlbDown,       CA_MOD         }, /* ║  double line ↓ */
+  { TE_LD2RT,  teldpgDlbRight,      CA_MOD         }, /* ╝              → */
 /*
  * Implemented in ud.c (declaration in "ud.h"), the same functions as in le.c
  */

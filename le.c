@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07    le = Line Editor -- Редактор строки    | (c) Epi MG, 2006-2020
+// МикроМир07    le = Line Editor -- Редактор строки    | (c) Epi MG, 2006-2022
 //------------------------------------------------------+--------------------*/
 #include "mic.h"             /* Old le.c (c) Attic 1989, (c) EpiMG 1996-2003 */
 #include "ccd.h"
@@ -142,7 +142,7 @@ void llmove (int xl, int xr, int dx, tchar *ns) /* Move: xl - start position */
 }
 void ledeol();    /* == llmove(Lx, Lxre, REPLACE, NIL); used in leLLCE below */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-static void llchar (tchar lchar)
+void llchar (tchar lchar)    /* replace current character (and force redraw) */
 {
   int x = Lx; lundoadd(Ltxt, x, x+1, REPLACE, Lebuf+x, &lchar);
 

@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07  Clipboard (using wxClipboard) & CS/LS op | (c) Epi MG, 2007-2020
+// МикроМир07  Clipboard (using wxClipboard) & CS/LS op | (c) Epi MG, 2007-2022
 //------------------------------------------------------+----------------------
 #include <QApplication>   /* Old le.c (c) Attic 1989,    (c) EpiMG 1996-2003 */
 #include <QClipboard>     /* old te.c (c) Attic 1989-96, (c) EpiMG 1998,2001 */
@@ -32,6 +32,7 @@ void clipStart()
                    theDummyClip,      SLOT(changed1()));
   QObject::connect(theClipboard, SIGNAL(selectionChanged()),
                    theDummyClip,           SLOT(changed2()));
+  ldpgInit();
 }
 // - - - - - - - - - - - - - - - - - - -
 void clipChanged (QClipboard::Mode mode)
@@ -367,4 +368,60 @@ void saveToDeck (txt *t, long ty)
   TxTop(DKtxt);    TxIL(DKtxt, pline, pos_len);
   DKtxt->txstat |= TS_CHANGED;   tmsave(DKtxt);
 }
+/*---------------------------------------------------------------------------*/
+// Line drawing with pseudo-graphic Unicode characters:
+//
+static const char ldpgC[] = "┌───┬┐└┴┘│││├┼┤╒╤╕╘╧╛╞╪╡╓╥╖╙╨╜╟╫╢╔═══╦╗╚╩╝║║║╠╬╣";
+static unsigned  ldpgDM[] =
+{ // ┌    ─    ─    ─    ┬    ┐    └    ┴    ┘    │    │    │    ├    ┼    ┤
+  0x05,0x03,0x01,0x02,0x07,0x06,0x09,0x0B,0x0A,0x0C,0x04,0x08,0x0D,0x0F,0x0E,
+  // ╒                   ╤    ╕    ╘    ╧    ╛                   ╞    ╪    ╡
+  0x14,               0x34,0x24,0x18,0x38,0x28,               0x1C,0x3C,0x2C,
+  // ╓                   ╥    ╖    ╙    ╨    ╜                   ╟    ╫    ╢
+  0x41,               0x43,0x42,0x81,0x83,0x82,               0xC1,0xC3,0xC2,
+  // ╔    ═    ═    ═    ╦    ╗    ╚    ╩    ╝    ║    ║    ║    ╠    ╬    ╣
+  0x50,0x30,0x10,0x20,0x70,0x60,0x90,0xB0,0xA0,0xC0,0x40,0x80,0xD0,0xF0,0xE0
+};                                         //
+#define NLDPG (sizeof(ldpgDM)/sizeof(int)) // directions bitmask: 0xUDLRudlr
+
+static tchar ldpgTC    [NLDPG]; // all line-drawing pseudo-graphic tchars
+static tchar ldpgDMtoTC[ 256 ]; // direction mask to LDPG tchar conversion
+void ldpgInit()
+{
+  aftotc(ldpgC,  -1,             ldpgTC );
+  memset(ldpgDMtoTC,0,sizeof(ldpgDMtoTC));
+  for (unsigned i = 0; i < NLDPG; i++) ldpgDMtoTC[ ldpgDM[i] ] = ldpgTC[i];
+}
+static unsigned DM (tchar tc, int shift, int mask) // get Direction Mask from
+{                                                  //              neighbours
+  for (unsigned i = 0; i < NLDPG; i++) if (ldpgTC[i] == tc)
+    { unsigned dm = (shift < 0) ? ldpgDM[i] << 1 : ldpgDM[i] >> 1;
+                                               return   dm & mask; }
+  /* not found => */                           return           0;
+}
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+static void LDPG (int dx, int dy, int dbl)        /* dbl = 0:single,4:double */
+{
+  unsigned mop = 0, // mask forced by operation
+          madd = 0; // addition from neighbours
+  txt *t = Ttxt;
+  if (qTxBottom(t)) exc(E_MOVEND);
+  if (dx == +1) mop = 0x01 << dbl; else madd |= DM(TxChar(t,Tx+1,Ty),+1,0x11);
+  if (dx == -1) mop = 0x02 << dbl; else madd |= DM(TxChar(t,Tx-1,Ty),-1,0x22);
+  if (dy == +1) mop = 0x04 << dbl; else madd |= DM(TxChar(t,Tx,Ty+1),+1,0x44);
+  if (dy == -1) mop = 0x08 << dbl; else madd |= DM(TxChar(t,Tx,Ty-1),-1,0x88);
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  short newx = my_max(Tx+dx, t->txlm);  if (newx >= t->txrm) newx = t->txrm-1;
+  long  newy = my_max(Ty+dy,       0);
+  tchar           newtc = ldpgDMtoTC[ mop|madd ];
+  if (newtc == 0) newtc = ldpgDMtoTC[(mop|madd)&(dbl?0xF0:0x0F)];
+  if (newtc == 0)                                    newtc = '?';
+  EnterLEmode(); llchar(newtc); Lchange = TRUE;
+   ExitLEmode(); tesetxy(newx, newy); vipReady();
+//                          vipGotoXY(newx,newy);
+}
+void teldpgLeft()    { LDPG(-1,0,0); }  void teldpgUp()     { LDPG(0,-1,0); }
+void teldpgRight()   { LDPG(+1,0,0); }  void teldpgDown()   { LDPG(0,+1,0); }
+void teldpgDblLeft() { LDPG(-1,0,4); }  void teldpgDblUp()  { LDPG(0,-1,4); }
+void teldpgDlbRight(){ LDPG(+1,0,4); }  void teldpgDlbDown(){ LDPG(0,+1,4); }
 /*---------------------------------------------------------------------------*/

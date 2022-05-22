@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07          Texts - Тексты (header)          | (c) Epi MG, 2007-2020
+// МикроМир07          Texts - Тексты (header)          | (c) Epi MG, 2007-2022
 //------------------------------------------------------+--------------------*/
 #ifndef TX_H_INCLUDED        /* Old tx.h (c) Attic 1989, (c) EpiMG 1998,2001 */
 #define TX_H_INCLUDED
@@ -29,5 +29,6 @@ void TxTIL (txt *t, tchar *line, short len),               TxDEL_end(txt *t);
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 extern short tab_size;  extern char afbuf[];
 extern txt     *texts;
+tchar TxChar(txt *t,int x,long y);  /* get one tchar from given text and pos */
 /*---------------------------------------------------------------------------*/
 #endif                                                      /* TX_H_INCLUDED */

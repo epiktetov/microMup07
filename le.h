@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07    le = Line Editor -- Редактор строки    | (c) Epi MG, 2006-2020
+// МикроМир07    le = Line Editor -- Редактор строки    | (c) Epi MG, 2006-2022
 //------------------------------------------------------+--------------------*/
 #ifndef LE_H_INCLUDED      /* Old "le.h" (c) Attic 1989, (c) EpiMG 1996-2003 */
 #define LE_H_INCLUDED
@@ -31,7 +31,7 @@ bool leNword(int *cw_beg,   /* Найти (unless ptr=0): начало теку�
 void leIC(), ledword(),       /* некоторые команды (используются в clip.cpp) */
      leDC(), lepword();
 void leic2 (tchar lchar), leic20(tchar *buf, int len),     /* low-level char */
-     leLLCE(tchar lchar), ledeol();                        /* insert / entry */
+     leLLCE(tchar lchar), llchar(tchar lch), ledeol();     /* insert / entry */
 /*---------------------------------------------------------------------------*/
 void LenterARG(tchar *buf, int *bufLen, /* buffer for argument & its length  */
                            int promLen, /* len of prompt (in buffer already) */

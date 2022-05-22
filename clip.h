@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07  Clipboard (using wxClipboard) & CS/LS op | (c) Epi MG, 2007-2020
+// МикроМир07  Clipboard (using wxClipboard) & CS/LS op | (c) Epi MG, 2007-2022
 //------------------------------------------------------+--------------------*/
 #ifndef CLIP_H_INCLUDED
 #define CLIP_H_INCLUDED
@@ -34,6 +34,10 @@ int  Block1size (int *x0, int *x1);  /* <- Return 1-line block size (+x0/x1) */
 bool BlockXYsize(int *dx, int *dy);  /*   0 if no block, exc() if multi-line */
 int  Block1move(tchar *b, int max);
 void saveToDeck(txt *t,  long txy);
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+void ldpgInit();
+void teldpgUp(),  teldpgLeft(), teldpgDblUp(),  teldpgDblLeft();
+void teldpgDown(),teldpgRight(),teldpgDlbDown(),teldpgDlbRight();
 /*---------------------------------------------------------------------------*/
 #ifdef __cplusplus
 }

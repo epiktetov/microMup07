@@ -702,5 +702,28 @@ a_(0, "Alt+,",  0x2264) /* ≤ */
 a_(0, "Alt+.",  0x2265) /* ≥ */
 a_(0, "Alt+/",  0x00F7) /* ÷ */   a_(0, "Alt+Shift+?", 0x00BF) /* ¿ */
 #endif
+/*
+ʁLine drawing.ʀ The following commands replace current character with appropriate
+Unicode character from the Box Drawing section (U+2500 to U+257F) that connects
+to neighbours making a line, moving cursor in given direction. Character at new
+position is not updated, so retracking may be required to properly draw closing
+corner. Both single and double lines are supported, with all their combinations
+that are available in Unicode:
+
+  Ctrl+Alt+H/U/K/J  ┌────┐      Alt+Shift+H/U/K/J  ╔════╗          supported
+    single line     │ U↑ │         double line     ║ U↑ ║         combinations
+               ┌────┼────┼────┐               ╔════╬════╬════╗      ╒╤╕  ╓╥╖
+               │ ←H │ J↓ │ K→ │               ║ ←H ║ J↓ ║ K→ ║      ╞╪╡  ╟╫╢
+               └────┴────┴────┘               ╚════╩════╩════╝      ╘╧╛  ╙╨╜
+*/
+k_(TE_LD1LT, "Ctrl+Alt+H",  0xcf112) /* влево  ┐                             */
+k_(TE_LD1UP, "Ctrl+Alt+U",  0xcf113) /* вверх  │ нарисовав фрагмент          */
+k_(TE_LD1RT, "Ctrl+Alt+K",  0xcf114) /* вправо │ линии в текущей позиции     */
+k_(TE_LD1DN, "Ctrl+Alt+J",  0xcf115) /* вниз   ┘                             */
+k_(TE_LD2LT, "Alt+Shift+H", 0xcf212) /* влево  ╗                             */
+k_(TE_LD2UP, "Alt+Shift+U", 0xcf213) /* вверх  ║ нарисовав фрагмент двойной  */
+k_(TE_LD2RT, "Alt+Shift+K", 0xcf214) /* вправо ║ линии в текущей позиции     */
+k_(TE_LD2DN, "Alt+Shift+J", 0xcf215) /* вниз   ╝                             */
+/*---------------------------------------------------------------------------*/
 k_(TK_ZERO,0,0)
 k_END_OF_TABLE

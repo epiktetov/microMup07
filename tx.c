@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07              Texts - Тексты               | (c) Epi MG, 2007-2020
+// МикроМир07              Texts - Тексты               | (c) Epi MG, 2007-2022
 //------------------------------------------------------+--------------------*/
 #include "mic.h"             /* Old tx.c (c) Attic 1989, (c) EpiMG 1998,2001 */
 #include "qfs.h"
@@ -377,6 +377,13 @@ short tctoaf (tchar *orig, int len, char *dest_buf)
   return laf;
 }
 /*---------------------------------------------------------------------------*/
+tchar TxChar (txt *t, int x, long y) /* get one tchar for given text and pos */
+{
+  if (x >= 0 && TxSetY(t, y)) { int     len = TxTRead(t, tcbuf);
+                                return (len > x) ? tcbuf[x] : 0; }
+  else return 0;
+}
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 tchar *TxInfo(wnd *w, long y, int *pl) /* TxInfo used for repaint in vip.cpp */
 {                                      /*    and to get current char mim.cpp */
   int len = 0, i, x;                    /* (return buffer may be changed)    */
