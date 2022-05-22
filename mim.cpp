@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07   Main Frame + Application Data + ScTwin  | (c) Epi MG, 2004-2020
+// МикроМир07   Main Frame + Application Data + ScTwin  | (c) Epi MG, 2004-2021
 //------------------------------------------------------+----------------------
 #include <QApplication>
 #include <QAction>
@@ -260,9 +260,11 @@ void MiFrame::SaveAll() { vipFocusOff(Twnd); tmSaveAll();         vipReady(); }
 void MiFrame::ShowLicense(void) { twShowFile(":/LICENSE"); }
 void MiFrame::ShowHelp   (void) { twShowFile(":/help");    }
 //-----------------------------------------------------------------------------
-void MiFrame::closeEvent (QCloseEvent *ev)
-{
-  if (safeClose(scwin) && safeClose(main)) ev->accept();
+void MiFrame::closeEvent (QCloseEvent *ev) // Apparently, Qt5 does not destroy
+{                                          // MiFrame immediately on accepting
+  if (safeClose(scwin) && safeClose(main)) // close event - must clear ScTwins
+  { if (scwin) delete scwin; scwin = NULL; //
+    if  (main) delete  main; main  = NULL; ev->accept(); }
   else                                     ev->ignore();
 }                                    
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

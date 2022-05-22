@@ -19,7 +19,7 @@ function Txt.openXref(Tx)        Tx.refs = { }       -- open new (throw-away)
     txN = txN or self.Y                       -- Mk["keyseq"] = function(Tx)
     rxN = rxN or Rx.Y-1; self.refs[txN] = rxN --   local Rx = Txt.openXref(Tx)
                            Rx.refs[rxN] = txN --   for N,line in Tx:lines() do
-  end; return newTx                           --     if ... end
+  end; return newTx                           --     if ... then
 end                                           --       Rx:IL(smth); Tx:Xref(N)  end
 Mk["Ctrl+X"] = function(Tx)                   --     end
   local  Rx = Tx.refTx and Txt[Tx.refTx]      --   end  --  use Ctrl+X to jump
@@ -50,6 +50,7 @@ function MkSyncMarks(Rx,Tx) -- called from (tm)SyncPos
     end end
   end
 end
+----------------------------------------------------------------------------
 do local function breakable(c) return (c == ' ' or c == ',' or c == ';') end
    local function squeeze(line,afterN)
      return line:sub(1,afterN-1)..line:sub(afterN):gsub("%s%s+"," ")
@@ -101,6 +102,7 @@ do local function breakable(c) return (c == ' ' or c == ',' or c == ';') end
                        while Tx.reX do BlockFormat(Tx) end end
   end
 end
+----------------------------------------------------------------------------
 function Mk2html(Tx)        -- convert MicroMir text (with ʁboldʀ etc) to HTML
   local Hx = Txt.open(true) --
   Hx:IL("auto-generated from `"..Tx.name.."` at "..os.date())

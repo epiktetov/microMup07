@@ -3,7 +3,7 @@
  * ----------------------------------------------------------------------------
  * original "МикроМир" idea (c) А.Г.Кушниренко, Г.В.Лебедев (мехмат МГУ)   1981
  * "nanoMir" implementation (c) Attic (Д.В.Варсанофьев, А.Г.Дымченко) 1989-1991
- * "nanoMir" and МикроМир07 (c) EpiMG (М.Г.Эпиктетов)   1998-2001 and 2006-2020
+ * "nanoMir" and МикроМир07 (c) EpiMG (М.Г.Эпиктетов)   1998-2001 and 2006-2022
 -------------------------------------------------------------------------------
  Ins is "Help" key on MacPro keyboard, missing on A1243 (see KEY MAPPING below)
  Del is "Delete⌦" on Mac keyboard ("delete" key is Backspace)
@@ -483,7 +483,7 @@ For example:                                   xddd hexadecimal number    x7e
   Esc,N,Ctrl+H       - move cursor to Nth position in current line
 
 NOTE: without repetition prefix, the last two commands work differently, which
-     is a special convenience feature to allow easy centering specific position
+    is a special convenience feature to allow easy centering specific position:
 
   Ctrl+E - centers current line in the windows (vertically only)
   Ctrl+H - centers curret position in the windows (horizontally)
@@ -558,7 +558,7 @@ NOTE:
   Tx:DL(N) -- delete N lines at cursor (default = 1)
   Tx:gtl() -- get-text-left convenience method = gets first chunk of non-spaces
                                        from text to the left of cursor position
-[line 551] xref: new.lua
+[line 561] xref: new.lua
 
   re = Re("..regex..",true/false) -- regular expression (arg: case sensitivity,
   re = Re[[..regex..]]                                default = case-sensitive)
@@ -675,6 +675,7 @@ a_(0, "Alt+1", 0x00B9) /* ¹ */    a_(0, "Alt+Shift+!", 0x00A1) /* ¡         */
 a_(0, "Alt+2", 0x00B2) /* ² */    a_(0, "Alt+Shift+:", 0x205D) /* ⁝ (moved) */
 a_(0, "Alt+3", 0x00B3) /* ³ */    a_(0, "Alt+=",       0x2248) /* ≈         */
 a_(0, "Alt+D", 0x2023) /* ‣ */
+a_(0, "Alt+W", 0x201E) /* „ */
 a_(0, "Alt+X", 0x00D7) /* × */
 a_(0, "Alt+Shift+W", 0x2191)   a_(0, "Alt+Shift+A", 0x2190) /*    W↑    */
 a_(0, "Alt+Shift+S", 0x2193)   a_(0, "Alt+Shift+D", 0x2192) /* A← S↓ D→ */
@@ -688,7 +689,6 @@ a_(0, "Alt+-",  0x2013) /* – */   a_(0, "Alt+Shift++", 0x00B1) /* ±     */
 a_(0, "Alt+R",  0x00AE) /* ® */
 a_(0, "Alt+T",  0x2020) /* † */
 a_(0, "Alt+O",  0x00F8) /* ø */
-a_(0, "Alt+W",  0x201E) /* „ */
 a_(0, "Alt+[",  0x201C) /* “ */   a_(0, "Alt+Shift+{", 0x201D) /* ” */
 a_(0, "Alt+]",  0x2018) /* ‘ */   a_(0, "Alt+Shift+}", 0x2019) /* ’ */
 a_(0, "Alt+\\", 0x00AB) /* « */   a_(0, "Alt+Shift+|", 0x00BB) /* » */

@@ -22,7 +22,7 @@ macx {
   QMAKE_PKGINFO_TYPEINFO = "~epi"
 # QMAKE_MAC_SDK            = macosx10.11
 # QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.11
-  CONFIG += sdk_no_version_check
+  CONFIG += sdk_no_version_check warn_off
 }
 QMAKE_CFLAGS   += -std=c99
 !win32:DEFINES += UNIX
