@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07  Command Codes Definition / transcoding   | (c) Epi MG, 1998-2020
+// МикроМир07  Command Codes Definition / transcoding   | (c) Epi MG, 1998-2022
 //------------------------------------------------------+----------------------
 //include <qnamespace.h>
 #include <QKeyEvent>
@@ -36,6 +36,7 @@ int MkConvertKeyMods (QKeyEvent *event, int &modMask)
       else for (int i = 0; i < text.size(); i++)
                               fprintf(stderr, ".%02x", text[i].unicode());
     }
+    last_MiCmd_mods =    QString::number(event->nativeModifiers(), 16);
     fprintf(stderr, "|%c%c%c%c%c),native=%x:%x:%x",      keypad ? '#' : '.',
         (modMask & mod_META) ? 'M' : '.', (modMask & mod_CTRL)  ? 'c' : '.',
         (modMask & mod_ALT)  ? 'a' : '.', (modMask & mod_SHIFT) ? 's' : '.',

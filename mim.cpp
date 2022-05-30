@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07   Main Frame + Application Data + ScTwin  | (c) Epi MG, 2004-2021
+// МикроМир07   Main Frame + Application Data + ScTwin  | (c) Epi MG, 2004-2022
 //------------------------------------------------------+----------------------
 #include <QApplication>
 #include <QAction>
@@ -34,9 +34,9 @@ int  dosEOL = 0;   /* Настраиваемые параметры: - DOS(1)/un
 int debugDQ = 0;   /* - debug DQ memory allocation (used in dq.c file)       */
 int TABsize = 4;   /* - табуляция, обычно 4 или 8 символов, configurable     */
 QSize MiFrameSize;
-       bool MiApp_debugKB    = false;
-static bool MiApp_timeDELAYS = false;
-QString  last_MiCmd_key;
+       bool   MiApp_debugKB     =  false;
+static bool   MiApp_timeDELAYS  =  false;
+QString  last_MiCmd_mods, last_MiCmd_key;
 quint64  last_MiCmd_time;
 QMap<int,int> MiApp_keyMap;
 QString MiApp_autoLoadLua;
@@ -897,7 +897,10 @@ void MiInfoWin::paintEvent (QPaintEvent *)
     dc.drawText(sctw->Tx2qtX(0), Y, displayText); displayText.clear();
   }
   else if (MiApp_debugKB) {
-    dc.drawText(sctw->Tx2qtX(0), Y, last_MiCmd_key); return;
+    int mpos = 20 - last_MiCmd_mods.length();
+    if (mpos < 0)            mpos = 0;
+    dc.drawText(sctw->Tx2qtX(mpos), Y, last_MiCmd_mods);
+    dc.drawText(sctw->Tx2qtX   (0), Y, last_MiCmd_key ); return;
   }
   else if (infoType == MitCHARK && sctw->vp->cx >= 0) {
     tchar tc = 0, *textln;

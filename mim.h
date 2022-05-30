@@ -161,7 +161,7 @@ public:
   void DisplayInfo(QString text) { info.display(text); }
 };
 //-----------------------------------------------------------------------------
-extern QString last_MiCmd_key;
+extern QString last_MiCmd_mods, last_MiCmd_key;
 extern quint64 last_MiCmd_time;
 #define pgt_1SEC 1000
 quint64 pgtime(void);   /* returns current time with "pretty good" precision */
