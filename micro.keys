@@ -635,17 +635,16 @@ solid background is just too boring), which may be configured using Preferences
 dialog. Full format of gradient specification is the following (square brackets
 mark optional parts):
 
-  primColor[/offColor][,start-stop][;tilt][,2nd:prim2][,3rd:prim3][,4th:prim4]
+  primColor[/offColor][,grad:start[-stop]][,2nd:prim2][,3rd:prim3][,4th:prim4]
 
 where primColor - primary gradient color for first (default) color palette
        offColor - off-color (default "white")
-     start/stop - start/stop points from 0.0 (top left) to 1.0 (bottom right)
-           tilt - from 0 (horizontal) to 1 (diagonal) to 4 (even more tilted)
+     start/stop - start/stop points from 0 (top left) to 1.0 (bottom right)
           primN - primary color for Nth color palette
 Color:
   #rrggbb 24-bit hexadecimal RGB value                for example:    #ffefd5
-  SVG color names (see http://www.w3.org/TR/SVG/types.html)        papayawhip
-  Hue degrees (in that case Sat=16% and Val=100% is forced)        40° or 40*
+  SVG color names (see http://www.w3.org/TR/SVG11/types.html)      papayawhip
+  Hue degrees  (in that case Sat=16% and Val=100% are forced)      40° or 40*
 
   Ctrl+Alt+1 - switch to first / default palette in current window
   Ctrl+Alt+2 - switch to palette 2 (if not confiured, using 80° light green)

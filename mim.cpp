@@ -77,7 +77,7 @@ bool MacEvents::eventFilter (QObject*, QEvent *ev)
 # define mimFONTFACENAME "Lucida Console"
 # define mimFONTSIZE  10
 #endif
-#define defWinGRADIENT Utf8("40°/white,0.0-0.25;4")
+#define defWinGRADIENT Utf8("40°/white,grad:0-0.25,2nd:80°,3rd:200°")
 #define IGNORE_CASE Qt::CaseInsensitive
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 QColor colorBlack     (  0,  0,  0); // black (used for regular text)
@@ -439,7 +439,7 @@ void MiFrame::resizeEvent (QResizeEvent*)
 MiScTwin::MiScTwin (MiFrame *frame, const QString bgndGrad, int pool, wnd *win)
   : gotFocus(0), vp(win), mf(frame),
     info (this),
-    diag (this),
+    diag (this),      gradTilt(4),
     gradInPool(pool), gradPixSize(0), gradPixHeight(0),
                       gradPixmap(NULL),  cmd2repeat(0), timerID(0)
 {
@@ -479,33 +479,37 @@ void mimSetNamedColor (QColor& color, const QString descr)
   else                         color.setNamedColor (descr);
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-void MiScTwin::SetGradient(const QString grad)
+void MiScTwin::SetGradient(const QString gradient)
 {
   mimSetNamedColor(gradPool[0], Utf8( "40°")); // ≈ SVG papaywhip (Hue=40°)
   mimSetNamedColor(gradPool[1], Utf8( "80°")); // very light green
   mimSetNamedColor(gradPool[2], Utf8("200°")); // very light sky blue
   mimSetNamedColor(gradPool[3], "mistyrose" );
-  QRegExp gf("([^/;,]+)(?:/([^/;,]+))?(?:,([0-9.]+)-([0-9.]+))?(?:;([0-4]))?"
-             "(?:,?\\s*2nd:([^/;,]+))?"
-             "(?:,?\\s*3rd:([^/;,]+))?(?:,?\\s*4th:([^/;,]+))?");
-//
-  if (gf.exactMatch(grad)) { mimSetNamedColor(gradColor, gf.cap(1));
-    if (gf.cap(2).isEmpty()) mimSetNamedColor(  bgColor,   "white");
-    else                     mimSetNamedColor(  bgColor, gf.cap(2));
-//
-    gradTilt = gf.cap(5).toInt();
-    if (gf.cap(3).isEmpty() && gradTilt > 0) { gradStart = 0.00;
-                                               gradStop  = 0.25; }
-    else {
-      gradStart = gf.cap(3).toFloat();
-      gradStop  = gf.cap(4).toFloat();
-    }                                          gradPool[0] = gradColor;
-    if (!gf.cap(6).isEmpty()) mimSetNamedColor(gradPool[1], gf.cap(6));
-    if (!gf.cap(7).isEmpty()) mimSetNamedColor(gradPool[2], gf.cap(7));
-    if (!gf.cap(8).isEmpty()) mimSetNamedColor(gradPool[3], gf.cap(8));
-  }
-  else { gradTilt = 4; bgColor = colorWinBgnd; gradStart = 0.00;
-                                               gradStop  = 0.25; }
+  QRegExp prim("([^/;,]+)(?:/([^/;,]+))?");
+  QRegExp grad("([0-9.]+)(?:-([0-9.]+))?");
+  QRegExp kvpair   ("([^:;,]+):([^:;,]+)");
+  QStringList opts = gradient.split(QRegExp("\\s*(,|;|\\n)\\s*"),
+                                    QString::SkipEmptyParts    );
+  bgColor = colorWinBgnd;
+  gradStart = 0.00;
+  gradStop  = 0.25;
+  for (QStringList::iterator it = opts.begin(); it != opts.end(); it++) {
+    if (kvpair.exactMatch(*it)) {
+      QString key = kvpair.cap(1);
+      QString val = kvpair.cap(2);
+      if (key == "grad" && grad.exactMatch(val)) {
+        gradStart =                                     grad.cap(1).toFloat();
+        gradStop  = grad.cap(2).isEmpty() ? gradStart : grad.cap(2).toFloat();
+      }
+      else if (key == "2nd") mimSetNamedColor(gradPool[1], val);
+      else if (key == "3rd") mimSetNamedColor(gradPool[2], val);
+      else if (key == "4th") mimSetNamedColor(gradPool[3], val);
+    }
+    else if (prim.exactMatch(*it)) {  mimSetNamedColor(gradColor, prim.cap(1));
+           if (prim.cap(2).isEmpty()) mimSetNamedColor(  bgColor,     "white");
+           else                       mimSetNamedColor(  bgColor, prim.cap(2));
+           gradPool[0] = gradColor;
+  } }
   SetGradFromPool(gradInPool);
 }
 void MiScTwin::SetGradFromPool(int N)
