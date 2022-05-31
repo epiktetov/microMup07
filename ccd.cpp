@@ -36,7 +36,34 @@ int MkConvertKeyMods (QKeyEvent *event, int &modMask)
       else for (int i = 0; i < text.size(); i++)
                               fprintf(stderr, ".%02x", text[i].unicode());
     }
-    last_MiCmd_mods =    QString::number(event->nativeModifiers(), 16);
+// ref: /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform
+//        /Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/AppKit.framework
+//        /Versions/C/Headers/NSEvent.h:163:
+//
+// typedef NS_OPTIONS(NSUInteger, NSEventModifierFlags) {
+//   NSEventModifierFlagCapsLock    = 1 << 16, //  =   0x01oooo
+//   NSEventModifierFlagShift       = 1 << 17, //  =   0x02oooo
+//   NSEventModifierFlagControl     = 1 << 18, //  =   0x04oooo
+//   NSEventModifierFlagOption      = 1 << 19, //  =   0x08oooo
+//   NSEventModifierFlagCommand     = 1 << 20, //  =   0x10oooo
+//   NSEventModifierFlagNumericPad  = 1 << 21, //  =   0x20oooo
+//   NSEventModifierFlagHelp        = 1 << 22, //  =   0x40oooo
+//   NSEventModifierFlagFunction    = 1 << 23, //  =   0x80oooo
+//   NSEventModifierFlagDeviceIndependentFlagsMask = 0xffff0000UL
+// };
+// undocumented: 0x0101 left   Ctrl,
+//               0x0102 left  Shift,        0x0120 left  Alt(⌥/opt)
+//               0x0104 right Shift,        0x0140 right Alt(⌥/opt)
+//               0x0108 left  Meta(⌘/win),  0x0180 -
+//               0x0110 right Meta(⌘/win),  0x2100 right Ctrl (remapped Caps)
+//
+// enum WindowsNativeModifiers from https://stackoverflow.com/a/67339544
+//   ShiftLeft   = 0x0001,  ShiftRight   = 0x0010,  CapsLock     = 0x00000100,
+//   ControlLeft = 0x0002,  ControlRight = 0x0020,  NumLock      = 0x00000200,
+//   AltLeft     = 0x0004,  AltRight     = 0x0040,  ScrollLock   = 0x00000400,
+//   MetaLeft    = 0x0008,  MetaRight    = 0x0080,  ExtendedKey  = 0x01000000
+//
+    last_MiCmd_mods = QString::number(event->nativeModifiers() & 0xFFFF,16);
     fprintf(stderr, "|%c%c%c%c%c),native=%x:%x:%x",      keypad ? '#' : '.',
         (modMask & mod_META) ? 'M' : '.', (modMask & mod_CTRL)  ? 'c' : '.',
         (modMask & mod_ALT)  ? 'a' : '.', (modMask & mod_SHIFT) ? 's' : '.',

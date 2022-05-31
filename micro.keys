@@ -9,6 +9,7 @@
  Del is "Delete⌦" on Mac keyboard ("delete" key is Backspace)
  Return is either "Enter↵" or "Return" on main keyboard (not "enter" on numpad)
  PgUp/PgDown on MacBook keyboard may be entered as Fn+Up/Fn+Down (modifiers Ok)
+ Super = user-defined extra modifier (default: right Ctrl, but see KEY MAPPING)
  Alt  == ⌥/option  key on Mac keyboard, Alt key elsewhere
  Meta == ⌘/command key on Mac keyboard, "WinKey" key on Windows-compatible one
                                 (in all cases, Meta+{x} has alias without Meta)
@@ -365,7 +366,7 @@ mechanism of rectangular selections: Shift+{arrows} makes "temporary" selection
 (grey rectangle),  F5 followed by any regular cursor movement makes "permanent"
 selection (light blue rectangle). -- Typing DO NOT overwrites selected text --
 
-  Shift+{arrows} and Ctrl+Shift+'<'/'>'    - start/extend "temporary" selection
+  Shift+{arrows}                           - start/extend "temporary" selection
   F5 ..(any movement except for Return)..  - start/extend "permanent" selection
   Ctrl+W  - select current word (or word left of cursor, if cursor not on word)
 */
@@ -666,6 +667,15 @@ Ins/Del keys (but have extra function or numpad keys), then you can use these:
 
   F11=Ins,F12=Del   -- use F11 as alias for Ins and F12 as alias for Del
   [0]=Ins,[.]=Del   -- use numpad keys for Ins and Del
+
+This key mapping field may also define Super modifier in terms of native flags,
+using "Super=0x{hex}" format (for example, Super=0x2100 for right Ctrl on Mac);
+currently it is not possible to combine this modifier with others
+
+  Mac: 0x0104 right Shift,          Win: 0x010 right Shift, ( 0x100 CapsLock )
+       0x0110 right Meta(⌘/win),         0x020 right Ctrl,  ( 0x200 NumLock  )
+       0x0140 right Alt (⌥/opt),         0x040 right Alt,   ( 0x400 ScrLock  )
+       0x2100 right Control              0x080 right WinKey
 
 See "Lua SCRIPTING" for remapping MicroMir commands to different key sequences.
 -------------------------------------------------------------------------------

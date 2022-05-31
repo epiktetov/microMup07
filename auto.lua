@@ -1,7 +1,9 @@
+if load and not loadstring then  loadstring = load end
 Mk["Ctrl+Shift+T"] = function(Tx) Tx:IC(os.date()) end
 Mk["Ctrl+Shift++"] = function(Tx)
-  local result = loadstring("local X="..Tx:gtl()..";return X")()
-  Tx:IC("= "..tostring(result))
+  local expr = Tx:gtl()
+  if expr then local result = loadstring("local X="..expr..";return X")()
+               Tx:IC("= "..tostring(result))                          end
 end
 for _,n in pairs{"F7","F8","F9"} do -- inserts current value of Fn macro into
   Mk["^J,"..n] = function(Tx)       --  current text (to edit and re-execute)

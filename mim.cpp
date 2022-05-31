@@ -39,6 +39,11 @@ static bool   MiApp_timeDELAYS  =  false;
 QString  last_MiCmd_mods, last_MiCmd_key;
 quint64  last_MiCmd_time;
 QMap<int,int> MiApp_keyMap;
+#ifdef Q_OS_MAC
+int MiApp_modSuper = 0x2100; // Default Super mod == right Ctrl (remapped Caps)
+#else                        // as defined from native OS modifiers bitmask
+int MiApp_modSuper = 0x0020; //   (not sure what's the correct value for Linux)
+#endif
 QString MiApp_autoLoadLua;
 QString MiApp_defaultFont, MiApp_defFontAdjH, MiApp_keyMaps, MiApp_gradDescr;
 int     MiApp_defFontSize;
@@ -791,7 +796,9 @@ void MiScTwin::Text (QPainter& dc, int x, int y, tchar *tp, int len)
 void MiScTwin::keyPressEvent (QKeyEvent *event)
 {
   QString text = event->text();  int modMask;
-  int key = MkConvertKeyMods(event, modMask); if (key < 0) return;
+  int key = MkConvertKeyMods(event, modMask);      if (key < 0) return;
+  int native =      event->nativeModifiers();
+  if ((native & MiApp_modSuper) == MiApp_modSuper) modMask = mod_SUPER;
   if (vipOSmode) {
     switch (key) {
     case Qt::Key_Escape:    setkbhin   (4); return; // ^D = end-of-file
@@ -885,7 +892,7 @@ void MiInfoWin::SetPalette (QColor bgnd, QColor text)
 }
 void MiInfoWin::vpResize() // need plenty of room for key codes...
 {
-  resize(2 * mimBORDER + sctw->Tw2qtW(MiApp_debugKB ? 20 : 10),
+  resize(2 * mimBORDER + sctw->Tw2qtW(MiApp_debugKB ? 25 : 10),
          2 * mimBORDER + sctw->Th2qtH(1));
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -897,7 +904,7 @@ void MiInfoWin::paintEvent (QPaintEvent *)
     dc.drawText(sctw->Tx2qtX(0), Y, displayText); displayText.clear();
   }
   else if (MiApp_debugKB) {
-    int mpos = 20 - last_MiCmd_mods.length();
+    int mpos = 25 - last_MiCmd_mods.length();
     if (mpos < 0)            mpos = 0;
     dc.drawText(sctw->Tx2qtX(mpos), Y, last_MiCmd_mods);
     dc.drawText(sctw->Tx2qtX   (0), Y, last_MiCmd_key ); return;
@@ -972,15 +979,21 @@ void MiDiagWin::paintEvent (QPaintEvent *)
 static void myParseKeyMap() // parse QString MiApp_keyMaps -> QMap MiApp_keyMap
 {
   QRegExp kvpair("(\\S+)\\s*=\\s*(\\S+)");
+  QRegExp hexval("0x([0-9a-fA-F]+)");
   QStringList maps = MiApp_keyMaps.split(QRegExp("\\s*(,|;|\\n)\\s*"),
                                          QString::SkipEmptyParts);
   MiApp_keyMap.clear();
   for (QStringList::iterator it = maps.begin(); it != maps.end(); it++) {
     if (kvpair.exactMatch(*it)) {
-      int key = MkFromString(kvpair.cap(1));
-      int val = MkFromString(kvpair.cap(2));
-      MiApp_keyMap.insert(key, val); *it = MkToString(key)+"="+MkToString(val);
-  } }
+      QString key = kvpair.cap(1);
+      QString val = kvpair.cap(2);
+      if (key == "Super" && hexval.exactMatch(val))
+         MiApp_modSuper = val.toInt(nullptr, 16);
+      else {
+        int from_kcode = MkFromString(key); key = MkToString(from_kcode);
+        int   to_kcode = MkFromString(val); val = MkToString  (to_kcode);
+        MiApp_keyMap.insert(from_kcode, to_kcode); *it = key + "=" + val;
+  } } }
   MiApp_keyMaps = maps.join(", ");
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

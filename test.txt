@@ -12,9 +12,9 @@ if (a=0) {
 Test ʁboldʀ test
 ʂepi/Dvlm/mim->ʀ sky ʈ>>>ʀ blue ʄredʀ normal
 
-mic.h:54:9: error: AF_ERROR definition
-mic.h:42:20: note: not the same as AT_ERROR attribute
-mic.h:64:12: TABsize is defined here
+mic.h:55:9: error: AF_ERROR definition
+mic.h:43:20: note: not the same as AT_ERROR attribute
+mic.h:65:12: TABsize is defined here
 
 080 AaàáâαÄäБбBbβвГγгCcçDdΔδДдEeèéêεЁёFfGgЖжЗзHhηΘθIiìíîïιИиЙйJj
 140 KkκкLlΛλЛлMmμмNnνнÑñΞξOoòóôÖöПπпPpρрQqRrSsßΣσTtτтUuùúûÜüVvWw
