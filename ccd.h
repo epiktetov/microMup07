@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07  Command Codes Definition / transcoding   | (c) Epi MG, 2006-2012
+// МикроМир07  Command Codes Definition / transcoding   | (c) Epi MG, 2006-2022
 //------------------------------------------------------+--------------------*/
 #ifdef MAKE_TRANS_TABLE
 # define k_BEGIN        static microCCD CCD[] = {
@@ -30,9 +30,10 @@
 #define CCD_H_INCLUDED
 #define mod_SHIFT 0x02000000 /* Mostly equivalent to Qt::SHIFT/CTRL/ALT/META */
 #define mod_CTRL  0x04000000 /* except mod_CTRL == Ctrl even on Mac keyboard */
-#define mod_ALT   0x08000000
+#define mod_ALT   0x08000000 /* +added NuPAD and user-defined Super modifier */
 #define mod_META  0x10000000
-#define mod_KyPAD 0x20000000
+#define mod_NuPAD 0x20000000
+#define mod_SUPER 0x40000000
 #define Mk_IsSHIFT(x) (Qt::Key_Shift <= x && x < Qt::Key_F1)
 #define Mk_IsCHAR(x) (' ' <= x && x < 0x10000) /* only 16bit Unicode allowed */
 #ifdef MIM_H_INCLUDED /*- - - - - - - - - - - - - - - - - - - - - - - - - - -*/

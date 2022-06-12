@@ -125,7 +125,9 @@ static short mcdpat (tchar *buf, short i)           /* micros.dir paste line */
   } }
   return i; // returns length of filled up lfbuf
 }
-void teIL() { TxTIL(Ttxt, lfbuf, mcdpat(lfbuf,0)); }
+void teIL() { if (ldpgMode && Ty > 0 && !qTxBottom(Ttxt)) teldpgIL();
+              else               TxTIL(Ttxt, lfbuf, mcdpat(lfbuf,0)); }
+// - - - - - - - - - - - - - - - - - - - -
 void teDL() { if (BlockMark) teclrblock();
               else           TxDL  (Ttxt); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -419,14 +421,12 @@ comdesc tecmds[] =
   { TE_CLPOS,  teclpos,             0              },
   { TE_TOCLIP, clipToCB,            0              },
   { TE_FROMCB, clipFromCB,          CA_MOD         },
-  { TE_LD1UP,  teldpgUp,            CA_MOD         }, /* ┐  line-drawing  */
-  { TE_LD1LT,  teldpgLeft,          CA_MOD         }, /* │ pseudo-graphic */
-  { TE_LD1DN,  teldpgDown,          CA_MOD         }, /* │  (single line) */
-  { TE_LD1RT,  teldpgRight,         CA_MOD         }, /* ┘                */
-  { TE_LD2UP,  teldpgDblUp,         CA_MOD         }, /* ╗              ↑ */
-  { TE_LD2LT,  teldpgDblLeft,       CA_MOD         }, /* ║ line-drawing ← */
-  { TE_LD2DN,  teldpgDlbDown,       CA_MOD         }, /* ║  double line ↓ */
-  { TE_LD2RT,  teldpgDlbRight,      CA_MOD         }, /* ╝              → */
+  { TE_LD1UP,  teldpgUp,            CA_MOD         }, /* ┐               ↑ */
+  { TE_LD1LT,  teldpgLeft,          CA_MOD         }, /* │ line-drawing  ← */
+  { TE_LD1DN,  teldpgDown,          CA_MOD         }, /* │pseudo-graphic ↓ */
+  { TE_LD1RT,  teldpgRight,         CA_MOD         }, /* ┘               → */
+  { TE_LDMOD1, teldpgMod1,          0              }, /* single line mode  */
+  { TE_LDMOD2, teldpgMod2,          0              }, /* double lines: ╔═╝ */
 /*
  * Implemented in ud.c (declaration in "ud.h"), the same functions as in le.c
  */

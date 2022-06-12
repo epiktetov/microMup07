@@ -57,6 +57,10 @@ static bool cpnocl = false;  /* Запрещено сохранение стро
 static bool cpempt = true;   /* Буфер пустой -- гарантировано ничего там нет */
 static char clbuf[MAXLUP];
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+int                                    ldpgMode = 0;
+void teldpgMod1() { if (ldpgMode == 1) ldpgMode = 0; else ldpgMode = 1; }
+void teldpgMod2() { if (ldpgMode == 2) ldpgMode = 1; else ldpgMode = 2; }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 static void cptinit (bool needContent)
 {
   if (LCtxt == NULL) {
@@ -67,7 +71,8 @@ static void cptinit (bool needContent)
 } }
 QString clipStatus()  /*- - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 {
-  return QString::fromUtf8(cpopen ? "»" : cb_new_data ? "«" : "·");
+  return QString::fromUtf8(ldpgMode ?    (ldpgMode == 2 ? "═" : "─")
+                           : cpopen ? "»" : cb_new_data ? "«" : "·");
 }
 /*---------------------------------------------------------------------------*/
 static void CPempty (void)
@@ -419,9 +424,31 @@ static void LDPG (int dx, int dy, int dbl)        /* dbl = 0:single,4:double */
   EnterLEmode(); llchar(newtc); Lchange = TRUE;
    ExitLEmode(); tesetxy(newx, newy); vipReady();
 //                          vipGotoXY(newx,newy);
+  ldpgMode = dbl ? 2 : 1;
 }
-void teldpgLeft()    { LDPG(-1,0,0); }  void teldpgUp()     { LDPG(0,-1,0); }
-void teldpgRight()   { LDPG(+1,0,0); }  void teldpgDown()   { LDPG(0,+1,0); }
-void teldpgDblLeft() { LDPG(-1,0,4); }  void teldpgDblUp()  { LDPG(0,-1,4); }
-void teldpgDlbRight(){ LDPG(+1,0,4); }  void teldpgDlbDown(){ LDPG(0,+1,4); }
+void teldpgLeft() { LDPG(-1,0,(ldpgMode == 2) ? 4 : 0); }
+void teldpgRight(){ LDPG(+1,0,(ldpgMode == 2) ? 4 : 0); }
+void teldpgUp()   { LDPG(0,-1,(ldpgMode == 2) ? 4 : 0); }
+void teldpgDown() { LDPG(0,+1,(ldpgMode == 2) ? 4 : 0); }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+void teldpgIL()
+{
+  blktspac(lfbuf,( Lleng = TxTRead(Ttxt, Lebuf) ));
+  int    len = 0;
+  for (int i = 0; i < Lleng; i++) {
+    int mc = DM(Lebuf[i],           +1,0x44),
+       mup = DM(TxChar(Ttxt,i,Ty-1),-1,0x88);
+    tchar tc;
+    if (mc && mup && ( tc = ldpgDMtoTC[mc|mup] )) { lfbuf[i] = tc; len = i+1; }
+  }                         // ^
+  TxSetY(Ttxt, Ty);         // only insert LDPG char if both current and upper
+  TxTIL (Ttxt, lfbuf, len); // position connect to each other, keep space else
+}
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+void leldpgIC()             /* <-- called in LE mode (current line in Lebuf) */
+{
+  int mc = DM(Lebuf[Lx],  +1,0x11),
+     mrt = DM(Lebuf[Lx+1],-1,0x22);
+  tchar tc = (mc && mrt) ? ldpgDMtoTC[mc|mrt] : 0;    leic2(tc ? tc : ' ');
+}
 /*---------------------------------------------------------------------------*/

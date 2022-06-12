@@ -177,7 +177,9 @@ void leLLCE (tchar lchar)
   else                                     llchar(lchar); Lx++;
 }
 /*---------------------------------------------------------------------------*/
-void leIC()   { leic2(' ');                     }
+void leIC() { if (ldpgMode && Lx > 0) leldpgIC();
+              else                    leic2(' '); }
+//- - - - - - - - - - - - - - - - - - - - - - - - -
 void leDC()   { llmove(Lx, Lxre,      -1, NIL); }
 void ledeol() { llmove(Lx, Lxre, REPLACE, NIL); }
 void ledbgol()

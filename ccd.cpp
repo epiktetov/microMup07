@@ -105,32 +105,35 @@ int MkConvertKeyMods (QKeyEvent *event, int &modMask)
     case Qt::Key_PageUp:   key = '9'; break;
     }
 #endif
-    return key | mod_KyPAD;
+    return key | mod_NuPAD;
   } return key;
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-int MkFromString (QString keystr)  //  Conversion from user-readable/-writable
+int MkFromString (QString keyst)   //  Conversion from user-readable/-writable
 {                                  //  string to the keycode as reported by Qt
   int keypad = 0;
-  int N = keystr.length() - 1;
-  if (keystr.at(0).unicode() == '[' && keystr.at(N).unicode() == ']') {
-      keystr = keystr.mid(1,N-1);      keypad = mod_KyPAD;
+  if (keyst.startsWith("Super+")) return MkFromString(keyst.mid(6))|mod_SUPER;
+  int N = keyst.length() - 1;
+  if (keyst.at(0).unicode() == '[' && keyst.at(N).unicode() == ']') {
+      keyst = keyst.mid(1,N-1);       keypad = mod_NuPAD;
   }
-  QKeySequence ks(keystr); return keypad | ks[0];
+  QKeySequence ks(keyst);          return keypad | ks[0];
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 int MkToDigit (int kcode)
 {
-  int key = (kcode & ~mod_KyPAD);
+  int key = (kcode & ~mod_NuPAD);
        if ('0' <= key && key <= '9') return key - '0';
   else if ('A' <= key && key <= 'F') return key - 'A' + 10;
   else                               return -1;
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 QString MkToString (int kcode)
-{
-  bool keypad  =  kcode &  mod_KyPAD;
-  QKeySequence ks(kcode & ~mod_KyPAD);
+{                                         if (kcode &  mod_SUPER)
+        return QString("Super+") + MkToString(kcode & ~mod_SUPER);
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  bool keypad  =  kcode &  mod_NuPAD;
+  QKeySequence ks(kcode & ~mod_NuPAD);
   QString st = ks.toString();
   if (keypad && st.size() > 0) { int N = st.size() - 1;
               return st.left(N) + "[" + st.at(N) + "]";

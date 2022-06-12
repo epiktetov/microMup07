@@ -35,9 +35,10 @@ bool BlockXYsize(int *dx, int *dy);  /*   0 if no block, exc() if multi-line */
 int  Block1move(tchar *b, int max);
 void saveToDeck(txt *t,  long txy);
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-void ldpgInit();
-void teldpgUp(),  teldpgLeft(), teldpgDblUp(),  teldpgDblLeft();
-void teldpgDown(),teldpgRight(),teldpgDlbDown(),teldpgDlbRight();
+void ldpgInit();      extern int ldpgMode; /* mode = 0:off,1:single,2:double */
+void             teldpgMod1(), teldpgMod2();
+void teldpgUp(), teldpgLeft(), teldpgDown(), teldpgRight(), teldpgIL();
+void leldpgIC();
 /*---------------------------------------------------------------------------*/
 #ifdef __cplusplus
 }
