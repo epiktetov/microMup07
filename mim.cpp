@@ -992,7 +992,7 @@ static void myParseKeyMap() // parse QString MiApp_keyMaps -> QMap MiApp_keyMap
       QString key = kvpair.cap(1);
       QString val = kvpair.cap(2);
       if (key == "Super" && hexval.exactMatch(val))
-         MiApp_modSuper = val.toInt(nullptr, 16);
+         MiApp_modSuper = val.toInt(NULL, 16);
       else {
         int from_kcode = MkFromString(key); key = MkToString(from_kcode);
         int   to_kcode = MkFromString(val); val = MkToString  (to_kcode);
