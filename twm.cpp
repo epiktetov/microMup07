@@ -544,7 +544,7 @@ void tmFnewByTtxt (void)                 /* войти в новый файл (�
     if (lm >= 0) for (rm = Tx; rm < Lleng && (uchar)Lebuf[rm-1] != 0xBB;) rm++;
     else {
       lm = rm = Tx;
-      while (lm > 0     && !strchr(" \'\",(<", (char)Lebuf[lm-1])) lm--;
+      while (lm > Lxle  && !strchr(" \'\",(<", (char)Lebuf[lm-1])) lm--;
       while (rm < Lleng && !strchr(" \'\",>)", (char)Lebuf[rm]  )) rm++;
       tmFnewSearchIncs(tcs2qstr(Lebuf+lm, rm-lm));               return;
   } }
