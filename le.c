@@ -304,13 +304,18 @@ static void leconvert_word (int type)
 }
 void lecwdec() { leconvert_word(cvTO_DECIMAL); }
 void lecwhex() { leconvert_word(cvTO_RADIX);   }
-void lecbold()
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+static void  make_tchar_bold(tchar *tc) { *tc |= AT_BOLD; }
+static void clear_tchar_attr(tchar *tc) { *tc &= AT_CHAR; }
+static void leupdate_attr(void (*fn)(tchar))
 {
   int x0,x1; if (! Block1size(&x0,&x1)) x1 = (x0 = Lx) + 1;
-  for (Lx = x0; Lx < x1; Lx++)        Lebuf[Lx] ^= AT_BOLD;
-  if (BlockMark) { BlockTx = x0;
-                   llmove(x0,x1, REPLACE, Lebuf+x0); } // just ot make sure
-}                                                      // window is updated
+  for (Lx = x0; Lx < x1; Lx++)  (*fn)(&Lebuf[Lx]);
+  if (BlockMark) { BlockTx = x0;                       // just ot make sure
+                   llmove(x0,x1, REPLACE, Lebuf+x0); } // window is updated
+}
+void lecbold() { leupdate_attr( make_tchar_bold); }
+void leclear() { leupdate_attr(clear_tchar_attr); }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void lemovleft() 
 {
@@ -512,6 +517,7 @@ comdesc lecmds[] =
   { LE_CWDEC,  lecwdec,   CA_RPT|CA_MOD         }, /* word -> decimal        */
   { LE_CWHEX,  lecwhex,   CA_RPT|CA_MOD         }, /* word -> hex            */
   { LE_CBOLD,  lecbold,          CA_MOD|CA_NEND }, /* сделать жирным         */
+  { LE_CLEAR,  leclear,          CA_MOD|CA_NEND }, /* очистить аттрибуты     */
   { LE_MOVRIGHT, lemovright,     CA_MOD|CA_NEND }, /* сдвинуть вправо        */
   { LE_MOVLEFT,  lemovleft,      CA_MOD|CA_NBEG }, /* сдвинуть влево         */
 /*

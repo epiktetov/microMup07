@@ -397,7 +397,8 @@ ones (without selection, current character is converted and cursor moves right)
 
   Ctrl+Shift+6(^) - convert current character (or selected block) to uppercase
   Ctrl+Shift+-(_) - convert current character (or selected block) to lowercase
-  Ctrl+Shift+B    - add / clear "bold" attribute
+  Ctrl+Shift+B    - add "bold" attribute
+  Ctrl+Shift+C    - clear all attributes (= remove "bold")
 
 NOTE: "bold" attribute is marked by Unicode chars U+281 / U+280 (which are very
 unlikely to appear in regular text) and not compatible with anything.. not even
@@ -408,6 +409,7 @@ k_(LE_CCDWN, "Ctrl+Shift+-", 0xf8915) /* буква -> строчная         
 a_(LE_CCUP,  "Ctrl+Shift+^", 0xf8913) /*   (only works in 'C' locale) */
 a_(LE_CCDWN, "Ctrl+Shift+_", 0xf8915) /*                              */
 k_(LE_CBOLD, "Ctrl+Shift+B", 0xf8442) /* сделать жирным               */
+k_(LE_CLEAR, "Ctrl+Shift+C", 0xf8443) /* очистить аттрибут "жирный"   */
 /*
 ʁThird MicroMir principle:ʀ instead of relying on sorting capabilites provided by
 file browser, one can keep files sorted his/her way (and also add any comments)
