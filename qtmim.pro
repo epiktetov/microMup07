@@ -8,7 +8,7 @@ macx {
   LIBS += /opt/local/lib/liblua.a -framework Cocoa
 } else:unix {
   INCLUDEPATH += /usr/include/lua5.2
-  LIBS += -llua5.2
+  LIBS += -l:liblua5.2.a -ldl
 } else:win32 {
   INCLUDEPATH += ../lua/include
   LIBS += -L../lua/lib -llua
