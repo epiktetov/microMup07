@@ -462,14 +462,15 @@ void MiScTwin::vpResize (int width, int height)
                    vp->wsh += dH/fontHeight; vpResize(); }
 }
 void MiScTwin::vpResize() { resize(Tsw2qtWb(vp->wsw), Tsh2qtHb(vp->wsh)); }
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-void MiScTwin::resizeEvent(QResizeEvent*) // using fontWidth as vertical offset
-{                                         //                       for symmetry
-  info.move(width()  - info.width()  - fontWidth,
-            height() - info.height() - fontWidth); UpdateGradientPixmap();
-  //
-  diag.move(width() - diag.width() - fontWidth, fontWidth);
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void MiScTwin::updateInfoDiagPosition() // using fontWidth as vertical offset
+{                                       //                       for symmetry
+  info.move(width () - info.width () - fontWidth,
+            height() - info.height() - fontWidth);
+  diag.move(width () - diag.width () - fontWidth, fontWidth);
 }                    
+void MiScTwin::resizeEvent(QResizeEvent*) { UpdateGradientPixmap  ();
+                                            updateInfoDiagPosition(); }
 //-----------------------------------------------------------------------------
 void mimSetNamedColor (QColor& color, const QString descr)
 {
@@ -896,8 +897,9 @@ void MiInfoWin::SetPalette (QColor bgnd, QColor text)
 }
 void MiInfoWin::vpResize() // need plenty of room for key codes...
 {
-  resize(2 * mimBORDER + sctw->Tw2qtW(MiApp_debugKB ? 25 : 10),
-         2 * mimBORDER + sctw->Th2qtH(1));
+  bool big = (MiApp_debugKB || infoType == MitKBKEY);
+  resize(2 * mimBORDER + sctw->Tw2qtW(big ? 25 : 10),
+         2 * mimBORDER + sctw->Th2qtH(1)           );
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiInfoWin::paintEvent (QPaintEvent *)
@@ -907,7 +909,7 @@ void MiInfoWin::paintEvent (QPaintEvent *)
   if (!displayText.isEmpty()) {
     dc.drawText(sctw->Tx2qtX(0), Y, displayText); displayText.clear();
   }
-  else if (MiApp_debugKB) {
+  else if (MiApp_debugKB || infoType == MitKBKEY) {
     int mpos = 25 - last_MiCmd_mods.length();
     if (mpos < 0)            mpos = 0;
     dc.drawText(sctw->Tx2qtX(mpos), Y, last_MiCmd_mods);
@@ -950,8 +952,11 @@ void MiInfoWin::paintEvent (QPaintEvent *)
   } }
   dc.drawText(sctw->Tx2qtX(9), Y, clipStatus());
 }
-void MiInfoWin::updateInfo (MiInfoType mit) { if (mit) infoType = mit;
-                                                            repaint(); }
+void MiInfoWin::updateInfo (MiInfoType mit)
+{
+  if (mit) { infoType = mit; vpResize(); sctw->updateInfoDiagPosition(); }
+  repaint(); // ^
+}            // resize on type change (MitKBKEY need more room), always repaint
 //-----------------------------------------------------------------------------
 MiDiagWin::MiDiagWin (MiScTwin *parent) : QWidget(parent),sctw(parent)
 {

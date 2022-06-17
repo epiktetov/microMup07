@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07 ViewPort (interface Qt/C++ • legacy code) | (c) Epi MG, 2006-2020
+// МикроМир07 ViewPort (interface Qt/C++ • legacy code) | (c) Epi MG, 2006-2022
 //------------------------------------------------------+----------------------
 #include <QApplication>
 #include <QPainter>
@@ -320,6 +320,7 @@ void vipOnKeyCode (wnd *vp, int ev)   /* called from MkMimXEQ (file ccd.cpp) */
        if (ev == TK_LINFO) vp->sctw->info.updateInfo(MitLINE_BLOCK);
   else if (ev == TK_PINFO) vp->sctw->info.updateInfo(MitLINE_POSXY);
   else if (ev == TK_CHARK) vp->sctw->info.updateInfo(MitCHARK);
+  else if (ev == TK_KBKEY) vp->sctw->info.updateInfo(MitKBKEY);
   else if (ev == TW_CDOWN) { wpos_off(vp);
     if (Lwnd) ExitLEmode();          // set Ty to the last line in the window,
     tesetxy (Tx, vp->wty+vp->wsh-1); // to avoid scrolling into an empty screen
