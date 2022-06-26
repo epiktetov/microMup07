@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07          Embedded Lua scripting           | (c) Epi MG, 2011-2016
+// МикроМир07          Embedded Lua scripting           | (c) Epi MG, 2011-2022
 //------------------------------------------------------+--------------------*/
 #include <QRegExp>
 #include "mim.h"
@@ -418,12 +418,72 @@ static void luasN_setTxt_this (txt *Tx) //- - - - - - - - - - - - - - - - - - -
           luaQQ_rawset(-3); luaQn_pop(1); // adding "this" only in the luasExec
 }                                         // scope (^J,^J and Shift^J commands)
 //-----------------------------------------------------------------------------
+static const char abc[] = "0123456789+ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                    "-abcdefghijklmnopqrstuvwxyz";
+static int Nabc (const char c)
+{
+  const char *p = strchr(abc,c); return p ? (p-abc) : 0;
+}
+static inline char encode1(int  N, char k) { return  abc[(N + Nabc(k)) & 63]; }
+static inline long decode1(char x, char k) { return (Nabc(x) - Nabc(k)) & 63; }
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+static int luasEncode (lua_State *L)
+{
+  size_t tlen; const char *orig_text = luaL_checklstring(L,1,&tlen);
+  size_t klen; const char       *key = luaL_checklstring(L,2,&klen);
+  if (klen < 1) luaP_pushstring("bad-key");
+  else {
+    uchar   *text = (uchar*)malloc((tlen+2)/3*3);
+    for (uchar *p = (uchar*)blkmov((void*)orig_text,text,tlen);
+                                              tlen % 3; tlen++) *p++ = ' ';
+    char *encoded = (char*)malloc(4*tlen/3),
+             *out = encoded;
+    for (int i = 0, k = 0; i < tlen; i += 3) {
+      long N = (text[i] << 16) | (text[i+1] << 8) | text[i+2];
+      *out++ = encode1((N & 0xFC0000) >> 18, key[k++ % klen]);
+      *out++ = encode1((N & 0x03F000) >> 12, key[k++ % klen]);
+      *out++ = encode1((N & 0x000FC0) >>  6, key[k++ % klen]);
+      *out++ = encode1((N & 0x00003F),       key[k++ % klen]);
+    }
+    luaP_pushlstring(encoded,out-encoded);
+                free(text); free(encoded);
+  } return 1;
+}
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+static int luasDecode (lua_State *L)
+{
+  size_t tlen; const char *text = luaL_checklstring(L,1,&tlen);
+  size_t klen; const char  *key = luaL_checklstring(L,2,&klen);
+       if (tlen % 4) luaP_pushstring("bad-length");
+  else if (klen < 1) luaP_pushstring("bad-key");
+  else {
+    char *decoded = (char*)malloc(3*tlen/4),
+             *out = decoded;
+    for (int i = 0, k = 0; i < tlen; i += 4) {
+      long N = decode1(text[i],   key[k++ % klen]) << 18;
+      N |=     decode1(text[i+1], key[k++ % klen]) << 12;
+      N |=     decode1(text[i+2], key[k++ % klen]) <<  6;
+      N |=     decode1(text[i+3], key[k++ % klen]);
+      *out++ = ((N >> 16) & 0xFF);
+      *out++ = ((N >>  8) & 0xFF); *out++ = N & 0xFF;
+    }
+    luaP_pushlstring(decoded,out-decoded);
+                            free(decoded);
+  } return 1;
+}
+static void luEndecFn(void) //- - - - - - - - - - - - - - - - - - - - - - - - -
+{
+  luaP_pushCfunction(luasEncode); luaQ_setglobal("encode");
+  luaP_pushCfunction(luasDecode); luaQ_setglobal("decode");
+}
+//-----------------------------------------------------------------------------
 void luasInit(void)                            // Lua SCRIPTING initialization
 {
   L = luaL_newstate();
       luaL_openlibs(L); MkInitCCD(); // defines "Mk" table (for Lua and itself)
                         luaReInit(); // defines "Re" function (obj constructor)
                         luTxtInit(); // defines "Txt" table
+                        luEndecFn(); // defines "encode" and "decode" functions
   luaP_newtable();
   luaQ_setglobal("MkLF"); // table "MkLF" initially empty, user may add filters
   //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

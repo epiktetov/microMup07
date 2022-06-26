@@ -104,6 +104,23 @@ do local function breakable(c) return (c == ' ' or c == ',' or c == ';') end
                        while Tx.reX do BlockFormat(Tx) end end
   end
 end
+-----------------------------------------------------------------------
+Mk["Ctrl+Shift+E"] = function(Tx,count) -- encode using Vigenère cipher
+  local key = Tx:gtl(); Tx:go(1)
+  local it = count or 2147483647
+  for i=1,it do                              local orig =  Tx:line();
+    if orig and orig:len() > 0 then Tx:DL(); Tx:IL(encode(orig,key));
+                               else return                        end
+  end
+end                                     -- to encode/decode, insert line,
+Mk["Ctrl+Shift+D"] = function(Tx,count) -- enter key: [0-9A-Za-z+\-]+ and
+  local key = Tx:gtl(); Tx:go(1)        -- invoke Ctrl+Shift+E/+D command
+  local it = count or 2147483647
+  for i=1,it do                              local orig =  Tx:line();
+    if orig and orig:len() > 0 then Tx:DL(); Tx:IL(decode(orig,key));
+                               else return                        end
+  end --
+end   -- Esc N,Ctrl+Shift+E/+D to process N lines (stop at empty line / EOF)
 ----------------------------------------------------------------------------
 function Mk2html(Tx)        -- convert MicroMir text (with ʁboldʀ etc) to HTML
   local Hx = Txt.open(true) --
