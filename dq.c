@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07       Деки                                | (c) Epi MG, 2007-2020
+// МикроМир07       Деки                                | (c) Epi MG, 2007-2023
 //------------------------------------------------------+----------------------
 * Original "dq.c" (c) Attic 1989-91
 *                 (c) EpiMG 1997-2001
@@ -40,10 +40,11 @@ static long tmswap(long req_mem); /* выкидывает заменимое, re
 deq *DqInit(char *membuf, long bufsize)     /* create "anti-deq" that covers */
 {                                           /* memory that other deqs cannot */
   deq0.dbext = 0; gapdeq = NIL;             /* use (it has reverse beg/end)  */
-  deq0.deext = 0;
+  deq0.deext = 0;      deq0.dtyp =    '0';
   deq0.dprev = &deq0;  deq0.dend = membuf;      deq0.dextra = 0;
   deq0.dnext = &deq0;  deq0.dbeg = membuf+bufsize; return &deq0;
 }
+deq *DqFreedeqs() { return freedeqs; } /* get freedeqs list (for debug only) */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 deq *DqNew (short typ, short bext, short eext, txt *town)
 {

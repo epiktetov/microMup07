@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07           Text & Window Manager           | (c) Epi MG, 2004-2020
+// МикроМир07           Text & Window Manager           | (c) Epi MG, 2004-2023
 //------------------------------------------------------+----------------------
 #include <QCoreApplication> // need QCoreApplication::arguments
 #include <QRegExp>
@@ -278,24 +278,28 @@ void tmDumpDeqs()             /* dump all deqs info to debug memory problems */
   qfile   *qf = QfsNew("~/.micro7.dump",  NULL);
   FILE *dumpf = fopen(qf->full_name.cStr(),"w");
   if   (dumpf == NULL)                   return;
+  char *base = deq0_for_debug->dend;
+  deq  *d = deq0_for_debug;
   const char *fname;
-  for (deq *d = deq0_for_debug->dnext; d != deq0_for_debug; d = d->dnext) {
+  fprintf(dumpf, "dbeg(+x) dend(+x) dextra dtyp/txt-info\n");
+//                1234567+ 1234567+ 1234567 T txt-file-info
+  do {
+    fprintf(dumpf, "%07lX%c ", cpdiff(d->dbeg,base), d->dbext?'<':' ');
+    fprintf(dumpf, "%07lX%c ", cpdiff(d->dend,base), d->deext?'>':' ');
+    fprintf(dumpf, "%07lX %c", d->dextra,    d->dtyp);
     if (d->dtyp == DT_TEXT) {
       fname = d->owner->file ? d->owner->file->full_name.cStr() : "NULL";
-      fprintf(dumpf, "\n%04x:%s\n ", d->owner->txstat,            fname);
+      fprintf(dumpf, " %04x:%s", d->owner->txstat,                fname);
     }
-    fprintf(dumpf, "%c%c", d->dbext? '{' : '[', d->dtyp);
-    long len = DqLen(d);
-         if (len > 1048576) fprintf(dumpf, "%ldM", (len+524288)/1048576);
-    else if (len > 1024)    fprintf(dumpf, "%ldk", (len+512)   /1024   );
-    else                    fprintf(dumpf, "%ld",   len                );
-    fprintf(dumpf, "%c", d->deext ? '}' : ']');
-    long gap = cpdiff(d->dnext->dbeg, d->dend);
-         if (gap > 1048576) fprintf(dumpf, "-%ldM-", (gap+524288)/1048576);
-    else if (gap > 1024)    fprintf(dumpf, "-%ldk-", (gap+512)   /1024   );
-    else if (gap > 0)       fprintf(dumpf, "-%ld-",   gap                );
+    fprintf(dumpf,"\n"); d  =        d->dnext;
+  } while               (d != deq0_for_debug);
+// - - - - - - - - - - - - - - - - - - - - - -
+  fprintf(dumpf,"--freedeqs--\n");
+  for (d = DqFreedeqs(); d; d = d->dnext) {
+    fprintf(dumpf, "%07lX  ", cpdiff(d->dbeg,base));
+    fprintf(dumpf, "%07lX  ", cpdiff(d->dend,base));
   }
-  fprintf(dumpf, "\n"); fclose(dumpf); delete qf;
+  fclose(dumpf); delete qf;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tmDumpList() /* dumps the list of all text objects (for debug purposes) */

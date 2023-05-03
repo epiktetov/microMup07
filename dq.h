@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07       Деки (deques) для Tx и Undo         | (c) Epi MG, 2007-2020
+// МикроМир07       Деки (deques) для Tx и Undo         | (c) Epi MG, 2007-2023
 //------------------------------------------------------+--------------------*/
 #ifndef DQ_H_INCLUDED                           /* Old "dq.h" (c) Attic 1989 */
 #define DQ_H_INCLUDED
@@ -21,6 +21,7 @@ struct deq_tag
 #define DT_SYNT 's' /* буфер для Syntax checker       (binary) */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 deq *DqInit(char *membuf, long bufsize);
+deq *DqFreedeqs();
 long DqFree();                               /* <- total free memory in deqs */
 /*---------------------------------------------------------------------------*/
 deq *DqNew(short typ, short bext, short eext, txt *town);
