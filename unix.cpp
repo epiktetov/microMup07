@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07       Shell commands and tmSyncPos        | (c) Epi MG, 2007-2020
+// МикроМир07       Shell commands and tmSyncPos        | (c) Epi MG, 2007-2023
 //------------------------------------------------------+--------------------*/
 #include <QString>        /* Old tm.c (c) Attic 1989-91, (c) EpiMG 1997-2003 */
 #include <QRegExp>
@@ -86,7 +86,7 @@ static void appendText(txt *Stxt, int& Sx, char *text, char *tend)
   }
   if (Sx > Stxt->txrm) Sx = Stxt->txrm;
 }
-static void appendCR(txt *Stxt, int& Sx, long& Sy)
+static void appendNL(txt *Stxt, int& Sx, long& Sy)
 {
   TxDown(Stxt); Sx = Stxt->txlm; Sy++;
 }
@@ -110,15 +110,26 @@ static void shellexec (txt *Stxt, int  &Sx,
   short oldTXED = Stxt->txredit;           // mark text as "read only"..
                   Stxt->txredit = TXED_NO; // mostly to force red cursor
   EnterOSmode();
+  int gotCR = 0;
   do {
     if (proc->state() == QProcess::NotRunning) break_count++;
     QByteArray                       bytes = proc->readAllStandardError();
     if ((len = bytes.length()) <= 0) bytes = proc->readAllStandardOutput();
     if ((len = bytes.length())  > 0) {                    TxSetY(Stxt, Sy);
       for (p = pst = bytes.data(); len--; p++) {
-        if (*p == '\r' || *p == '\n') { appendText(Stxt,Sx,     pst,   p);
-                                        appendCR  (Stxt,Sx,Sy); pst = p+1; }
-      } if (p != pst)                   appendText(Stxt,Sx,     pst,   p);
+        switch (*p) {
+        case '\r': gotCR = 1; break;
+        case '\n': gotCR = 0;
+          appendText(Stxt,Sx,     pst,   p); // add text before NL + NL itself,
+          appendNL  (Stxt,Sx,Sy); pst = p+1; // move pst to the char after '\n'
+          break;
+        default:                                           // gotCR => add text
+          if (gotCR) {                                     // with CR included,
+            if (p != pst) appendText(Stxt,Sx,     pst, p); // if possible, move
+                          appendNL  (Stxt,Sx,Sy); pst = p; // pst to a new char
+            gotCR = 0;
+        } }
+      } if (p != pst) appendText(Stxt,Sx, pst, p);
     }
     while ((k = kbhin()) != 0) { // Process all user input from KBH queue
       char ascii = k;            //  (but do not wait for anything here)
@@ -126,7 +137,7 @@ static void shellexec (txt *Stxt, int  &Sx,
       case    3: proc->terminate(); break_count++; break; /* ^C */
       case    4: proc->close();     break_count++; break; /* ^D */
       default:
-        if (k == '\n') appendCR(Stxt,Sx,Sy);
+        if (k == '\n') appendNL(Stxt,Sx,Sy);
         else {
           p = &ascii; appendText(Stxt,Sx, p, p+1);
         }
