@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07 ViewPort (interface Qt/C++ • legacy code) | (c) Epi MG, 2006-2022
+// МикроМир07 ViewPort (interface Qt/C++ • legacy code) | (c) Epi MG, 2006-2023
 //------------------------------------------------------+----------------------
 #include <QApplication>
 #include <QPainter>
@@ -140,10 +140,10 @@ void vipRepaint(wnd *vp, QPainter& dc, MiScTwin *sctw, int x0, int x1,
         len -= vp->wtx; cline = QRect(x0,y,width,1);
 //
 // NOTE: TxInfo returns len of the filled up buffer, but the buffer itself is
-// much larger - tcbuf[MAXLPAC], and it's discardable, so no problem to write
+// larger - tcbuf[MAXLPAC+MAXTXRM] + it's discardable, so no problem to write
 // past the end-of-pt_line (we only use len because Erase is faster than Text)
 //
-         if (len < x0) len = x0;   // Draw BlockMark and curosor into buffer
+         if (len < x0) len = x0;   // Draw BlockMark and cursor into buffer
     else if (len > x1) len = x1+1; // (block first, as area may contain both,
     bool spoiled = false;          //                    keeping cursor color)
     if (BlockMark && cline.intersects(BlockMarkRect)) {

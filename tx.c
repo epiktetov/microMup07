@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07              Texts - Тексты               | (c) Epi MG, 2007-2022
+// МикроМир07              Texts - Тексты               | (c) Epi MG, 2007-2023
 //------------------------------------------------------+--------------------*/
 #include "mic.h"             /* Old tx.c (c) Attic 1989, (c) EpiMG 1998,2001 */
 #include "qfs.h"
@@ -12,7 +12,7 @@
 #include "synt.h"
 #include <string.h>
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-txt *texts  =  NIL;  static tchar tcbuf[MAXLPAC]; int tcbuflen = 0;
+txt *texts  =  NIL;  static tchar tcbuf[MAXLPAC+MAXTXRM]; int tcbuflen = 0;
 char afbuf[MAXLUP];
 char txbuf[MAXLUP+2];
 /*-----------------------------------------------------------------------------

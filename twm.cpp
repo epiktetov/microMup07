@@ -298,6 +298,7 @@ void tmDumpDeqs()             /* dump all deqs info to debug memory problems */
   for (d = DqFreedeqs(); d; d = d->dnext) {
     fprintf(dumpf, "%07lX  ", cpdiff(d->dbeg,base));
     fprintf(dumpf, "%07lX  ", cpdiff(d->dend,base));
+    fprintf(dumpf, "%07lX %c\n",d->dextra, d->dtyp);
   }
   fclose(dumpf); delete qf;
 }
