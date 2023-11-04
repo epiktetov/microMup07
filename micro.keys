@@ -6,7 +6,7 @@
  * "nanoMir" and МикроМир07 (c) EpiMG (М.Г.Эпиктетов)   1998-2001 and 2006-2023
 -------------------------------------------------------------------------------
  Ins is "Help" key on MacPro keyboard, missing on A1243 (see KEY MAPPING below)
- Del is "Delete⌦" on Mac keyboard ("delete" key is Backspace)
+ Del is "Delete⌦" on Mac keyboard, when present ("delete" key is Backspace)
  Return is either "Enter↵" or "Return" on main keyboard (not "enter" on numpad)
  PgUp/PgDown on MacBook keyboard may be entered as Fn+Up/Fn+Down (modifiers Ok)
  Super = user-defined extra modifier (default: right Ctrl, but see KEY MAPPING)
@@ -561,7 +561,7 @@ NOTE:
   Tx:DL(N) -- delete N lines at cursor (default = 1)
   Tx:gtl() -- get-text-left convenience method = gets first chunk of non-spaces
                                        from text to the left of cursor position
-[line 561] xref: new.lua
+[line 564] xref: new.lua
 
   re = Re("..regex..",true/false) -- regular expression (arg: case sensitivity,
   re = Re[[..regex..]]                                default = case-sensitive)
