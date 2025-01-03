@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07    le = Line Editor -- Редактор строки    | (c) Epi MG, 2006-2022
+// МикроМир07    le = Line Editor -- Редактор строки    | (c) Epi MG, 2006-2025
 //------------------------------------------------------+--------------------*/
 #include "mic.h"             /* Old le.c (c) Attic 1989, (c) EpiMG 1996-2003 */
 #include "ccd.h"
@@ -307,11 +307,11 @@ void lecwhex() { leconvert_word(cvTO_RADIX);   }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 static void  make_tchar_bold(tchar *tc) { *tc |= AT_BOLD; }
 static void clear_tchar_attr(tchar *tc) { *tc &= AT_CHAR; }
-static void leupdate_attr(void (*fn)(tchar))
+static void leupdate_attr(void (*fn)(tchar*))
 {
   int x0,x1; if (! Block1size(&x0,&x1)) x1 = (x0 = Lx) + 1;
   for (Lx = x0; Lx < x1; Lx++)  (*fn)(&Lebuf[Lx]);
-  if (BlockMark) { BlockTx = x0;                       // just ot make sure
+  if (BlockMark) { BlockTx = x0;                       // just to make sure
                    llmove(x0,x1, REPLACE, Lebuf+x0); } // window is updated
 }
 void lecbold() { leupdate_attr( make_tchar_bold); }
