@@ -3,7 +3,7 @@
  * ----------------------------------------------------------------------------
  * original "МикроМир" idea (c) А.Г.Кушниренко, Г.В.Лебедев (мехмат МГУ)   1981
  * "nanoMir" implementation (c) Attic (Д.В.Варсанофьев, А.Г.Дымченко) 1989-1991
- * "nanoMir" and МикроМир07 (c) EpiMG (М.Г.Эпиктетов)   1998-2001 and 2006-2023
+ * "nanoMir" and МикроМир07 (c) EpiMG (М.Г.Эпиктетов)   1998-2001 and 2006-2025
 -------------------------------------------------------------------------------
  Ins is "Help" key on MacPro keyboard, missing on A1243 (see KEY MAPPING below)
  Del is "Delete⌦" on Mac keyboard, when present ("delete" key is Backspace)
@@ -546,6 +546,7 @@ MicroMir-specific Lua objects and operations
   Tx.X, Tx.Y -- current cursor position (assigning new value will move cursor)
   Tx.reX,reY -- another corner of the selection rectangle (nil if no selection)
   Tx.maxY    -- max value of Y in text  (= total number of lines in given text)
+  Tx.name,fname -- short/full text name (excluding or including full file path)
   Tx:go(dy)
   Tx:go(dx,dy) = convenience methods to move cursor around (because Lua does
                                            not allow 'Tx.Y++' or 'Tx.Y += k')
@@ -561,7 +562,7 @@ NOTE:
   Tx:DL(N) -- delete N lines at cursor (default = 1)
   Tx:gtl() -- get-text-left convenience method = gets first chunk of non-spaces
                                        from text to the left of cursor position
-[line 564] xref: new.lua
+[line 565] xref: new.lua
 
   re = Re("..regex..",true/false) -- regular expression (arg: case sensitivity,
   re = Re[[..regex..]]                                default = case-sensitive)

@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07          Embedded Lua scripting           | (c) Epi MG, 2011-2022
+// МикроМир07          Embedded Lua scripting           | (c) Epi MG, 2011-2025
 //------------------------------------------------------+--------------------*/
 #include <QRegExp>
 #include "mim.h"
@@ -187,6 +187,7 @@ static int luTxFocus (lua_State*)     // Tx:focus() = focus last opened window,
 //   Tx.reX,reY = opposite corner of selection rectangle (nil if no selection)
 //   Tx.maxY    = max valid value of Y (= total number of lines in given text)
 //   Tx.name    = text (file) name (not including the path)
+//   Tx.fname   = full canonical file name (with absolute path)
 //   Tx:go(dy)
 //   Tx:go(dx,dy) = convenience methods to move cursor around ('cause Lua does
 //                                      not allow 'Tx.Y++' or even 'Tx.Y += k')
@@ -240,8 +241,9 @@ static int luTxIndex (lua_State *L) // Tx.X and Tx.Y - read/write access
     if (t == Ttxt && BlockMark) luaP_pushinteger(BlockTy+1);
     else                        luaP_pushnil();
   }
-  else if (strcmp(var,"maxY") == 0) luaP_pushinteger(t->maxTy);
-  else if (strcmp(var,"name") == 0) luaP_pushstring(t->file->name.uStr());
+  else if(strcmp(var, "maxY") == 0) luaP_pushinteger(t->maxTy);
+  else if(strcmp(var, "name") == 0) luaP_pushstring(t->file->name.uStr());
+  else if(strcmp(var,"fname") == 0) luaP_pushstring(t->file->full_name.uStr());
   else {
     luaP_getglobal ("Txt"); // refer to the base Txt table for everything else
     luaX_getfield_top(var); // (if field is not there, let Lua generate errors
