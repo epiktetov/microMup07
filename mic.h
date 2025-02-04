@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07         Самый главный header файл         | (c) Epi MG, 2006-2020
+// МикроМир07         Самый главный header файл         | (c) Epi MG, 2006-2025
 //------------------------------------------------------+--------------------*/
 #ifndef MIC_H_INCLUDED  /* Old "nm.h" (c) Attic 1989-90, (c) EpiMG 1998-2001 */
 #define MIC_H_INCLUDED
@@ -136,6 +136,7 @@ extern void xfree(void *mem); /* =free(), only to avoid including <stdlib.h> */
  * let virtual memory subsystem do optimization by itself
  */
 char *MemInit(long *allocated_size);
+extern        long    miTotalMemMiB;
 /*
  * Часто употребляемые функции:
  */

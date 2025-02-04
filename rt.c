@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07   runtime (memory and string operations)  | (c) Epi MG, 2007-2016
+// МикроМир07   runtime (memory and string operations)  | (c) Epi MG, 2007-2025
 //------------------------------------------------------+--------------------*/
 #include "mic.h" /* Old me.c - Память (c) Attic 1989-90, (c) EpiMG 1998-2003 */
 #include <stdio.h>
@@ -15,6 +15,10 @@ char *xmalloc (long n)
 }                                   // will be happy with that byte anyway)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 #define BIG_MEM_CHUNK 120*1024*1024      /* 120 MiB is just peanuts nowadays */
+#define MIN_MEM_MiB   20
+#define MAX_MEM_MiB 2048
+#define MiB  (1024*1024)
+long miTotalMemMiB = 0; // total requested memory in MiB (def: BIG_MEM_CHUNK)
 /*
  * Инициализация "большого" сегмента памяти -- platform-specific manipulations
  * with VirtualAlloc() etc are removed, now it just malloc()'s a bug chunk and
@@ -22,7 +26,9 @@ char *xmalloc (long n)
  */
 char *MemInit (long *allocated_size)
 {
-  return xmalloc(*allocated_size = BIG_MEM_CHUNK);
+  if (MIN_MEM_MiB <= miTotalMemMiB && miTotalMemMiB <= MAX_MEM_MiB)
+       *allocated_size = miTotalMemMiB * MiB;
+  else *allocated_size =       BIG_MEM_CHUNK;  return xmalloc(*allocated_size);
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  * Переслать блок из <len> байт начиная с адреса <from> по адресу <to>.

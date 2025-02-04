@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07   Main Frame + Application Data + ScTwin  | (c) Epi MG, 2004-2022
+// МикроМир07   Main Frame + Application Data + ScTwin  | (c) Epi MG, 2004-2025
 //------------------------------------------------------+----------------------
 #include <QApplication>
 #include <QAction>
@@ -120,32 +120,32 @@ int main(int argc, char *argv[])
 #elif defined(Q_OS_LINUX)
   app.setWindowIcon(QIcon(":/qtmim.png"));
 #endif
-  tmInitialize(); // init everything (and run 'auto.lua' and configured script)
-  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  for (int i = 1; i < argc; i++) {
+#ifdef Q_OS_MAC                 // When file/directory is drag-n-dropped on our
+  QString farg = QfsEMPTY_NAME; // application on Mac, the name of the file/dir
+#else                           // is not specified in command line; open empty
+  QString farg =  ".";          // file to avoid showing unwanted contents
+#endif
+  QRegExp MemSize(Utf8("-([0-9]+)[Mm]")); // option to set total mem for files,
+  for (int i = 1; i < argc; i++) {        // implementation: file rt.c, line 21
     QString param = Utf8(argv[i]);
          if (param.compare("-dos", IGNORE_CASE) == 0) dosEOL           =     1;
     else if (param.compare("-unix",IGNORE_CASE) == 0) dosEOL           =     2;
     else if (param.compare("-dq",  IGNORE_CASE) == 0) debugDQ          =  TRUE;
     else if (param.compare("-ti",  IGNORE_CASE) == 0) MiApp_timeDELAYS =  true;
     else if (param.compare("-kb",  IGNORE_CASE) == 0) MiApp_debugKB    =  true;
-    else if (param == "-") { if (twStart(QfsEMPTY_NAME)) return app.exec();
-                             else                        return 2;        }
+    else if (param == "-")                       farg =          QfsEMPTY_NAME;
+    else if (MemSize.exactMatch(param)) miTotalMemMiB = MemSize.cap(1).toInt();
     else {
 #ifdef Q_OS_WIN                // Qt operates with correct forward slashes, but
       param.replace('\\','/'); // argv here comes from Windows, have to replace
 #endif
       if (param.startsWith("'")) param.replace(0,1,QfsXEQ_PREFIX);
-      if (twStart(param)) return app.exec();
-      else                return 1;
+      farg = param;
   } }
-#ifdef Q_OS_MAC                 // When file/directory is drag-n-dropped on our
-#define mimNoNAME QfsEMPTY_NAME // application on Mac, the name of the file/dir
-#else                           // is not specified in command line; open empty
-#define mimNoNAME "."           // file to avoid showing unwanted contents
-#endif
-  if (twStart(mimNoNAME)) return app.exec();
-  else                    return 2;
+  tmInitialize(); // init everything (and run 'auto.lua' and configured script)
+  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  if (twStart(farg)) return app.exec();
+  else               return 1;
 }
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void mimExit()
