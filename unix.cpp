@@ -1,5 +1,5 @@
 /*------------------------------------------------------+----------------------
-// МикроМир07       Shell commands and tmSyncPos        | (c) Epi MG, 2007-2023
+// МикроМир07       Shell commands and tmSyncPos        | (c) Epi MG, 2007-2025
 //------------------------------------------------------+--------------------*/
 #include <QString>        /* Old tm.c (c) Attic 1989-91, (c) EpiMG 1997-2003 */
 #include <QRegExp>
@@ -216,6 +216,20 @@ int tmGrep (int kcode)
   TxIL(Ttxt, (char*)grep_cmd.cStr(), grep_cmd.length());      Ty++;
   TxDown(Ttxt);
   shellexec(Ttxt, Tx, Ty, grep_cmd.cStr(), Twnd); return 0;
+}
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+static void append_disrstk_item (qfile *file, long ypos)
+{
+  QString fn = QString("%1:%2:").arg(file->full_name).arg(ypos);
+  TxIL(Ttxt,(char*)fn.cStr(),fn.length());  Ty++;  TxDown(Ttxt);
+}
+int tmShowDirst (void) // show dirstack = history of files entered by Esc,Down
+{                      //  (or equivalent) commands in the current text/window
+  txt *Ctxt = Ttxt;    //
+  wnd *Cwnd = Twnd;                         if (shelltext(TM_HFORK)) return -1;
+  dirstk   *pds   = Cwnd->dirsp; append_disrstk_item(Ctxt->file, Ctxt->vp_cty);
+  while ((--pds) >= Cwnd->stack) append_disrstk_item( pds->file,     pds->dsy);
+  return 0;
 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 void tmLoadXeq (txt *t) /* load text by executing command from t->file->name */

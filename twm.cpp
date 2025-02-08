@@ -1,5 +1,5 @@
 //------------------------------------------------------+----------------------
-// МикроМир07           Text & Window Manager           | (c) Epi MG, 2004-2023
+// МикроМир07           Text & Window Manager           | (c) Epi MG, 2004-2025
 //------------------------------------------------------+----------------------
 #include <QCoreApplication> // need QCoreApplication::arguments
 #include <QRegExp>
@@ -624,8 +624,9 @@ int TmCommand (int kcode)
     break;
   case TM_GREP:
   case TM_GREP2:   return (tmGrep(kcode) < 0) ? E_SFAIL : E_OK;
-  case TM_SYNCPOX: return (tmSyncPos(0)  < 0) ? E_SFAIL : E_OK;
-  case TM_SYNCPOS: return (tmSyncPos(1)  < 0) ? E_SFAIL : E_OK;
+  case TM_SYNCPOS: return (tmSyncPos(0)  < 0) ? E_SFAIL : E_OK;
+  case TM_SYNCPOX: return (tmSyncPos(1)  < 0) ? E_SFAIL : E_OK;
+  case TM_DIRST:   return (tmShowDirst() < 0) ? E_SFAIL : E_OK;
   case TM_LUAF:    return luasExec(Ttxt,false);
   case TM_LUAS:    return luasExec(Ttxt, true);
   case TM_LUAN:    twNewLuaText(); return E_OK;

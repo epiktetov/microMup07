@@ -51,6 +51,7 @@ function MkSyncMarks(Rx,Tx) -- called from (tm)SyncPos
           N = N+1;   if N == 20 then return end
     end end
   end
+  while N < 20 do Tx:mark(N,0); N = N+1 end
 end
 ----------------------------------------------------------------------------
 do local function breakable(c) return (c == ' ' or c == ',' or c == ';') end
