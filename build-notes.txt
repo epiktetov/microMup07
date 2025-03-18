@@ -1,0 +1,4 @@
+When building on Windows with minGW-32, make sure its binaries are 1st in path:
+
+set path=(/opt/mingw32/bin $path /cygdrive/c/Qt/4.8.6/bin /home/epi/lua)
+
