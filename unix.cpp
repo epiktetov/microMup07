@@ -178,7 +178,6 @@ static int shelltext (int kcode) /* select new Ttxt (and Twnd) for shell cmd */
   }
   else {
     Ctxt = tmDesc(QfsELLIPSIS, false, Ttxt);
-//+    wind = vipSplitWindow(Twnd, kcode == TM_F2EXEC ? TM_VFORK : TM_HFORK);
     wind = vipSplitWindow(Twnd, kcode);
     if (wind) wattach(Ctxt, wind);
     else    { vipBell(); return 1; }   // the content is re-created => register
@@ -406,8 +405,9 @@ diff_sync_to_sibling_wnd:
   else {
     for (other_wnd = windows; other_wnd; other_wnd = other_wnd->wdnext) {
       txt *t =                                       other_wnd->wtext;
-      if (t && t->file && t->file->name == filename
-                       && t->file->path == Ttxt->file->path) break;
+      if (t && t->file &&
+        ((t->file->name == filename && t->file->path == Ttxt->file->path) ||
+                                       t->file->full_name == filename) ) break;
   } }
   if (other_wnd) { vipActivate(other_wnd);   // if "other window" already exist
                    vipFocus   (other_wnd); } // then just activate, else create
