@@ -588,7 +588,7 @@ void vipFileTooBigError (qfile *f, long size)
   vipError(QString("File %1 is too big (size: %2), truncated")
                          .arg(QfsShortName(f)).arg(size));
 }
-void vipErrEvent (int E_code)
+void vipErrEvent (int /*E_code*/)
 {
   vipBell(); // if (Twnd) Twnd->sctw->DisplayInfo(QString("e:%1").arg(E_code));
 }

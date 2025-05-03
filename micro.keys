@@ -22,7 +22,8 @@ COMMAND LINE
 Options:
  -dos  - save files in MS DOS format (with CR LF) instead of default POSIX (LF)
  -unix - force POSIX format (if no -dos/unix => mixed mode, use LF and show CR)
- -{n}M - allocate {n} MiB for file storage, min:20(MiB), max:2048, def:120(MiB)
+ -n    - start a new instance on Windows (by default only one instance allowed)
+ -{k}M - allocate {k} MiB for file storage, min:20(MiB), max:2048, def:120(MiB)
  -dq - debug memory allocation |
  -ti - show execution timing   | debugging only, not intended for regular use
  -kb - show keyboard commands  |

@@ -76,6 +76,7 @@ bool MacEvents::eventFilter (QObject*, QEvent *ev)
 #ifdef Q_OS_WIN
 # define mimFONTFACENAME "Lucida Console"
 # define mimFONTSIZE  10
+# include <windows.h>
 #endif
 #define defWinGRADIENT Utf8("40°/white,grad:0-0.25,2nd:80°,3rd:200°")
 #define IGNORE_CASE Qt::CaseInsensitive
@@ -99,6 +100,18 @@ QColor colorLightBrown(234,195,125); // background for "default" mark text
 QColor colorSolidRed  (255,  0,  0); // solid red
 QColor colorSolidGreen(  0,166,  0); // - green | for numbered marks (used for
 QColor colorSolidBlue (  0, 85,215); // - blue  |          gradient background)
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#ifdef Q_OS_WIN
+struct MiSharedData
+{
+  HWND frameHWND;         // sharing the frame HWND and filename to open, using
+  char filename[MAXPATH]; // UUID for mutex name to not interfere with anything
+};                        //
+#define MimUUID "mim-8aac5518-cdcb-4797-8a8f-64e4e0bb691b"
+#define MIM_MSG_OPEN_NEW_FILE              (WM_USER+0x10F)
+bool       run1instance = true;
+MiSharedData *mimShared = NULL;
+#endif
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 int main(int argc, char *argv[])
 {
@@ -133,6 +146,7 @@ int main(int argc, char *argv[])
     else if (param.compare("-dq",  IGNORE_CASE) == 0) debugDQ          =  TRUE;
     else if (param.compare("-ti",  IGNORE_CASE) == 0) MiApp_timeDELAYS =  true;
     else if (param.compare("-kb",  IGNORE_CASE) == 0) MiApp_debugKB    =  true;
+    else if (param.compare("-n",   IGNORE_CASE) == 0) run1instance     = false;
     else if (param == "-")                       farg =          QfsEMPTY_NAME;
     else if (MemSize.exactMatch(param)) miTotalMemMiB = MemSize.cap(1).toInt();
     else {
@@ -142,6 +156,20 @@ int main(int argc, char *argv[])
       if (param.startsWith("'")) param.replace(0,1,QfsXEQ_PREFIX);
       farg = param;
   } }
+#ifdef Q_OS_WIN
+  QSharedMemory sharedMem(MimUUID);
+  if (run1instance) {
+    if (sharedMem.attach()) { mimShared = (MiSharedData*)sharedMem.data();
+      *scpyx  (farg.cStr(),   mimShared->filename,   MAXPATH-1)      =  0;
+      if (mimShared->frameHWND)
+        SendMessage(mimShared->frameHWND, MIM_MSG_OPEN_NEW_FILE, 0,0);
+      fprintf(stderr, "Open file in another instance...\n"); return 0;
+    }
+    else { sharedMem.create(sizeof(MiSharedData));
+      mimShared = (MiSharedData*)sharedMem.data();
+      memset(mimShared, 0,  sizeof(MiSharedData));
+  } }
+#endif
   tmInitialize(); // init everything (and run 'auto.lua' and configured script)
   //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   if (twStart(farg)) return app.exec();
@@ -219,6 +247,9 @@ MiFrame::~MiFrame() //- - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   Qs.setValue("frameHeight", MiApp_defHeight = tSize.height());
   if (main) delete main;         MiFrameSize = tSize;
   if (scwin) delete scwin;
+#ifdef Q_OS_WIN
+  if (mimShared && mimShared->frameHWND == winId()) mimShared->frameHWND = 0;
+#endif
 }                          
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void MiFrame::makeFonts() // makes textFont and boldFont from MiApp_defaultFont
@@ -301,6 +332,18 @@ void MiFrame::finishClose (int qtStandBtn) // finish closing either scwin (when
   }
   QCoreApplication::postEvent(this, new QCloseEvent);
 }
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#ifdef Q_OS_WIN
+bool MiFrame::winEvent (MSG *msg, long *result)
+{
+  if (mimShared && msg->message == MIM_MSG_OPEN_NEW_FILE) {
+    *result = twStart(mimShared->filename); return  true;
+  } else                                    return false;
+}
+void MiFrame::onFocus() { if (mimShared) mimShared->frameHWND = winId(); }
+#else
+void MiFrame::onFocus() { }
+#endif
 //-----------------------------------------------------------------------------
 // Creates new pane in the frame (unless two already exist - then do nothing,
 // return NULL), using background color from supplied pane (default if no base)
@@ -437,11 +480,11 @@ void MiFrame::resizeEvent (QResizeEvent*)
 }
 //=============================================================================
 MiScTwin::MiScTwin (MiFrame *frame, const QString bgndGrad, int pool, wnd *win)
-  : gotFocus(0), vp(win), mf(frame),
-    info (this),
-    diag (this),      gradTilt(4),
-    gradInPool(pool), gradPixSize(0), gradPixHeight(0),
-                      gradPixmap(NULL),  cmd2repeat(0), timerID(0)
+  : vp(win),             mf(frame),
+    info(this),         diag(this),
+    gradInPool(pool),
+    gradTilt(4), gotFocus(0),gradPixSize(0), gradPixHeight(0),
+                             gradPixmap(NULL),  cmd2repeat(0), timerID(0)
 {
   vp->sctw = this;       setFocusPolicy(Qt::ClickFocus);
   UpdateMetrics();       setAttribute(Qt::WA_OpaquePaintEvent);
@@ -854,8 +897,8 @@ void MiScTwin::timerEvent(QTimerEvent *)
 } }
 //-----------------------------------------------------------------------------
 void MiScTwin::focusInEvent(QFocusEvent *) 
-{ 
-  gotFocus = pgtime(); vipOnFocus(vp); info.show();          clipRefocus();
+{                                              vipOnFocus(vp); info.show();
+  mf->onFocus();          gotFocus = pgtime(); clipRefocus ();
 }                                                                           
 void MiScTwin::focusOutEvent(QFocusEvent *) { vipFocusOff(vp); info.hide();
                                               clipFocusOff (); stopTimer(); }

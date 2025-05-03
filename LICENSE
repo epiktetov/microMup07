@@ -14,6 +14,9 @@
  (iii) altered source versions must be plainly marked as such, and must not be
          misrepresented as being the original software.
 
+ Permission is NOT granted to use this software or any of the associated files
+ as sample data for the purposes of building machine learning models.
+
  This software is provided "AS IS," without a warranty of any kind.
 
  ALL EXPRESS OR IMPLIED CONDITIONS,  REPRESENTATIONS AND WARRANTIES, INCLUDING

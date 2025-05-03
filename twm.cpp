@@ -284,9 +284,9 @@ void tmDumpDeqs()             /* dump all deqs info to debug memory problems */
   fprintf(dumpf, "dbeg(+x) dend(+x) dextra dtyp/txt-info\n");
 //                1234567+ 1234567+ 1234567 T txt-file-info
   do {
-    fprintf(dumpf, "%07lX%c ", cpdiff(d->dbeg,base), d->dbext?'<':' ');
-    fprintf(dumpf, "%07lX%c ", cpdiff(d->dend,base), d->deext?'>':' ');
-    fprintf(dumpf, "%07lX %c", d->dextra,    d->dtyp);
+    fprintf(dumpf, "%07X%c ", cpdiff(d->dbeg,base), d->dbext?'<':' ');
+    fprintf(dumpf, "%07X%c ", cpdiff(d->dend,base), d->deext?'>':' ');
+    fprintf(dumpf, "%07X %c",       (int)d->dextra, d->dtyp);
     if (d->dtyp == DT_TEXT) {
       fname = d->owner->file ? d->owner->file->full_name.cStr() : "NULL";
       fprintf(dumpf, " %04x:%s", d->owner->txstat,                fname);
@@ -296,9 +296,9 @@ void tmDumpDeqs()             /* dump all deqs info to debug memory problems */
 // - - - - - - - - - - - - - - - - - - - - - -
   fprintf(dumpf,"--freedeqs--\n");
   for (d = DqFreedeqs(); d; d = d->dnext) {
-    fprintf(dumpf, "%07lX  ", cpdiff(d->dbeg,base));
-    fprintf(dumpf, "%07lX  ", cpdiff(d->dend,base));
-    fprintf(dumpf, "%07lX %c\n",d->dextra, d->dtyp);
+    fprintf(dumpf, "%07X  ",       cpdiff(d->dbeg,base));
+    fprintf(dumpf, "%07X  ",       cpdiff(d->dend,base));
+    fprintf(dumpf, "%07X %c\n", (int)d->dextra, d->dtyp);
   }
   fclose(dumpf); delete qf;
 }

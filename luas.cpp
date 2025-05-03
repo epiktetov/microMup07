@@ -440,7 +440,7 @@ static int luasEncode (lua_State *L)
                                               tlen % 3; tlen++) *p++ = ' ';
     char *encoded = (char*)malloc(4*tlen/3),
              *out = encoded;
-    for (int i = 0, k = 0; i < tlen; i += 3) {
+    for (size_t i = 0, k = 0; i < tlen; i += 3) {
       long N = (text[i] << 16) | (text[i+1] << 8) | text[i+2];
       *out++ = encode1((N & 0xFC0000) >> 18, key[k++ % klen]);
       *out++ = encode1((N & 0x03F000) >> 12, key[k++ % klen]);
@@ -461,7 +461,7 @@ static int luasDecode (lua_State *L)
   else {
     char *decoded = (char*)malloc(3*tlen/4),
              *out = decoded;
-    for (int i = 0, k = 0; i < tlen; i += 4) {
+    for (size_t i = 0, k = 0; i < tlen; i += 4) {
       long N = decode1(text[i],   key[k++ % klen]) << 18;
       N |=     decode1(text[i+1], key[k++ % klen]) << 12;
       N |=     decode1(text[i+2], key[k++ % klen]) <<  6;
