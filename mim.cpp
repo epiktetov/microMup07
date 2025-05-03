@@ -109,9 +109,9 @@ struct MiSharedData
 };                        //
 #define MimUUID "mim-8aac5518-cdcb-4797-8a8f-64e4e0bb691b"
 #define MIM_MSG_OPEN_NEW_FILE              (WM_USER+0x10F)
-bool       run1instance = true;
 MiSharedData *mimShared = NULL;
 #endif
+bool run1instance = true;
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 int main(int argc, char *argv[])
 {

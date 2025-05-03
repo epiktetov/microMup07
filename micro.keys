@@ -566,7 +566,7 @@ NOTE:
   Tx:DL(N) -- delete N lines at cursor (default = 1)
   Tx:gtl() -- get-text-left convenience method = gets first chunk of non-spaces
                                        from text to the left of cursor position
-[line 565] xref: new.lua
+[line 568] xref: new.lua
 
   re = Re("..regex..",true/false) -- regular expression (arg: case sensitivity,
   re = Re[[..regex..]]                                default = case-sensitive)
